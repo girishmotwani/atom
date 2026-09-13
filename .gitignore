@@ -1,0 +1,30 @@
+# Atom framework state (machine-generated, not source)
+.atom/events.jsonl
+.atom/state.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
