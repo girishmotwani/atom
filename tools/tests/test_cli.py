@@ -96,3 +96,47 @@ def test_no_race_flag_disables_the_race_gate(tmp_path, monkeypatch):
     main(["check", str(make_go_module(tmp_path)), "--no-race"])
 
     assert recorded["enable_race"] is False
+
+
+# --------------------------------------------------------------------------
+# B70 -- the module must actually run, not merely import
+#
+# Every test above imports `atom.cli`, which defines every name in the module
+# regardless of ordering. Running it as `python -m atom.cli` does not: module
+# execution stops at `raise SystemExit(main())`, so anything defined below
+# that line is missing when main() needs it.
+#
+# This is the third time in this project that a fully green suite has sat on
+# top of a program that could not run -- Phase 1's unbuildable pyproject.toml,
+# then a NameError reachable only via `-m`. Importing is not running, and only
+# a subprocess can tell the difference.
+# --------------------------------------------------------------------------
+
+import subprocess
+import sys
+
+
+def _run_cli(*arguments: str) -> subprocess.CompletedProcess:
+    """Invoke the CLI the way a developer does, in a real process."""
+    return subprocess.run(
+        [sys.executable, "-m", "atom.cli", *arguments],
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_the_cli_runs_as_a_module_without_exploding():
+    """B70: catches names defined after the __main__ guard, which imports hide."""
+    completed = _run_cli("--help")
+
+    assert "Traceback" not in completed.stderr
+    assert completed.returncode == 0
+
+
+def test_every_subcommand_is_reachable_in_a_real_process():
+    """B70: --help per subcommand executes the parser wiring for each one."""
+    for subcommand in (["check", "--help"], ["poc", "--help"], ["poc", "new", "--help"], ["poc", "run", "--help"]):
+        completed = _run_cli(*subcommand)
+
+        assert "Traceback" not in completed.stderr, subcommand
+        assert completed.returncode == 0, subcommand

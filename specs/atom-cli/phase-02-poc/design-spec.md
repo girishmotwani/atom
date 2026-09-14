@@ -262,9 +262,34 @@ evidence lives in its tests instead.
 |---|---|
 | **B62** | `atom poc new <slug> --question "..."`, `atom poc run <slug>`, `atom poc list`. |
 | **B63** | Exit codes follow Phase 1's contract (B28–B34): `0` success, `1` the operation failed, `2` usage error. |
-| **B64** | **`atom poc run` exits `0` whenever the spike actually ran — whatever its verdict.** A Refuted spike is a successful use of the method, not a malfunction. Non-zero means strictly *Atom could not run your spike*: it did not compile, it timed out, or `go.mod` was missing. |
+| **B64** | **`atom poc run` exits `0` whenever the spike actually ran — whatever its verdict.** A Refuted spike is a successful use of the method, not a malfunction. Non-zero means strictly *Atom could not run your spike*: it did not compile, it timed out, or `go.mod` was missing. *Refined by B69: a crash was not a case anyone had in mind here, and it is not a verdict either.* |
 | **B65** | The verdict is therefore **output, not exit status**. A developer who wants CI to enforce an invariant makes the spike itself exit non-zero when the invariant breaks — as `poc/go-run-failure-modes/spike.py` already does. |
 | **B66** | `--json` emits the full `SpikeResult`, reusing `SCHEMA_VERSION` from `report.py`. |
+
+### Found by running the tool (B67–B70)
+
+Everything above was written before the code existed. The four behaviours below
+were not: each one was discovered by using the finished tool against a real Go
+toolchain, and none of them would have been found by reading the code.
+
+They are recorded separately rather than folded into the tables above, because
+the distinction matters to this project's central claim. If POC-first only
+surfaced things a careful reader would have caught anyway, it would not be worth
+the step.
+
+| # | Behaviour |
+|---|---|
+| **B67** | **A spike that answered has no failed stage.** The first end-to-end run of an exit-2 spike printed `FAIL execute exited 2` directly above `Verdict: INCONCLUSIVE`, and then exited `0` — three accounts of one event, two of them wrong. The EXECUTE stage's job is to run the spike; a non-zero exit is the spike's *answer*, not a malfunction. `StageResult.produced_an_answer` marks this, `failed_stage` exempts it, and the renderer says `answered with exit 2` rather than `exited 2`. |
+| **B68** | **A crash is not a verdict.** A panicking Go binary exits `2` — byte-identical to Atom's *Inconclusive*. Measured, not assumed. Without disambiguation a spike that fell over would be reported as having carefully concluded "I could not tell". Atom reads exit `2` as `CRASHED` only when stderr carries **both** `panic:` and a `goroutine N [running]:` stack dump. Requiring both signals stops a spike that merely prints the word from being misread. Note the direction: this parse can only ever escalate the report, never soften a failure into a success, which is what keeps it compatible with Phase 1's rule that a parse must not override an exit code. |
+| **B69** | **`atom poc run` exits non-zero on a crash**, refining B64. B64's principle was "a verdict is not a failure of Atom"; a crash is not a verdict, so the exit code keys on `SpikeResult.answered` rather than `ran`. All three real verdicts still exit `0`. `ran` and `answered` are both exposed in `--json`, since a crashed spike genuinely did run. |
+| **B70** | **The CLI is smoke-tested in a real subprocess.** Every other test imports `atom.cli`, which defines every name regardless of ordering. `python -m atom.cli` does not: execution stops at `raise SystemExit(main())`, so anything defined below that line is missing when `main()` needs it. A `NameError` of exactly this shape shipped past 169 green tests. `test_cli.py` now invokes the CLI with `subprocess` and asserts no traceback. |
+
+> **B68 is the strongest evidence for this framework's thesis so far.** Nothing
+> about the code suggested exit `2` was overloaded. The collision exists in the
+> Go runtime, is documented nowhere Atom's authors had read, and was found by
+> deliberately crashing a program and looking at `$LASTEXITCODE`. A design
+> review of `spike.py` would have approved the ambiguous mapping without
+> comment — it is internally consistent, well-commented, and wrong.
 
 ## Error Handling
 

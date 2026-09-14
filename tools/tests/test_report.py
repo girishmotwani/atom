@@ -101,3 +101,105 @@ def test_render_json_includes_every_gate_with_its_evidence():
     assert set(gates_by_name) == {"build", "vet"}
     assert gates_by_name["vet"]["status"] == "failed"
     assert "suspicious shift" in gates_by_name["vet"]["details"]
+
+
+# --------------------------------------------------------------------------
+# B67 -- one coherent story for one event
+#
+# Found by running the tool, not by reading it. A spike exiting 2 rendered
+# `FAIL execute exited 2` immediately above `Verdict: INCONCLUSIVE`, and the
+# process exited 0. Three accounts of the same event, two of them wrong.
+# The execute stage's job is to run the spike; it did that perfectly. The
+# exit code is the spike's answer, and the verdict line is where answers
+# belong.
+# --------------------------------------------------------------------------
+
+from atom.spike import SpikeKind, SpikeResult, Stage, StageResult, Verdict
+from atom.report import render_spike_text, render_spike_json
+
+
+GO_PANIC_STDERR = "panic: runtime error: index out of range [5] with length 0\n\ngoroutine 1 [running]:\nmain.main()\n"
+
+
+def make_spike_result(execute_exit: int, verdict: Verdict, stderr: str = "") -> SpikeResult:
+    """Build a SpikeResult whose earlier stages all passed, isolating the execute stage."""
+    stages = (
+        StageResult(Stage.VET, 0, "", ""),
+        StageResult(Stage.BUILD, 0, "", ""),
+        StageResult(Stage.EXECUTE, execute_exit, "measured 1.2ms", stderr),
+    )
+    return SpikeResult("json-streaming", SpikeKind.COMMAND, stages, verdict, execute_exit)
+
+
+def test_a_spike_that_answered_is_not_rendered_as_a_failed_stage():
+    """B67: the defect itself -- FAIL contradicted the verdict printed below it."""
+    output = render_spike_text(make_spike_result(2, Verdict.INCONCLUSIVE), use_colour=False)
+
+    assert "FAIL" not in output
+    assert "INCONCLUSIVE" in output
+
+
+def test_an_answering_stage_says_it_answered_rather_than_that_it_exited():
+    """B67: `exited 2` reads as a malfunction; `answered with exit 2` reads as a result."""
+    output = render_spike_text(make_spike_result(2, Verdict.INCONCLUSIVE), use_colour=False)
+
+    assert "answered with exit 2" in output
+
+
+def test_a_refuted_spike_is_not_rendered_as_a_failure_either():
+    """B67: Refuted is the most valuable verdict a spike can give."""
+    output = render_spike_text(make_spike_result(1, Verdict.REFUTED), use_colour=False)
+
+    assert "FAIL" not in output
+    assert "REFUTED" in output
+
+
+def test_a_crashed_spike_is_still_rendered_as_a_failure():
+    """B67/B68: the control -- without this, 'never FAIL' would pass every test above."""
+    output = render_spike_text(make_spike_result(2, Verdict.CRASHED, GO_PANIC_STDERR), use_colour=False)
+
+    assert "FAIL" in output
+    assert "CRASHED" in output
+
+
+def test_a_crash_explains_that_exit_2_was_a_panic_not_a_verdict():
+    """B68: the developer needs to know why this 2 was read differently from any other 2."""
+    output = render_spike_text(make_spike_result(2, Verdict.CRASHED, GO_PANIC_STDERR), use_colour=False)
+
+    assert "panic" in output.lower()
+
+
+def test_the_spike_output_is_shown_even_when_nothing_failed():
+    """B67: for an answered spike the output IS the evidence, so it must not be hidden."""
+    output = render_spike_text(make_spike_result(2, Verdict.INCONCLUSIVE), use_colour=False)
+
+    assert "measured 1.2ms" in output
+
+
+def test_json_reports_no_failed_stage_for_a_spike_that_answered():
+    """B67: machine consumers were being told `failed_stage: execute` as well."""
+    parsed = json.loads(render_spike_json(make_spike_result(2, Verdict.INCONCLUSIVE)))
+
+    assert parsed["failed_stage"] is None
+    assert parsed["verdict"] == "inconclusive"
+
+
+def test_json_exposes_answered_separately_from_ran():
+    """B69: a crashed spike ran but did not answer, and consumers need both facts."""
+    parsed = json.loads(render_spike_json(make_spike_result(2, Verdict.CRASHED, GO_PANIC_STDERR)))
+
+    assert parsed["ran"] is True
+    assert parsed["answered"] is False
+
+
+def test_stderr_is_rendered_before_stdout():
+    """B48: a gap found by auditing the spec against the tests, not by failure.
+
+    When a spike fails, stdout is usually empty and stderr holds the entire
+    explanation. Printing stdout first buries the only useful line. This had
+    no test until the test spec was written -- and the rendering code around
+    it was edited the same day, with nothing to catch a flip.
+    """
+    output = render_spike_text(make_spike_result(2, Verdict.CRASHED, GO_PANIC_STDERR), use_colour=False)
+
+    assert output.index("stderr:") < output.index("stdout:")
