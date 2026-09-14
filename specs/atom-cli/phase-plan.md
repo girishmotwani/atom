@@ -133,7 +133,15 @@ mode, to return review findings as schema-valid JSON reliably enough to merge
 programmatically — and what fraction of responses need repair?*
 
 **Done when.** Two distinct models review a real diff; findings merge and deduplicate;
-malformed model output degrades to a readable report rather than a crash.
+malformed model output degrades to a readable report rather than a crash. **And** the
+Phase 1 diff has been run through `atom review` — see below.
+
+**Inherited debt — the bootstrap gap.** Phase 1 shipped without a multi-model review,
+because `atom review` did not exist to review it. Agreed with the developer at the Phase 1
+gate on 2026-09-14: the first real target for `atom review` is the code that could not be
+reviewed by it. **This phase's gate does not close until `atom review` has been run over
+the Phase 1 diff (commit `4d8dee1` onward) and its findings triaged.** Recorded in
+`phase-01-check/decisions.md` under Tracked debt.
 
 **Size.** ~350 lines production.
 

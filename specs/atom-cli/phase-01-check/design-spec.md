@@ -171,6 +171,20 @@ def render_text(report: CheckReport, use_colour: bool = True) -> str: ...
 def render_json(report: CheckReport) -> str: ...   # stable, versioned schema
 ```
 
+```python
+# cli.py
+
+EXIT_PASSED = 0        # every required gate passed or was skipped
+EXIT_CHECK_FAILED = 1  # a required gate failed
+EXIT_USAGE_ERROR = 2   # the command could not run at all
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Parse arguments, run the requested command, and return an exit code."""
+```
+
+Usage: `atom check [directory] [--json] [--no-race] [--no-colour]`
+
 ## Types And Responsibilities
 
 | Type | Responsibility | File |
@@ -231,6 +245,28 @@ Numbered; each becomes at least one test case.
     summary line alone.
 26. `render_json` emits a stable schema including a `schema_version` field.
 27. `render_json` output parses as valid JSON for both passing and failing reports.
+
+**CLI**
+
+The command line is the only user-facing surface in this phase, so its contract is
+numbered rather than left implicit in the tests.
+
+28. `atom check` exits **0** when every required gate passed or was skipped.
+29. `atom check` exits **1** when any required gate failed.
+30. `atom check` exits **2** when the command could not run at all — a missing directory
+    or a directory with no `go.mod`. Callers frequently need to distinguish a broken
+    invocation from a genuine gate failure.
+31. Usage errors print a single-line message to **stderr** and never surface a traceback.
+    A traceback would bury the one line the user needs.
+32. `atom check` with no path argument checks the current directory.
+33. `--json` emits `render_json` output instead of text, so the command is consumable by
+    automation without parsing human-facing formatting.
+34. `--no-race` disables the race detector, which requires cgo and is materially slower.
+    The gate still appears in the report as `SKIPPED` rather than vanishing, so the
+    report always shows what was not checked.
+
+Exit codes are part of the public contract. `atom check` is designed to be used directly
+in a gate, so changing them is a breaking change.
 
 ## Error Handling
 

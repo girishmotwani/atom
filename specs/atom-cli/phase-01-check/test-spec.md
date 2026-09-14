@@ -12,6 +12,8 @@ verify it. A behaviour with no test is an unverified claim.
 
 **Suite:** 55 tests, 95% statement coverage, all passing.
 
+Every numbered behaviour **B1–B34** maps to at least one named test.
+
 ```
 python -m pytest tests -v --cov=atom --cov-report=term-missing
 ```
@@ -101,17 +103,18 @@ python -m pytest tests -v --cov=atom --cov-report=term-missing
 | No `go.mod` → `NotAGoModuleError` | `test_run_check_refuses_a_directory_without_go_mod` | `test_check.py` |
 | Refusal happens **before** any gate runs | `test_run_check_refuses_before_running_any_gate` | `test_check.py` |
 
-### CLI
+### CLI (B28–B34)
 
-| Behaviour | Test | File |
-|---|---|---|
-| Exit 0 when gates pass | `test_check_returns_zero_when_every_gate_passes` | `test_cli.py` |
-| Exit 1 when a gate fails | `test_check_returns_one_when_a_gate_fails` | `test_cli.py` |
-| `--json` emits parseable JSON | `test_check_json_flag_emits_parseable_json` | `test_cli.py` |
-| Missing directory → exit 2, no traceback | `test_check_reports_a_missing_directory_without_a_traceback` | `test_cli.py` |
-| No `go.mod` → exit 2, message names `go.mod` | `test_check_reports_a_directory_without_go_mod_clearly` | `test_cli.py` |
-| Defaults to current directory | `test_check_defaults_to_the_current_directory` | `test_cli.py` |
-| `--no-race` disables the race gate | `test_no_race_flag_disables_the_race_gate` | `test_cli.py` |
+| # | Behaviour | Test | File |
+|---|---|---|---|
+| B28 | Exit 0 when gates pass | `test_check_returns_zero_when_every_gate_passes` | `test_cli.py` |
+| B29 | Exit 1 when a gate fails | `test_check_returns_one_when_a_gate_fails` | `test_cli.py` |
+| B30 | Exit 2 on a missing directory | `test_check_reports_a_missing_directory_without_a_traceback` | `test_cli.py` |
+| B30 | Exit 2 when there is no `go.mod` | `test_check_reports_a_directory_without_go_mod_clearly` | `test_cli.py` |
+| B31 | Usage errors print to stderr with no traceback | `test_check_reports_a_missing_directory_without_a_traceback` | `test_cli.py` |
+| B32 | Defaults to the current directory | `test_check_defaults_to_the_current_directory` | `test_cli.py` |
+| B33 | `--json` emits parseable JSON | `test_check_json_flag_emits_parseable_json` | `test_cli.py` |
+| B34 | `--no-race` disables the race gate | `test_no_race_flag_disables_the_race_gate` | `test_cli.py` |
 
 ## Test Design Notes
 
@@ -129,7 +132,7 @@ output.
 
 ## Completeness Checklist
 
-- [x] Every numbered behaviour B1–B27 maps to at least one named test
+- [x] Every numbered behaviour B1–B34 maps to at least one named test
 - [x] Behaviours with multiple failure modes have a test per mode (B9, B10, B14, B15, B19, B22)
 - [x] Error-handling table rows are covered
 - [x] Test names describe behaviour, not implementation

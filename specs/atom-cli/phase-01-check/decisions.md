@@ -14,11 +14,11 @@ Deviations from instructions and autonomous judgement calls made during Phase 1.
 |---|---|---|---|---|---|
 | 1 | 2026-09-13 | Atom's stated purpose is Go development, and `go-style.md` governs generated code | Implemented the tooling in **Python** | The developer specified Python for all framework scripts. `go-style.md`'s *intent* — explicit names, real doc comments, dependency injection — was applied to the Python API | Yes — original instruction |
 | 2 | 2026-09-14 | Phase 1 implementation was delegated to a background subagent | Finished the work directly after the agent stalled | The agent completed `runner.py` and `gates.py` (build/vet only) then returned an empty turn after 14 tool calls. Framework guidance is not to relaunch a failed agent | Yes — reported at the time |
-| 3 | 2026-09-14 | Design spec lists five gates and a `cli.py`, but numbers no CLI behaviours | Wrote 7 CLI tests against behaviour inferred from the spec's exit-code rules (B21) and error-handling table | An untested entry point would leave the phase's only user-facing surface unverified | Pending — CLI behaviours should be numbered into the spec at the gate |
-| 4 | 2026-09-14 | No instruction covered CI | Added `.github/workflows/ci.yml` running tests on 3 OSes × 2 Python versions, plus a job that **re-runs the module-isolation spike** | The spike was only ever run on Windows; the design rests on its result. CI is how that evidence stays true rather than becoming folklore | Pending |
-| 5 | 2026-09-14 | No instruction covered doc-link integrity | Wrote `tools/check_links.py` and wired it into CI | Atom's skills navigate by relative link. A broken link silently drops a discipline reference an agent was told to read. Found and verified 73 links resolve | Pending |
+| 3 | 2026-09-14 | Design spec lists five gates and a `cli.py`, but numbers no CLI behaviours | Wrote 7 CLI tests against behaviour inferred from the spec's exit-code rules (B21) and error-handling table | An untested entry point would leave the phase's only user-facing surface unverified | **Yes — resolved.** Developer directed that they be written down; added to the design spec as B28–B34 and mapped in `test-spec.md` |
+| 4 | 2026-09-14 | No instruction covered CI | Added `.github/workflows/ci.yml` running tests on 3 OSes × 2 Python versions, plus a job that **re-runs the module-isolation spike** | The spike was only ever run on Windows; the design rests on its result. CI is how that evidence stays true rather than becoming folklore | **Yes — kept, approved at the Phase 1 gate** |
+| 5 | 2026-09-14 | No instruction covered doc-link integrity | Wrote `tools/check_links.py` and wired it into CI | Atom's skills navigate by relative link. A broken link silently drops a discipline reference an agent was told to read. Found and verified 74 links resolve | **Yes — kept, approved at the Phase 1 gate** |
 | 6 | 2026-09-14 | `pyproject.toml` referenced `../README.md` | Removed the field | It made `pip install -e .` fail outright. Recorded as finding 1 rather than silently patched | Yes — shown in session |
-| 7 | 2026-09-14 | Spec does not state whether `find_poc_modules_without_go_mod` recurses | Treated only directories *directly* under `poc/` as spikes, searching `.go` files recursively inside each | A spike is one directory. Recursing to find nested spikes would report a spike's own subpackages as separate offenders | Pending — also logged as a Medium-confidence ambiguity in `findings.md` |
+| 7 | 2026-09-14 | Spec does not state whether `find_poc_modules_without_go_mod` recurses | Treated only directories *directly* under `poc/` as spikes, searching `.go` files recursively inside each | A spike is one directory. Recursing to find nested spikes would report a spike's own subpackages as separate offenders | **Yes — confirmed correct by the developer at the Phase 1 gate** |
 
 ## Standing Waivers
 
@@ -29,7 +29,32 @@ None.
 | Step | Reason | Developer informed? |
 |---|---|---|
 | Phase 1 POC | Deliberately waived in `phase-plan.md`. The project-level module-isolation spike already answered this phase's only open technical question, and subprocess orchestration carries no unknown feasibility risk | Yes — recorded in the approved phase plan |
-| Multi-model review of the Phase 1 diff | `atom review` is Phase 4 and does not exist yet. Phase 1 cannot use a tool it is a prerequisite for | Pending — Phase 1 should be re-reviewed once Phase 4 lands |
+| Multi-model review of the Phase 1 diff | `atom review` is Phase 4 and does not exist yet. Phase 1 cannot use a tool it is a prerequisite for | **Yes — developer directed at the Phase 1 gate that Phase 1 be re-reviewed once Phase 4 lands.** Carried as a tracked debt below, not written off |
+
+### Tracked debt: Phase 1 re-review
+
+| Item | Trigger | Owner | Status |
+|---|---|---|---|
+| Run `atom review` over the Phase 1 diff (commit `4d8dee1` onward) | Phase 4 (`atom review`) reaching a working state | Next agent working Phase 4 | Open |
+
+This is the bootstrap gap, and it resolves itself: the first real target for `atom review`
+should be the code that could not be reviewed by it. Phase 4's own gate should not close
+until this has been run.
+
+## Gate Record — Phase 1
+
+Reviewed with the developer on 2026-09-14. All seven decisions and both skipped steps were
+walked through individually.
+
+| Item | Outcome |
+|---|---|
+| Decision 3 — CLI behaviours unnumbered | Write them down; added as B28–B34 |
+| Decision 7 — `poc/` recursion semantics | Implementation confirmed correct |
+| Decisions 4, 5 — CI and link checker | Both kept |
+| Skipped — multi-model review | Deferred to Phase 4, tracked as debt above |
+| Decisions 1, 2, 6 | Already surfaced during the session |
+
+No Pending items remain for Phase 1.
 
 ## Notes On Process Honesty
 

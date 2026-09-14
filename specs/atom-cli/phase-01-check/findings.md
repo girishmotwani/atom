@@ -26,10 +26,10 @@ fixed in this phase.
 | Should a `WARNING` gate that is `required=True` fail the check? | No — `WARNING` never fails, regardless of `required` | B20 says warnings are advisory. Letting `required` override that would make two fields fight over one verdict | High |
 | Is a disabled `RaceGate` absent from the report, or present as `SKIPPED`? | Present as `SKIPPED` | A report should show what was *not* checked. Silently dropping a gate hides a coverage gap | High |
 | What exit code signals "the command could not run" versus "the code failed"? | `2` for usage errors, `1` for a genuine gate failure | Callers frequently need to distinguish a broken invocation from a real failure. Follows common CLI convention | High |
-| Does `find_poc_modules_without_go_mod` recurse below `poc/<slug>/`? | Only directories *directly* under `poc/` are candidates, but `.go` files are searched recursively within each | A spike is one directory; nested packages inside it are still that spike's problem | Medium |
+| Does `find_poc_modules_without_go_mod` recurse below `poc/<slug>/`? | Only directories *directly* under `poc/` are candidates, but `.go` files are searched recursively within each | A spike is one directory; nested packages inside it are still that spike's problem | **High — confirmed by the developer at the Phase 1 gate** |
 
-The `poc/` recursion choice is Medium confidence and affects a user-visible warning. Raised
-here for the Phase 1 gate.
+All ambiguities above are now resolved at High confidence. The `poc/` recursion question
+was raised at the Phase 1 gate and the chosen interpretation was confirmed.
 
 ## Learnings
 
