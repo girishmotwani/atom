@@ -88,12 +88,26 @@ both streams. `atom poc list` shows every spike and whether it still runs.
 **Technical risk.** Medium, concentrated in one place: if the generated `go.mod` is
 wrong or missing, the parent build breaks. That is the one thing tests must pin down.
 
-**POC question — justifiably skipped.** The project POC proved this exact mechanism and
-produced the invariants. Nothing further is unknown.
+**POC question — *originally* marked justifiably skipped. That call was wrong.**
+The claim was "the project POC proved this exact mechanism; nothing further is unknown."
+On inspection it had not: the module-isolation spike **hand-wrote** every `go.mod` from
+a string constant (`go mod init` was never run) and only ever executed `go run .` on a
+spike that **compiled**. Both of those are precisely what Phase 2 depends on.
 
-**Done when.** A scaffolded spike always has a `go.mod`; a deliberately broken spike
-does not affect `atom check` at the repo root; `atom poc run` surfaces compile errors
-from stderr rather than reporting success.
+The spike was run. See [`phase-02-poc/poc-report.md`](./phase-02-poc/poc-report.md).
+It **refuted** an assumption this phase's design rested on: `go run` flattens every
+non-zero exit code to `1`, so a spike exiting `2` for *Inconclusive* would have been
+reported by Atom as *Refuted*. `atom poc run` must build then execute the binary.
+
+> **Lesson for the remaining phases.** "Justifiably skipped" is a claim about the
+> evidence, and like any claim it has to be checked against the evidence rather than
+> asserted. Before skipping a POC, name the specific spike and the specific line that
+> already proved the thing. If you cannot, the POC is not skippable.
+
+**Done when.** A scaffolded spike always has a `go.mod` produced by `go mod init`; a
+deliberately broken spike does not affect `atom check` at the repo root; `atom poc run`
+surfaces compile errors from stderr rather than reporting success; and a spike's own
+exit code reaches the developer unflattened.
 
 **Size.** ~200 lines production.
 

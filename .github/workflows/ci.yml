@@ -38,8 +38,16 @@ jobs:
         run: python -m pytest tests -v --cov=atom --cov-report=term-missing
 
   poc:
-    name: POC spikes still run
-    runs-on: ubuntu-latest
+    name: POC spikes still run (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The spikes were written and observed on Windows. Running them on all
+        # three platforms is what turns "we saw this on one machine" into
+        # evidence -- and is the stated way the reports close their own
+        # single-platform gap.
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +64,13 @@ jobs:
       # gets revisited rather than quietly inherited.
       - name: Re-run the module-isolation spike
         run: python poc/module-isolation/spike.py
+
+      # Phase 2 rests on `go run` flattening non-zero exit codes to 1, which is
+      # why `atom poc run` builds then executes. This spike asserts that
+      # refutation still holds -- if Go ever fixes it, the job fails and tells us
+      # poc-report.md has gone stale, rather than passing quietly.
+      - name: Re-run the go-run failure-modes spike
+        run: python poc/go-run-failure-modes/spike.py
 
   docs:
     name: Doc links resolve
