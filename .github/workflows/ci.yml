@@ -72,6 +72,15 @@ jobs:
       - name: Re-run the go-run failure-modes spike
         run: python poc/go-run-failure-modes/spike.py
 
+      # Phase 3's plan called state persistence "ordinary JSON persistence" with
+      # "no technical uncertainty". This spike refuted that three times over --
+      # most importantly, unlocked concurrent appends SILENTLY LOSE log entries,
+      # and binary mode does not fix it. Those refutations are load-bearing for
+      # the design, so the spike asserts they still hold and fails loudly if the
+      # platform changes underneath them.
+      - name: Re-run the state-persistence spike
+        run: python poc/state-persistence-on-windows/spike.py
+
   docs:
     name: Doc links resolve
     runs-on: ubuntu-latest
