@@ -40,10 +40,15 @@ scope.
 | # | Phase | Delivers | Risk | Needs POC? | Depends on |
 |---|---|---|---|---|---|
 | 1 | `check` | `atom check` — build, vet, gofmt, test, race, coverage, one verdict | M | No — see justification | — |
-| 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | No — the project POC covered the risk | 1 |
-| 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | No | 1 |
+| 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | ~~No~~ **Yes — and it refuted an assumption** | 1 |
+| 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | **Under review — see Phase 3 detail** | 1 |
 | 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | 1, 3 |
 | 5 | `ship` | `atom ship` — commit, push, PR from artifacts | L | No | 1, 3 |
+
+> The Phase 2 row is left struck through rather than rewritten. This table
+> asserted that Phase 2 needed no POC; running it anyway produced the single
+> most consequential finding in the project so far. The wrong prediction is
+> more useful on the page than a tidy correction.
 
 ## Phase Detail
 
@@ -123,7 +128,23 @@ JSONL event log, `atom init` and `atom status`.
 **Technical risk.** Low. Ordinary JSON persistence. The only real trap is corrupt or
 partially-written state, which must degrade to a clear error rather than a stack trace.
 
-**POC question — justifiably skipped.** No technical uncertainty.
+**POC question — ~~justifiably skipped. No technical uncertainty.~~ Challenged.**
+
+This is the same phrase that was used to skip the Phase 2 POC, and it was wrong
+there. "No technical uncertainty" is a claim, not a fact, and the way to settle
+it is to run something. Three specific uncertainties are visible without
+looking hard, and all three sit squarely under the "corrupt state" trap that the
+risk note above acknowledges and then dismisses:
+
+| # | Question | Why it is not obvious |
+|---|---|---|
+| Q1 | Is `os.replace` atomic on Windows when the destination is **open by another process**? | The POSIX guarantee does not transfer. Windows keeps files locked while open, and every write-to-temp-then-rename recipe assumes the rename cannot fail. If it can, "ordinary JSON persistence" silently is not. |
+| Q2 | Are concurrent appends to the JSONL event log atomic? | On POSIX, `O_APPEND` writes under `PIPE_BUF` are. On Windows there is no such guarantee documented in these terms. Two `atom` processes logging at once could interleave into corrupt lines — the exact failure the phase says it will handle. |
+| Q3 | What does a state file written by a process killed mid-write actually look like? | The plan promises "a clear error rather than a stack trace". Nobody has produced one to look at. Truncated JSON, a zero-byte file, and a file of NUL bytes are three different failures needing three different messages. |
+
+Q3 is cheap and settles what the error path must handle. Q1 and Q2 decide
+whether the write strategy is sound at all, and are far more expensive to
+discover after `atom review` and `atom ship` depend on the log.
 
 **Done when.** State survives a restart; a corrupt state file produces an actionable
 message; `atom status` shows the current phase and step.
