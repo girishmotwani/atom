@@ -298,3 +298,67 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
     }
 
     return json.dumps(payload, indent=2)
+
+
+# ---------------------------------------------------------------------------
+# atom status
+# ---------------------------------------------------------------------------
+
+
+def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
+    """Render a status report for a person.
+
+    Everything the report found is shown in one go (B93). Problems are listed
+    rather than raised, because a developer whose state file is broken still
+    wants to see the module path and the last event that made it.
+    """
+
+    lines: list[str] = []
+
+    def paint(text: str, colour: str) -> str:
+        return f"{colour}{text}{_RESET}" if use_colour else text
+
+    lines.append(f"Project: {report.root}")
+
+    if report.module_path:
+        lines.append(f"Module:  {report.module_path}")
+
+    if report.state is not None:
+        phase = report.state.phase.value
+        status = report.state.status.value.replace("_", " ")
+        lines.append(f"Phase:   {paint(phase, _GREEN)} ({status})")
+    else:
+        lines.append(f"Phase:   {paint('unknown', _RED)}")
+
+    if report.last_event is not None:
+        name = report.last_event.get("event", "?")
+        when = report.last_event.get("at", "?")
+        lines.append(f"Last:    {name} at {when}")
+
+    if report.problems:
+        lines.append("")
+        # Amber, not red: most of these are warnings about recoverable things.
+        # Reserving red for the genuine failure keeps the colour meaningful.
+        heading = "Problems:" if not report.could_answer else "Warnings:"
+        lines.append(paint(heading, _RED if not report.could_answer else _YELLOW))
+        for problem in report.problems:
+            # Problems are multi-line by design -- they carry recovery steps.
+            for index, part in enumerate(str(problem).splitlines()):
+                lines.append(f"  {'-' if index == 0 else ' '} {part}")
+
+    if not report.problems and report.could_answer:
+        lines.append("")
+        lines.append(paint("No problems found.", _GREEN))
+
+    return "\n".join(lines)
+
+
+def render_status_json(report: "StatusReport") -> str:
+    """Render a status report as JSON (B97).
+
+    Emitted even when the state could not be read, so a caller that asked for
+    JSON always gets something parseable to inspect.
+    """
+
+    payload = {"schema_version": SCHEMA_VERSION, **report.to_dict()}
+    return json.dumps(payload, indent=2, sort_keys=True)

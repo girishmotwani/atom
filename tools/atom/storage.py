@@ -60,6 +60,17 @@ class StateWriteFailed(StateFileError):
     """The state could not be persisted. Carries recovery instructions."""
 
 
+# A diagnosis without an action leaves the developer stuck. The parenthetical is
+# the part that makes `--force` safe to suggest: `.atom/` holds only the project
+# record, so re-creating it costs a phase marker, not any spike or spec.
+_RECOVERY_ADVICE = (
+    "If there is a `.unsaved` file beside it, that holds your last known state -- "
+    "move it over this file.\n"
+    "Otherwise run `atom init --force` to start the project record again; your "
+    "spikes and specs are not touched."
+)
+
+
 @dataclass(frozen=True)
 class SweptFile:
     """One leftover temp file removed at startup, reported so it is not silent."""
@@ -103,7 +114,8 @@ def read_json(path: Path, *, required_keys: Sequence[str] = ()) -> dict[str, Any
     except json.JSONDecodeError as error:
         raise StateFileCorrupt(
             f"{path} is not valid JSON: {error}.\n"
-            "It was probably damaged by a process that stopped mid-write."
+            "It was probably damaged by a process that stopped mid-write.\n"
+            f"{_RECOVERY_ADVICE}"
         ) from error
 
     # The check that the spike showed is not optional. `[1, 2, 3]` reaches this
@@ -111,7 +123,8 @@ def read_json(path: Path, *, required_keys: Sequence[str] = ()) -> dict[str, Any
     if not isinstance(parsed, dict):
         raise StateFileCorrupt(
             f"{path} does not contain Atom state: "
-            f"expected a JSON object, found a {type(parsed).__name__}."
+            f"expected a JSON object, found a {type(parsed).__name__}.\n"
+            f"{_RECOVERY_ADVICE}"
         )
 
     missing = [key for key in required_keys if key not in parsed]
@@ -178,15 +191,30 @@ def write_json(
     # Every retry is spent. Preserve the work under a name the startup sweep
     # will not touch (B83b), then fail loudly with a way out (B83a).
     unsaved_path = path.with_suffix(path.suffix + UNSAVED_SUFFIX)
+    rescued = True
     try:
         os.replace(temporary_path, unsaved_path)
-    except OSError:  # pragma: no cover - the temp file is already the fallback
+    except OSError:
+        # Whatever is blocking the destination is blocking this rename too. The
+        # work still exists, but only as a `.tmp` file -- which sweep_temp_files
+        # deletes on the next run. Saying "nothing was lost" here would be a
+        # promise Atom cannot keep, so the message changes to match reality.
         unsaved_path = temporary_path
+        rescued = False
+
+    if rescued:
+        fate = f"Your unsaved state has been kept at {unsaved_path} -- nothing was lost."
+    else:
+        fate = (
+            f"Your unsaved state is still at {unsaved_path}, but that file will be "
+            "removed the next time an `atom` command runs. Copy it somewhere else "
+            "now if you want to keep it."
+        )
 
     raise StateWriteFailed(
         f"could not save state to {path} after {retries} attempts: {last_error}.\n"
         "Another process is holding that file open.\n"
-        f"Your unsaved state has been kept at {unsaved_path} -- nothing was lost.\n"
+        f"{fate}\n"
         "Close whatever is holding the file (another `atom` run, an editor, or a "
         "file explorer preview), then either re-run this command or move that "
         f"file over {path} yourself."

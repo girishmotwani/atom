@@ -16,11 +16,16 @@ from atom.report import (
     render_spike_list_json,
     render_spike_list_text,
     render_spike_text,
+    render_status_json,
+    render_status_text,
     render_text,
 )
 from atom.runner import SubprocessRunner
 from atom.scaffold import ScaffoldError, SlugError, scaffold_spike
 from atom.spike import NotASpikeError, run_spike
+from atom.state import Project
+from atom.status import collect_status
+from atom.storage import StateWriteFailed
 
 # Exit codes are part of the contract, because `atom check` is designed to be used
 # directly in a gate. 0 and 1 are verdicts about the code; 2 means the command
@@ -45,6 +50,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if arguments.command == "poc":
         return _run_poc_command(arguments, parser)
+
+    if arguments.command == "init":
+        return _run_init_command(arguments)
+
+    if arguments.command == "status":
+        return _run_status_command(arguments)
 
     parser.print_help()
     return EXIT_USAGE_ERROR
@@ -85,8 +96,40 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     _add_poc_parser(subparsers)
+    _add_state_parsers(subparsers)
 
     return parser
+
+
+def _add_state_parsers(subparsers: argparse._SubParsersAction) -> None:
+    """Wire up `atom init` and `atom status`, the commands that track a project."""
+
+    init_parser = subparsers.add_parser(
+        "init",
+        help="Create .atom/ and start the project at the first phase.",
+    )
+    init_parser.add_argument(
+        "--module",
+        required=True,
+        dest="module_path",
+        help="The Go module path this project builds, e.g. example.com/thing.",
+    )
+    init_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-initialise a project that already exists, discarding its state.",
+    )
+
+    status_parser = subparsers.add_parser(
+        "status",
+        help="Show the current phase, recent activity, and any problems.",
+    )
+    status_parser.add_argument(
+        "--json", action="store_true", dest="as_json", help="Emit machine-readable JSON."
+    )
+    status_parser.add_argument(
+        "--no-colour", action="store_true", help="Disable colour."
+    )
 
 
 def _add_poc_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -227,6 +270,65 @@ def _run_poc_list(arguments: argparse.Namespace, poc_root: Path) -> int:
     # An empty list is not a failure, and neither is a broken spike showing up
     # here -- `atom check` is what fails on that. This command only reports.
     return EXIT_PASSED
+
+
+def _run_init_command(arguments: argparse.Namespace) -> int:
+    """Create a new Atom project in the current directory."""
+
+    project = Project(Path.cwd())
+
+    # B96: overwriting an existing project silently would destroy a record of
+    # work. Refusing by default costs one flag; the alternative costs progress.
+    if project.is_initialised and not arguments.force:
+        print(
+            f"atom init: {project.state_directory} already exists.\n"
+            "Re-initialising would discard the phase this project has reached.\n"
+            "Pass --force if that is genuinely what you want.",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE_ERROR
+
+    try:
+        state = project.initialise(module_path=arguments.module_path)
+    except StateWriteFailed as error:
+        # B83/B83a: never claim success for work whose record was not saved,
+        # and never report the failure without a route out of it.
+        print(f"atom init: {error}", file=sys.stderr)
+        return EXIT_CHECK_FAILED
+
+    print(f"Initialised {project.state_directory}")
+    print(f"  module: {arguments.module_path}")
+    print(f"  phase:  {state.phase.value} ({state.status.value.replace('_', ' ')})")
+    print()
+    print("Atom starts by proving things, not describing them:")
+    print("  atom poc new <slug> --question \"...\"")
+    return EXIT_PASSED
+
+
+def _run_status_command(arguments: argparse.Namespace) -> int:
+    """Report where the project is, and everything wrong with it (B93)."""
+
+    project = Project(Path.cwd())
+    report = collect_status(project)
+
+    if arguments.as_json:
+        # Emitted on both paths: a caller that asked for JSON needs parseable
+        # output even when the answer is "your state file is broken". The
+        # problems also go to stderr so a human watching a CI log sees them
+        # without having to pipe stdout through a JSON parser.
+        print(render_status_json(report))
+        if not report.could_answer:
+            for problem in report.problems:
+                print(f"atom status: {problem}", file=sys.stderr)
+    else:
+        use_colour = not arguments.no_colour and sys.stdout.isatty()
+        # No stderr echo here: the text report already lists every problem, and
+        # printing them twice reads like a bug rather than like emphasis.
+        print(render_status_text(report, use_colour=use_colour))
+
+    # B95: a command that could not answer its question has not succeeded, even
+    # though it ran without error. Same reasoning as Phase 2's crashed spike.
+    return EXIT_PASSED if report.could_answer else EXIT_CHECK_FAILED
 
 
 def _exit_code_for_spike(result) -> int:
