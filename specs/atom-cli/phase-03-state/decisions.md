@@ -145,16 +145,58 @@ much of a diagnostic tool.
 B78's immediate-close and B79's atomic replace mean it sees either the old file or
 the new one, never a torn one — but it may see a *stale* one. Accepted.
 
+### A6 — Recovery instructions extended from failed writes to corrupt reads
+
+**Decision.** A corrupt `state.json` or `config.json` now prints the same kind of
+recovery instructions that a failed *write* prints: check for a `.unsaved`
+sibling, otherwise `atom init --force`, with the reassurance that spikes and
+specs are untouched.
+
+**Why.** P3-4 settled the principle — a fatal error must say exactly what to do.
+But it was asked and answered about *write* failures only, so the spec gained
+detailed recovery text on that path and none on the corrupt-read path. The
+asymmetry was invisible in the document, because the two behaviours live in
+different sections and each reads well alone. It became obvious within seconds of
+running the program by hand.
+
+Corruption is the **likelier** of the two events: the spike proved torn writes
+happen, whereas an exhausted-retry write failure needs a handle held across ten
+attempts.
+
+**Why this is the developer's call to review.** The principle was theirs; only
+its scope was widened. If they intended P3-4 narrowly, this should be reverted.
+
+### A7 — Text output goes to stdout as one report; stderr is reserved for `--json`
+
+**Decision.** In text mode `atom status` prints a single report to stdout,
+problems included, and writes nothing to stderr. In `--json` mode the payload
+owns stdout and the problems are echoed to stderr.
+
+**Why.** The spec (B93, B97) says status reports everything at once and that JSON
+is a contract, but says nothing about *streams*. The first implementation printed
+problems to both, which running it by hand showed as the same message twice, with
+the stderr copy missing its newline and colliding with the report:
+`...mid-write.Project: C:\...`. Every test passed.
+
+`status` is a report command, not a diagnostic emitter — `git status` prints
+everything to stdout — so one report on stdout is the reading most consistent
+with B93. The `--json` path is different because stdout is a machine contract
+there, and a human watching a CI log still needs to see the problem.
+
+**Cost.** Two earlier tests asserting the stderr behaviour were changed. That is
+a contract change made during TDD, which is why it is recorded here rather than
+absorbed silently.
+
 ---
 
 ## Tracked Debt
 
 | # | Item | Status |
 |---|---|---|
-| D1 | Cross-process lock behaviour unverified (A3) | **Must be closed in Phase 3 TDD** |
-| D2 | No POSIX baseline recorded for the spike (A2) | Pending — CI will produce one |
+| D1 | Cross-process lock behaviour unverified (A3) | **Closed in Phase 3 TDD.** Verified across real processes, then teeth-checked by neutering the lock: 553/600 lines survived without it, 600/600 with it. See [`tdd-log.md`](tdd-log.md) Cycle 1. |
+| D2 | No POSIX baseline recorded for the spike (A2) | Pending — CI runs the spike on Linux and macOS, but the numbers have not been read into a report. `filelock.py`'s POSIX branch is the one uncovered region of the phase (84%). |
 | D3 | Lock contention cost at high log volume unmeasured | Pending |
-| D4 | `state.json` schema versioning undecided | Pending — needed before v1 |
+| D4 | `state.json` schema versioning undecided | Pending — needed before v1. Changing the shape today breaks existing projects with a corruption error rather than a migration. |
 | D5 | Stale-lock recovery is manual (P3-3) | Accepted for now |
 
 ---
@@ -165,4 +207,5 @@ the new one, never a torn one — but it may see a *stale* one. Accepted.
 |---|---|---|
 | POC | this session | Spiked on developer instruction (P3-1). 3 of 5 predictions refuted. |
 | Design spec | this session | **Approved** after three questions resolved (P3-2, P3-3, P3-4). |
-| TDD | — | Not started. D1 must be closed here. |
+| TDD | this session | **Complete.** 275 tests, 94% coverage. D1 closed. Five cycles recorded in [`tdd-log.md`](tdd-log.md); behaviour-to-test mapping in [`test-spec.md`](test-spec.md); eight findings in [`findings.md`](findings.md). Two agent decisions (A6, A7) await developer review. |
+| Phase gate | — | Pending developer review. |
