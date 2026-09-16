@@ -17,6 +17,7 @@ from atom.report import (
     render_spike_list_text,
     render_spike_text,
     render_status_json,
+    render_status_problems,
     render_status_text,
     render_text,
 )
@@ -313,18 +314,22 @@ def _run_status_command(arguments: argparse.Namespace) -> int:
 
     if arguments.as_json:
         # Emitted on both paths: a caller that asked for JSON needs parseable
-        # output even when the answer is "your state file is broken". The
-        # problems also go to stderr so a human watching a CI log sees them
-        # without having to pipe stdout through a JSON parser.
+        # output even when the answer is "your state file is broken".
         print(render_status_json(report))
-        if not report.could_answer:
-            for problem in report.problems:
-                print(f"atom status: {problem}", file=sys.stderr)
     else:
         use_colour = not arguments.no_colour and sys.stdout.isatty()
-        # No stderr echo here: the text report already lists every problem, and
-        # printing them twice reads like a bug rather than like emphasis.
         print(render_status_text(report, use_colour=use_colour))
+
+    # Problems go to stderr on both paths, and appear exactly once. The answer
+    # belongs on stdout so `atom status > phase.txt` captures it; the problems
+    # belong on stderr so they stay visible when it is redirected.
+    if report.problems:
+        if arguments.as_json:
+            for problem in report.problems:
+                print(f"atom status: {problem}", file=sys.stderr)
+        else:
+            use_colour = not arguments.no_colour and sys.stderr.isatty()
+            print(render_status_problems(report, use_colour=use_colour), file=sys.stderr)
 
     # B95: a command that could not answer its question has not succeeded, even
     # though it ran without error. Same reasoning as Phase 2's crashed spike.

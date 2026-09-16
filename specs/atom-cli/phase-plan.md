@@ -37,18 +37,18 @@ scope.
 
 ## Phases
 
-| # | Phase | Delivers | Risk | Needs POC? | Depends on |
-|---|---|---|---|---|---|
-| 1 | `check` | `atom check` — build, vet, gofmt, test, race, coverage, one verdict | M | No — see justification | — |
-| 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | ~~No~~ **Yes — and it refuted an assumption** | 1 |
-| 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | **Complete — awaiting gate review** | 1 |
-| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | 1, 3 |
-| 5 | `ship` | `atom ship` — commit, push, PR from artifacts | L | No | 1, 3 |
+| # | Phase | Delivers | Risk | Needs POC? | Status | Depends on |
+|---|---|---|---|---|---|---|
+| 1 | `check` | `atom check` — build, vet, gofmt, test, race, coverage, one verdict | M | No — see justification | Shipped | — |
+| 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | ~~No~~ **Yes — and it refuted an assumption** | Shipped | 1 |
+| 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | ~~No~~ **Yes — 3 of 5 predictions refuted** | Complete | 1 |
+| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | Not started | 1, 3 |
+| 5 | `ship` | `atom ship` — commit, push, PR from artifacts | L | ~~No~~ **Challenged — see Phase 5 detail** | Not started | 1, 3 |
 
-> The Phase 2 row is left struck through rather than rewritten. This table
-> asserted that Phase 2 needed no POC; running it anyway produced the single
-> most consequential finding in the project so far. The wrong prediction is
-> more useful on the page than a tidy correction.
+> The struck-through entries are left visible rather than rewritten. This table
+> asserted that Phases 2 and 3 needed no POC; running them anyway produced the
+> two most consequential findings in the project. **"No" in this column is now
+> 0 for 2**, which is why Phase 5's entry is challenged before it is believed.
 
 ## Phase Detail
 
@@ -153,8 +153,7 @@ risk note above acknowledged and then dismissed:
 
 **Done when.** ~~State survives a restart; a corrupt state file produces an actionable
 message; `atom status` shows the current phase and step.~~ **Met.** 275 tests,
-94% coverage, D1 closed. Two agent decisions (A6, A7) await developer review at
-the gate — see [`decisions.md`](phase-03-state/decisions.md).
+94% coverage, D1 closed. Two agent decisions were reviewed at the gate: A6 confirmed, A7 revised into P3-5 — see [`decisions.md`](phase-03-state/decisions.md).
 
 **Size.** ~250 lines production. **Actual:** ~430, across five modules
 (`filelock`, `storage`, `eventlog`, `state`, `status`) plus CLI wiring. The

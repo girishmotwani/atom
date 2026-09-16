@@ -78,6 +78,23 @@ written out concretely instead of being left as "report an error".
 
 **Behaviours.** B83, B83a, B83b, B83c.
 
+### P3-5 — `atom status` splits its output by stream
+
+**Question.** The spec says status reports everything at once (B93) and that
+`--json` is a contract (B97), but says nothing about *which stream*. The agent
+proposed one report on stdout with nothing on stderr.
+
+**Decision.** Split by stream. The answer — project, module, phase, last event —
+goes to **stdout**. The problems go to **stderr**. Neither is duplicated.
+
+**Why this is better than what was proposed.** Problems on stdout means
+`atom status > phase.txt` swallows them: the redirect hides precisely what the
+developer needs to see. Splitting keeps the answer machine-capturable *and* the
+problems visible. stdout carries a one-line pointer (`1 problem reported below.`)
+so a redirected stdout still shows there was more to the story.
+
+**Behaviours.** Refines B93 and B97. See A7 for the full record.
+
 ---
 
 ## Agent Decisions
@@ -166,26 +183,40 @@ attempts.
 **Why this is the developer's call to review.** The principle was theirs; only
 its scope was widened. If they intended P3-4 narrowly, this should be reverted.
 
-### A7 — Text output goes to stdout as one report; stderr is reserved for `--json`
+### A7 → P3-5 — Text output splits by stream: answer on stdout, problems on stderr
 
-**Decision.** In text mode `atom status` prints a single report to stdout,
-problems included, and writes nothing to stderr. In `--json` mode the payload
-owns stdout and the problems are echoed to stderr.
+**Agent proposal.** One report on stdout, problems included, nothing on stderr.
 
-**Why.** The spec (B93, B97) says status reports everything at once and that JSON
-is a contract, but says nothing about *streams*. The first implementation printed
-problems to both, which running it by hand showed as the same message twice, with
-the stderr copy missing its newline and colliding with the report:
-`...mid-write.Project: C:\...`. Every test passed.
+**Developer decision (P3-5).** Split by stream instead. The answer — project,
+module, phase, last event — goes to **stdout**; the problems go to **stderr**;
+neither is duplicated. stdout carries a one-line pointer (`1 problem reported
+below.`) so a redirected stdout still shows there was more to the story.
 
-`status` is a report command, not a diagnostic emitter — `git status` prints
-everything to stdout — so one report on stdout is the reading most consistent
-with B93. The `--json` path is different because stdout is a machine contract
-there, and a human watching a CI log still needs to see the problem.
+**Why the question arose.** The spec (B93, B97) says status reports everything at
+once and that JSON is a contract, but says nothing about *streams*. The first
+implementation printed problems to both, which running it by hand showed as the
+same message twice, with the stderr copy missing its newline and colliding with
+the report: `...mid-write.Project: C:\...`. Every test passed.
 
-**Cost.** Two earlier tests asserting the stderr behaviour were changed. That is
-a contract change made during TDD, which is why it is recorded here rather than
-absorbed silently.
+**Why the developer's answer beats the proposal.** Putting problems on stdout
+makes `atom status > phase.txt` swallow them silently — the redirect hides
+exactly what the developer needs to see. Splitting keeps the answer
+machine-capturable *and* the problems visible. The agent proposal solved the
+duplication and missed that.
+
+**Cost.** Six tests updated. `render_status_text` and `render_status_problems`
+are now separate functions, which is also what makes "exactly once" testable:
+`test_status_prints_each_problem_exactly_once` counts across both streams.
+
+### Gate outcomes for A6 and A7
+
+Both were put to the developer at the Phase 3 gate. Recorded here because an
+agent decision is provisional until reviewed, and the review is the point.
+
+| # | Decision | Outcome |
+|---|---|---|
+| A6 | Recovery instructions extended from failed writes to corrupt reads | **Confirmed.** P3-4 is a general principle, not specific to writes. |
+| A7 | Text output stream handling | **Revised → P3-5.** Answer on stdout, problems on stderr, neither duplicated. The agent proposal would have hidden problems behind a stdout redirect. |
 
 ---
 
@@ -207,5 +238,5 @@ absorbed silently.
 |---|---|---|
 | POC | this session | Spiked on developer instruction (P3-1). 3 of 5 predictions refuted. |
 | Design spec | this session | **Approved** after three questions resolved (P3-2, P3-3, P3-4). |
-| TDD | this session | **Complete.** 275 tests, 94% coverage. D1 closed. Five cycles recorded in [`tdd-log.md`](tdd-log.md); behaviour-to-test mapping in [`test-spec.md`](test-spec.md); eight findings in [`findings.md`](findings.md). Two agent decisions (A6, A7) await developer review. |
-| Phase gate | — | Pending developer review. |
+| TDD | this session | **Complete.** 275 tests, 94% coverage. D1 closed. Five cycles recorded in [`tdd-log.md`](tdd-log.md); behaviour-to-test mapping in [`test-spec.md`](test-spec.md); eight findings in [`findings.md`](findings.md). A6 confirmed; A7 revised into P3-5 by the developer. |
+| Phase gate | this session | **Closed.** Developer reviewed both agent decisions: A6 confirmed, A7 revised into P3-5 and reimplemented. 275 tests green, links resolve. |

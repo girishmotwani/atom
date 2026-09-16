@@ -98,9 +98,8 @@ def test_status_on_an_uninitialised_project_explains_the_fix(
     exit_code = main(["status"])
 
     assert exit_code != 0
-    # Text mode prints one report to stdout; stderr is reserved for the --json
-    # path, where stdout belongs to the payload. See agent decision A7.
-    assert "atom init" in capsys.readouterr().out
+    # A7: the answer goes to stdout, the problems go to stderr, each exactly once.
+    assert "atom init" in capsys.readouterr().err
 
 
 def test_status_exits_non_zero_when_state_is_corrupt(
@@ -118,7 +117,7 @@ def test_status_exits_non_zero_when_state_is_corrupt(
     exit_code = main(["status", "--no-colour"])
 
     assert exit_code != 0
-    assert "object" in capsys.readouterr().out.lower()
+    assert "object" in capsys.readouterr().err.lower()
 
 
 def test_status_json_is_machine_readable(
@@ -184,9 +183,9 @@ def test_status_reports_unsaved_work(
     )
 
     exit_code = main(["status", "--no-colour"])
-    output = capsys.readouterr().out
+    captured = capsys.readouterr()
 
-    assert ".unsaved" in output
+    assert ".unsaved" in captured.err
     # Unsaved work is a problem worth surfacing, but the state itself is fine,
     # so this is a warning rather than a failure to answer.
     assert exit_code == 0
@@ -219,9 +218,9 @@ def test_status_sweeps_leftover_temp_files_and_says_so(
     main(["status", "--no-colour"])
 
     assert not leftover.exists()
-    output = capsys.readouterr().out
-    assert "state.json.tmp" in output
-    assert "900" in output
+    problems = capsys.readouterr().err
+    assert "state.json.tmp" in problems
+    assert "900" in problems
 
 
 def test_the_sweep_never_touches_unsaved_work(project_root: Path) -> None:
@@ -443,15 +442,21 @@ def test_status_tells_the_developer_how_to_recover_from_corruption(
     exit_code = main(["status", "--no-colour"])
 
     assert exit_code != 0
-    output = capsys.readouterr().out
-    assert ".unsaved" in output, output
-    assert "atom init --force" in output, output
+    problems = capsys.readouterr().err
+    assert ".unsaved" in problems, problems
+    assert "atom init --force" in problems, problems
 
 
-def test_status_does_not_print_the_same_problem_twice(
+def test_status_prints_each_problem_exactly_once(
     project_root: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    """Text output lists problems once; duplicating them reads like a bug."""
+    """A7: the answer goes to stdout, the problems to stderr, neither twice.
+
+    The first implementation printed problems to both streams, which running it
+    by hand showed as the same message duplicated -- with the stderr copy
+    missing its newline and colliding with the report. Every test still passed,
+    which is why this one exists.
+    """
     main(["init", "--module", "example.com/thing"])
     capsys.readouterr()
     (project_root / ".atom" / "state.json").write_text("nonsense", encoding="utf-8")
@@ -459,5 +464,9 @@ def test_status_does_not_print_the_same_problem_twice(
     main(["status", "--no-colour"])
 
     captured = capsys.readouterr()
-    assert captured.out.count("is not valid JSON") == 1, captured.out
-    assert captured.err == "", "the text report already said it"
+    combined = captured.out + captured.err
+    assert combined.count("is not valid JSON") == 1, combined
+    # stdout keeps the answer and a pointer, never the problem text itself.
+    assert "is not valid JSON" not in captured.out
+    assert "Project:" in captured.out
+    assert "1 problem reported below." in captured.out

@@ -306,11 +306,12 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
 
 
 def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
-    """Render a status report for a person.
+    """Render the status report body for a person.
 
-    Everything the report found is shown in one go (B93). Problems are listed
-    rather than raised, because a developer whose state file is broken still
-    wants to see the module path and the last event that made it.
+    Problems are deliberately **not** included here. They are rendered
+    separately by `render_status_problems` and written to stderr, so that
+    `atom status > phase.txt` captures the answer and lets the problems stay
+    visible in the terminal. Each problem is therefore printed exactly once.
     """
 
     lines: list[str] = []
@@ -336,19 +337,33 @@ def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
         lines.append(f"Last:    {name} at {when}")
 
     if report.problems:
-        lines.append("")
-        # Amber, not red: most of these are warnings about recoverable things.
-        # Reserving red for the genuine failure keeps the colour meaningful.
-        heading = "Problems:" if not report.could_answer else "Warnings:"
-        lines.append(paint(heading, _RED if not report.could_answer else _YELLOW))
-        for problem in report.problems:
-            # Problems are multi-line by design -- they carry recovery steps.
-            for index, part in enumerate(str(problem).splitlines()):
-                lines.append(f"  {'-' if index == 0 else ' '} {part}")
-
-    if not report.problems and report.could_answer:
-        lines.append("")
+        # A pointer, not a repetition: someone redirecting stdout should be able
+        # to tell that there was more to the story.
+        count = len(report.problems)
+        noun = "problem" if count == 1 else "problems"
+        lines.append(f"{count} {noun} reported below.")
+    else:
         lines.append(paint("No problems found.", _GREEN))
+
+    return "\n".join(lines)
+
+
+def render_status_problems(report: "StatusReport", use_colour: bool = True) -> str:
+    """Render just the problems, for stderr. Empty string when there are none."""
+
+    if not report.problems:
+        return ""
+
+    # Amber for things still recoverable, red when status could not answer at
+    # all. Reserving red for the genuine failure keeps the colour meaningful.
+    colour = _RED if not report.could_answer else _YELLOW
+    heading = "Problems:" if not report.could_answer else "Warnings:"
+
+    lines = [f"{colour}{heading}{_RESET}" if use_colour else heading]
+    for problem in report.problems:
+        # Problems are multi-line by design -- they carry recovery steps.
+        for index, part in enumerate(str(problem).splitlines()):
+            lines.append(f"  {'-' if index == 0 else ' '} {part}")
 
     return "\n".join(lines)
 
