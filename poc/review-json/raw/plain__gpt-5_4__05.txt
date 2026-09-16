@@ -1,0 +1,27 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Lookup reads the map without taking the RWMutex, so concurrent calls with Reserve can trigger a data race or a concurrent-map panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "high",
+    "message": "Reserve fetches a missing SKU as the zero Item and then writes it back, so reserving an unknown SKU silently creates a bogus negative inventory record instead of returning an error."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "Export ignores the error from os.Create, so if the file cannot be opened it will proceed with a nil file handle and panic instead of returning the failure."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Export iterates over the map without any lock, so concurrent calls with Reserve can race and panic with concurrent map access."
+  }
+]
+

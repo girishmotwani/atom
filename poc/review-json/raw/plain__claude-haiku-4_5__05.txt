@@ -1,0 +1,23 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored, causing a nil pointer panic when writing to the file."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "File handle is never closed, resulting in a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "medium",
+    "message": "Reserve does not validate that the requested count does not exceed available quantity, allowing negative stock."
+  }
+]
+```
+

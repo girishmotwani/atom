@@ -1,0 +1,27 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Lookup reads s.items without taking the read lock, so a concurrent Reserve can cause a data race or a concurrent-map panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "high",
+    "message": "Reserve does not verify that the SKU exists, so reserving an unknown SKU inserts a zero-value Item with a negative quantity instead of returning an error."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "Export ignores the error from os.Create and never checks write or close errors, so it can panic or return success even when nothing was written."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Export iterates over s.items without holding the read lock, so a concurrent Reserve can crash with 'concurrent map iteration and map write'."
+  }
+]
+

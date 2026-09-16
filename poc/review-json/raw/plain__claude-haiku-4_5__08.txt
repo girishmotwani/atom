@@ -1,0 +1,29 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored; if it fails, f will be nil and fmt.Fprintf will panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Reading from s.items without holding s.mu.RLock() creates a data race with concurrent Reserve calls."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 48,
+    "severity": "high",
+    "message": "File handle is never closed, causing a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "medium",
+    "message": "Reserve allows negative quantities by subtracting without checking if sufficient stock exists."
+  }
+]
+```
+

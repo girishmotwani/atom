@@ -1,0 +1,29 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored, causing nil pointer dereference in subsequent fmt.Fprintf call."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "critical",
+    "message": "Race condition: s.items is read without holding mu lock, but Reserve method modifies it under lock."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "File handle is never closed, causing resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "medium",
+    "message": "No validation that stock quantity does not go negative after decrement."
+  }
+]
+```
+

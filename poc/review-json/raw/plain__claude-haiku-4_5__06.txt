@@ -1,0 +1,29 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Race condition: Lookup reads from s.items without holding s.mu lock, concurrent with Reserve writes."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "critical",
+    "message": "Error from os.Create ignored; f is nil if file creation fails, causing nil pointer dereference at line 46."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Race condition: iterating s.items without holding s.mu lock, concurrent with Reserve modifications."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "medium",
+    "message": "File handle f is never closed, causing resource leak."
+  }
+]
+```
+

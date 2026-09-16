@@ -42,7 +42,7 @@ scope.
 | 1 | `check` | `atom check` — build, vet, gofmt, test, race, coverage, one verdict | M | No — see justification | Shipped | — |
 | 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | ~~No~~ **Yes — and it refuted an assumption** | Shipped | 1 |
 | 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | ~~No~~ **Yes — 3 of 5 predictions refuted** | Complete | 1 |
-| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | Not started | 1, 3 |
+| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | POC done — 2 of 6 predictions refuted | 1, 3 |
 | 5 | `ship` | `atom ship` — commit, push, PR from artifacts | L | ~~No~~ **Challenged — see Phase 5 detail** | Not started | 1, 3 |
 
 > The struck-through entries are left visible rather than rewritten. This table
@@ -174,6 +174,15 @@ POC is mandatory.
 **POC question.** *Can a model be driven, through the Copilot CLI in non-interactive
 mode, to return review findings as schema-valid JSON reliably enough to merge
 programmatically — and what fraction of responses need repair?*
+
+**POC answer.** Yes, with one deterministic normalisation step. 40 calls across two
+contracts and two models: compliance is **bimodal, not a rate** — `gpt-5.4` returned
+bare schema-valid JSON 20/20, `claude-haiku-4.5` wrapped it in a markdown fence 20/20.
+Zero schema violations of any other kind. The transport contract (`--output-format
+json`) made no difference at the findings level, so the simpler `--silent` wins. See
+[`phase-04-review/poc-report.md`](phase-04-review/poc-report.md) for the binding
+consequences C1–C9 and the debt D6–D10 — **and note that the decision rule was amended
+after the data came in, which is recorded there rather than absorbed silently.**
 
 **Done when.** Two distinct models review a real diff; findings merge and deduplicate;
 malformed model output degrades to a readable report rather than a crash. **And** the

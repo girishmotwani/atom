@@ -1,0 +1,41 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored with blank identifier, file creation could fail silently."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "File handle is never closed, causing a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 33,
+    "severity": "high",
+    "message": "Reserve accesses s.items[sku] without verifying the key exists, operating on zero-value Item."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 23,
+    "severity": "high",
+    "message": "Lookup does not acquire read lock before accessing s.items, causing potential race condition."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 34,
+    "severity": "medium",
+    "message": "Reserve does not validate that quantity would not go negative."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "Export does not acquire read lock before iterating s.items, causing potential race condition."
+  }
+]
+```
+

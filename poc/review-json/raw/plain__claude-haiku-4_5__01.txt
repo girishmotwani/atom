@@ -1,0 +1,35 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 42,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored with blank identifier, causing panic or undefined behavior if file creation fails."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 42,
+    "severity": "high",
+    "message": "File handle is never closed, causing resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "Reading from s.items without holding read lock creates data race condition."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "high",
+    "message": "Reserve allows item quantity to become negative without validation."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "medium",
+    "message": "Accessing s.items[sku] for non-existent key creates unintended map entry with zero value."
+  }
+]
+```
+

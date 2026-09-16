@@ -1,0 +1,57 @@
+diff --git a/inventory/stock.go b/inventory/stock.go
+index 3f8a1c2..b7d4e91 100644
+--- a/inventory/stock.go
++++ b/inventory/stock.go
+@@ -1,14 +1,48 @@
+ package inventory
+ 
+-import "errors"
++import (
++	"errors"
++	"fmt"
++	"os"
++	"sync"
++)
+ 
+ // Item is one line in the warehouse ledger.
+ type Item struct {
+ 	SKU      string
+ 	Quantity int
+ }
+ 
+-func Lookup(sku string) (Item, error) {
+-	return Item{}, errors.New("not implemented")
++// Store holds the in-memory stock ledger.
++type Store struct {
++	items map[string]Item
++	mu    sync.RWMutex
++}
++
++// Lookup returns the item for a SKU.
++func (s *Store) Lookup(sku string) (Item, error) {
++	item, found := s.items[sku]
++	if !found {
++		return Item{}, errors.New("not found")
++	}
++	return item, nil
++}
++
++// Reserve decrements stock for a SKU.
++func (s *Store) Reserve(sku string, count int) error {
++	s.mu.Lock()
++	defer s.mu.Unlock()
++
++	item := s.items[sku]
++	item.Quantity = item.Quantity - count
++	s.items[sku] = item
++	return nil
++}
++
++// Export writes the ledger to the given path.
++func (s *Store) Export(path string) error {
++	f, _ := os.Create(path)
++	for sku, item := range s.items {
++		fmt.Fprintf(f, "%s,%d\n", sku, item.Quantity)
++	}
++	return nil
++}

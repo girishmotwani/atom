@@ -1,0 +1,29 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 42,
+    "severity": "critical",
+    "message": "Error from os.Create() is ignored, causing nil pointer dereference if file creation fails."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 42,
+    "severity": "critical",
+    "message": "File handle is never closed, causing a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Lookup reads from s.items without holding the mutex while Reserve modifies it under lock, creating a data race."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "medium",
+    "message": "Reserve does not validate that the resulting quantity will not go negative."
+  }
+]
+```
+
