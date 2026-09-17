@@ -243,6 +243,7 @@ should be a separate flag with its own output, not a review that reports nothing
 | D8 | Large diffs untested (Q3, P4-4) | Pending — A6 makes size visible; the cliff remains unmeasured |
 | D9 | Fence behaviour observed under one prompt only | Pending |
 | D10 | Non-Windows behaviour unmeasured | Pending — consistent with D2 from Phase 3 |
+| D12 | A finding whose message contains a triple backtick truncates the fence and fails the run | Pending — pinned by a test; fixing needs a greedy retry, an unobserved path |
 | D11 | Cost per review unmeasured, and P4-2 tripled it | Pending — no token or credit figure exists for a single review, let alone six calls |
 
 ---
@@ -255,3 +256,41 @@ should be a separate flag with its own output, not a review that reports nothing
 | Design spec | this session | **Approved.** Four open questions resolved (P4-2 … P4-5) plus one follow-up on partial-review exit codes. |
 | TDD | — | Not started |
 | Phase gate | — | Does not close until `atom review` has been run over the Phase 1 diff and its findings triaged — inherited bootstrap debt agreed at the Phase 1 gate. Six agent decisions (A1–A6) await developer review, A2 and A5 most in need of it. |
+
+---
+
+### A9 — A `line` below 1 is rejected
+
+**Decision.** Extraction rejects `line <= 0`, and rejects booleans before the integer
+check.
+
+**Why.** B116 asks only for "an integer `line`". A negative or zero line is an integer
+and has nowhere to point. Left in, it reaches the merge step, where proximity grouping
+(P4-5, window 3) clusters impossible line numbers together and presents them as one
+corroborated location. An impossible value does not stay impossible — it acquires
+apparent confidence.
+
+**Overturnable.** If some model uses `0` to mean "the whole file", the right answer is to
+represent file-level findings explicitly, not to accept a sentinel the prompt never
+offered.
+
+---
+
+### A10 — A `json`-labelled fence wins over an earlier unlabelled one
+
+**Decision.** When a reply contains several fences, extraction prefers the one labelled
+`json`.
+
+**Why.** Measured: a reply that illustrates a problem with a ```go sample and *then*
+supplies findings in a ```json fence loses everything, because the regex takes the first
+fence regardless of label.
+
+**Why this is not the heuristic B114 refuses.** The bracket scan invents a boundary by
+guessing where data begins. Choosing among fences the model itself delimited and labelled
+invents nothing — the delimiters are given. Selecting between candidates and fabricating
+one are different acts, and only the second has a silent failure mode.
+
+**Not extended further.** A finding whose message contains a triple backtick still
+truncates and fails loudly. Fixing that would need a greedy retry — a third recovery path
+nobody has observed firing. Tracked as D12 instead.
+

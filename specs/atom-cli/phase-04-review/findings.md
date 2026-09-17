@@ -183,3 +183,88 @@ result. The measurement was sound and the conclusion was sound; the *command*
 carried an assumption about the host that neither of them did. When promoting
 spike commands to production, each argument needs asking separately whether it
 describes the tool or the machine.
+
+---
+
+## 6. The fence regex took the first fence, not the right one
+
+Cycle 3's extractor passed 31 tests, then failed on the most ordinary thing a
+review model does — illustrate a point before answering:
+
+```
+The problem is here:
+```go
+var mu sync.Mutex
+```
+Findings:
+```json
+[{"file": "store/cache.go", ...}]
+```
+```
+
+The pattern `` ```(?:json)?\s*(.*?)``` `` matches the **first** fence whatever
+its label. It captured `go\nvar mu sync.Mutex`, failed to parse, and discarded
+the entire run — including findings that were sitting correctly formatted a few
+lines further down.
+
+The fix is to prefer a `json`-labelled fence when one exists. This is worth
+distinguishing from the bracket scan that B114 refuses: the bracket scan
+*invents* a boundary by guessing where data starts, whereas choosing between
+fences the model itself delimited and labelled invents nothing. Selection
+between candidates is not the same act as fabricating one.
+
+**Left unfixed, deliberately:** a fence closes at the first ``` it meets, so a
+finding whose *message* contains a triple backtick truncates the payload and the
+run fails loudly. A greedy retry would fix it and would also be a third
+unobserved recovery path. Pinned by a test so the behaviour is visible and any
+future fix is a decision rather than a drift. Tracked as D12.
+
+---
+
+## 7. Line numbers below 1 were accepted, and the merge step would have believed them
+
+`"line": -5` and `"line": 0` both validated. `isinstance(line, int)` is true for
+both, and nothing else looked.
+
+Harmless in isolation — but the merge model groups findings within a few lines
+of each other, so line 0 and line -5 would cluster into a single group and be
+presented as one location with corroboration from two runs. An impossible line
+number does not stay impossible; it becomes a confident-looking finding.
+
+Now rejected with a reason. Recorded as A9 because it is a tightening the spec
+did not ask for: B116 says "an integer `line`", and requiring it to be a *real*
+line is an inference about intent.
+
+Related, and already caught in the same pass: `isinstance(True, int)` is `True`
+in Python, so `"line": true` validated and produced a finding pointing at line 1.
+The spike's own validator has this hole. The bool check has to come first.
+
+---
+
+## 8. The extractor was validated against the 40 real spike responses
+
+Rather than trusting 37 unit tests built from imagined inputs, the finished
+extractor was run over every reply the spike actually saved:
+
+| Model | n | Fenced | Parses as-is | With the extractor |
+|---|---:|---:|---:|---:|
+| `gpt-5.4` | 10 | 0 | **10** | 10 |
+| `claude-haiku-4.5` | 10 | **10** | **0** | **10** |
+
+Two things this settles that no unit test could.
+
+**The measured compliance figures reproduce exactly** through production code —
+100% for one model, 100%-after-fence-stripping for the other. The spike's
+conclusion survives the trip from analysis script to shipped module.
+
+**B113 is entirely load-bearing.** Without fence stripping, `claude-haiku-4.5`
+contributes *nothing* — not a degraded signal, zero findings, on every single
+response. A "minor formatting quirk" turns out to be the difference between a
+two-model review and a one-model review, and the failure would have been silent:
+the report would have shown one model's findings and a run that "returned
+nothing".
+
+**The habit worth keeping:** saved POC artefacts are a regression corpus. The
+spike's 40 responses cost real time and money to collect; running the finished
+implementation back over them is free and checks something unit tests
+structurally cannot — that the inputs were imagined correctly.
