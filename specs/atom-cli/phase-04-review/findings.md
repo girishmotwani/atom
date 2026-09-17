@@ -268,3 +268,90 @@ nothing".
 spike's 40 responses cost real time and money to collect; running the finished
 implementation back over them is free and checks something unit tests
 structurally cannot — that the inputs were imagined correctly.
+
+---
+
+## Finding 9 — proximity merging cannot separate defects closer than the drift
+
+Running the finished merge module back over the 20 real spike responses produced
+82 findings → 5 merged, 3 corroborated, 2 solo. The 2 solo findings were noise
+(2/10 and 1/10 runs). That is the agreement analysis reproduced end to end, and
+it is the result the phase wanted.
+
+It also merged two genuinely different defects into one.
+
+The fixture had **four** planted defects — lines 24, 36, 44 and 45. Merging
+returned **three** corroborated findings. Lines 44 and 45 landed in a single
+group spanning 42–45:
+
+| line | what the models described |
+|------|---------------------------|
+| 42, 43, 44 | error from `os.Create` ignored; `f` is nil when writing |
+| 45 | `Export` iterates `s.items` without holding the lock |
+
+Those are not the same defect. They merged because **line drift moved the
+anchor**. Both models attributed the `os.Create` problem to lines 42, 43 and 44
+on different runs; the lowest anchors the group, so a window of 3 reaches line
+45. The effective reach past the true defect is `window + drift`, not `window`.
+
+**No window value fixes this.** Shrinking to 2 would split the genuine 33–36
+cluster, which is one defect, into two. Proximity merging cannot distinguish
+"one defect described with drift" from "two defects one line apart", because on
+the evidence available they are the same shape.
+
+**Why it is nevertheless tolerable.** B120 keeps every message attributed, so
+both defects are still described in the output — the developer reads about the
+ignored error *and* the missing lock. What is wrong is the **count** and the
+headline: three corroborated findings for four real defects. A report that
+claimed "3 issues found" would be quietly wrong.
+
+This bears directly on P4-5, which is the developer's decision, so it is raised
+rather than absorbed. Pinned by `test_drift_lets_a_group_reach_further_than_the_window`.
+
+## Finding 10 — the number the phase rests on could render impossible values
+
+`1/0` and `5/3`. Both were accepted and would have been printed.
+
+The agreement fraction is the one output B121 and B122 ask the developer to
+trust; nothing else separates a real defect from noise. `runs_total = 0` with a
+finding present gave "reported by 1/0 runs". Findings from five run indices with
+`runs_per_model = 3` — an ordinary caller mistake, passing the configured
+`--runs` alongside findings from a longer review — gave "5/3".
+
+Neither was caught by 29 passing tests at 100% coverage, because every test
+supplied a consistent pair of numbers. Coverage measures which lines ran, not
+which combinations of arguments were imagined.
+
+A single impossible fraction does not just misreport one finding. It tells the
+reader that none of the numbers can be relied on. Both are now refused (A12).
+
+## Finding 11 — an ordering guarantee resting on an unstated type
+
+Severity ranking is built by enumerating `ALLOWED_SEVERITIES`. That works
+because it is an ordered tuple. Had it been the set it superficially resembles,
+Python's per-process string hash randomisation would have reordered every report
+between runs, and the failure would have looked like model non-determinism
+rather than a type choice three modules away.
+
+Nothing documented the coupling and no test asserted it. Now pinned by
+`test_severity_ordering_depends_on_the_allowed_list_staying_ordered`.
+
+**The habit worth keeping:** when a module depends on a property of another
+module's constant rather than on its value, assert the property. Type and order
+are as load-bearing as content, and only content tends to get tested.
+
+## Finding 12 — first-attempt green, four times out of four
+
+Cycles 1, 2, 3 and 4 each passed on the first implementation pass. Each hid real
+defects found only by deliberate probing afterwards — a phantom-file parser, a
+concurrency test that passed with concurrency removed, a fence regex that
+discarded whole runs, and now impossible agreement fractions.
+
+The mechanism is consistent: tests written from the same mental model as the
+implementation verify *the rule as understood*, never *the requirement*. Passing
+confirms the two halves of one idea agree with each other.
+
+Four for four is no longer an observation about individual cycles. Green on the
+first attempt should be treated as an unexplored area, and the probe is the step
+that actually finds things — in this cycle, running the module over real POC
+data and feeding it deliberately inconsistent arguments.

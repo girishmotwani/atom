@@ -294,3 +294,50 @@ one are different acts, and only the second has a silent failure mode.
 truncates and fails loudly. Fixing that would need a greedy retry — a third recovery path
 nobody has observed firing. Tracked as D12 instead.
 
+
+### A11 — groups are anchored, not chained
+
+**Decision.** Within a file, findings are sorted by line; the lowest line anchors a group
+and only findings within `window` of that **anchor** join it. A group is therefore never
+wider than the window the developer asked for.
+
+**Why.** Proximity is not transitive. With a window of 3, lines 10 and 12 are near, 12 and
+14 are near, but 10 and 14 are not. Single-linkage chaining — the obvious implementation —
+would place all three in one group, and on findings at consecutive lines the chain grows
+without bound: one group could span an entire file while every adjacent pair looked
+correct. That is precisely the "merges two genuinely different defects" failure B119 warns
+about, arriving without anyone having chosen it.
+
+**Cost, stated plainly.** Anchoring makes the partition depend on where the lowest finding
+sits. Lines 10/12/14 group as {10,12},{14} rather than {10},{12,14}; both are defensible
+and the tool picks one. It is deterministic and bounded, which chaining is not.
+
+### A12 — an impossible agreement fraction is refused, not rendered
+
+**Decision.** A model recorded with fewer than one completed run, or reporting a finding on
+more runs than it completed, raises `ValueError`. An unrecognised severity does too, naming
+the allowed set instead of leaking a bare `KeyError`.
+
+**Why.** Extends A8 to the one number B121 and B122 ask the developer to trust. `1/0` and
+`5/3` were both accepted before this (finding 10). A fraction that cannot exist does not
+misreport one finding — it discredits every number in the report, and the reader has no way
+to tell which others are affected.
+
+**Why not clamp.** Clamping `5/3` to `3/3` would convert a caller bug into maximum
+confidence: the single worst direction to be wrong in.
+
+### A13 — the default window stays at 3 despite a measured over-merge
+
+**Decision.** `DEFAULT_PROXIMITY_WINDOW` remains 3, as decided in P4-5, even though it
+demonstrably merges two distinct planted defects on the only real data available.
+
+**Why.** No window fixes it (finding 9): 3 merges defects at lines 44/45, and 2 splits the
+genuine 33–36 cluster. The choice is between two errors, and the current one is the safer
+of the two because B120 keeps both defects' messages visible — the developer still reads
+about both problems. Splitting a real defect in two, by contrast, manufactures corroboration
+that was never observed.
+
+**Flagged for the gate.** P4-5 is the developer's decision and this evidence postdates it,
+so it is raised rather than absorbed. The specific thing to decide: whether a merged finding
+spanning several lines should say so prominently, given that its headline count can
+understate the number of real defects.
