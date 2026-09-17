@@ -1,9 +1,10 @@
 # Design Spec — Phase 4: `atom review`
 
-**Status.** DRAFT — open questions Q1–Q4 await developer review. Not approved.
-**Behaviours.** B103 onward.
+**Status.** APPROVED — Q1–Q4 resolved at the developer gate as P4-2 … P4-5.
+**Behaviours.** B103–B137.
 **Evidence.** [`poc-report.md`](poc-report.md) (C1–C9, D6–D10) and the agreement
 analysis in `poc/review-json/analyse_agreement.py`.
+**Decisions.** [`decisions.md`](decisions.md) — P4-1 … P4-5 and agent decisions A1–A6.
 
 ---
 
@@ -64,7 +65,9 @@ The phase plan says "run a diff past two or more different models and merge the
 findings". That sentence assumes **one call per model**. The stability data refutes the
 assumption: with a model whose best finding appears in 65% of runs, a single call
 produces a report that silently omits real defects about a third of the time, and
-nothing in the output would indicate it. This is the subject of **Q1**.
+nothing in the output would indicate it. This was put to the developer as **Q1** and
+answered by **P4-2**: each model is called three times, and repetition frequency becomes
+the confidence signal the single-call design could not produce.
 
 ---
 
@@ -81,7 +84,7 @@ diff. Choosing which models a developer has access to.
 ## The Pipeline
 
 ```
- diff source ──▶ chunk ──▶ call each model (parallel) ──▶ extract ──▶ validate
+ diff source ──▶ call each model, N runs each (parallel) ──▶ extract ──▶ validate
                                                                         │
                        report ◀── rank ◀── merge across models ◀────────┘
 ```
@@ -109,6 +112,18 @@ exits 0. A CI job that runs `atom review` on a docs-only commit should not fail.
 models review byte-identical input. Re-running `git diff` per model would allow the
 working tree to change underneath the review.
 
+**B106a.** The **whole diff goes in a single call**. There is no per-file chunking. Per
+P4-4, cross-file context is where some of the most valuable findings live — a caller that
+no longer matches its callee cannot be seen one file at a time — and the reason this is
+affordable is that Atom breaks work into phases before code is written, so a diff
+reaching `atom review` should already be small.
+
+**B106b.** That safety argument is an assumption about *how the framework is used*, and
+the tool does not enforce it. So the report states the **size of the reviewed diff** in
+lines and files. No limit is imposed and nothing is truncated: per A6, inventing a
+threshold would mean picking a number nobody has measured (D8). A developer looking at a
+thin review of a 2,000-line diff can at least see a plausible reason.
+
 ---
 
 ## Model Invocation
@@ -134,11 +149,32 @@ model fails in about two seconds with `Model "x" from --model flag is not availa
 so the check is cheap and the alternative is discovering it after the other model has
 already run for a minute.
 
-**B111.** Calls run in parallel, bounded by a concurrency limit. Per C6, four
-concurrent calls showed no rate limiting and no measurable interference.
+**B111.** Calls run in parallel, bounded by a concurrency limit that **defaults to 4**.
+Per C6, four concurrent calls showed no rate limiting and no measurable interference.
+Per A4 the default stays at the measured figure rather than being raised to 6 to make
+B132's six calls finish in one wave — six is unmeasured, and choosing a number for tidy
+arithmetic over evidence is the move this phase exists to refuse. The cost is two waves,
+roughly 60 seconds rather than 30.
 
 **B112.** Each call has a timeout. A timed-out call is a **recorded outcome**, not an
 exception — it appears in the report as a model that did not answer.
+
+### Repetition
+
+**B132.** Each model is called **3 times by default**, overridable with `--runs`. Per
+P4-2 this is forced by the stability measurement: `claude-haiku-4.5`'s best finding
+appeared in 13 of 20 runs, so a single call to it omits real defects about a third of the
+time and the output cannot say so. Repetition turns that invisible failure into a visible
+confidence number.
+
+**B133.** Runs of the same model are **identical calls** — same prompt, same diff, no
+injected variation. The variation being measured belongs to the model. Perturbing the
+prompt between runs would measure something else entirely and make B121's counts
+meaningless.
+
+**B134.** Each run's outcome is tracked individually, and the report states **how many
+runs of each model completed**. B121's confidence signal is a fraction; a review that
+quietly shrinks the denominator presents a degraded signal as an intact one.
 
 ---
 
@@ -163,11 +199,17 @@ alternative to a clear message is a crash inside the merge step.
 **B117.** A finding whose `file` is not present in the reviewed diff is rejected. A
 model naming a file it was not shown is describing something it cannot have seen.
 
+> **This is the weakest behaviour in the spec.** It never happened in 40 calls, so by
+> B114's own reasoning it should not exist. It is kept only because its failure mode is
+> loud and bounded — at worst it rejects a finding that shows up as rejected — where the
+> bracket-scan fallback's failure mode is silent. Recorded as **A2** so it can be struck.
+
 ---
 
 ## The Merge Model
 
-This is the part the evidence changed most, and the part with the most open questions.
+This is the part the evidence changed most. Every behaviour in it is derived from the
+agreement analysis rather than from intuition about how findings ought to combine.
 
 ### Identity — when are two findings the same finding?
 
@@ -176,10 +218,12 @@ line equality. The evidence shows the same defect reported at line 36 and line 3
 the *same model* on different runs, and Haiku's lines 34–35 sitting within three of
 gpt-5.4's line 37. Exact matching would report one defect as several.
 
-**B119.** The proximity window is **configurable with a small default**, because the
+**B119.** The proximity window **defaults to 3 lines** and is configurable, because the
 window trades two opposite errors against each other: too wide merges two genuinely
 different defects on adjacent lines into one; too narrow reports one defect repeatedly.
-Neither error is detectable from the output. See **Q4**.
+Neither error is detectable from the output. Per P4-5 the default of 3 is derived from
+the near misses observed in **one fixture diff** — it is honest provenance, not a tuned
+value.
 
 **B120.** Merging never discards a message. A merged finding carries every contributing
 message, attributed to the model that produced it, so a developer can see that two
@@ -236,55 +280,59 @@ the review. It is recorded and reported.
 **B130.** If **no** model returned a usable response, `atom review` fails loudly. An
 empty report is indistinguishable from a clean review, and that confusion is dangerous.
 
-**B131.** Partial reviews are marked as partial in both text and JSON output — see
-**Q2** for whether a partial review should also change the exit code.
+**B131.** Partial reviews are marked as partial in both text and JSON output.
+
+### Exit codes
+
+**B135.** `atom review` reuses the exit codes established in Phases 1–3 rather than
+inventing a scheme:
+
+| Code | Constant | Meaning |
+|---|---|---|
+| 0 | `EXIT_PASSED` | The review completed. Every run of every model answered. **Findings do not change this** — `review` reports, it does not judge. |
+| 1 | `EXIT_CHECK_FAILED` | The review did not complete: a run failed or timed out, no model returned anything usable (B130), or the diff could not be obtained. |
+| 2 | `EXIT_USAGE_ERROR` | No diff source given (B104), or an invalid argument. |
+
+**B136.** Per P4-3, a **partial review exits non-zero** even though a report was
+produced. The reasoning is about noticing: a CI job where one model fails on every run
+would otherwise stay green forever while nobody reads the banner.
+
+**B137.** Per A5, a single failed *run* is enough to make the review partial — not only
+the total failure of a model. B132 makes run count the denominator of the confidence
+signal, so a missing run degrades the headline output of the phase. This is deliberately
+strict, it is the behaviour most likely to prove annoying in practice, and A5 records
+both that risk and the alternative.
+
+**Severity never affects the exit code.** Gating on it was considered and rejected
+(P4-3): severity is measurably unstable (B123), and a build that fails for reasons the
+developer cannot see is worse than no gate.
 
 ---
 
-## Open Questions For Developer Review
+## Resolved At The Developer Gate
 
-These are genuinely open. Each has a cost the developer bears and I do not.
+Four questions were put to the developer, each carrying a cost the developer bears and
+the agent does not. All four are answered; the full reasoning is in
+[`decisions.md`](decisions.md).
 
-### Q1 — Does each model get called once, or several times?
+| # | Question | Answer | Recorded as |
+|---|---|---|---|
+| Q1 | Once per model, or several times? | **3 runs per model**, `--runs` to override | P4-2 → B132–B134 |
+| Q2 | Does `atom review` exit non-zero on findings? | **No.** 0 unless the tool failed — and a **partial review counts as failed** | P4-3 → B135–B137 |
+| Q3 | Whole diff, or one call per file? | **Whole diff, one call.** Phase decomposition is what keeps diffs small | P4-4 → B106a, B106b |
+| Q4 | How wide is the proximity window? | **Default 3 lines**, configurable | P4-5 → B119 |
 
-The stability data makes this the most consequential question in the phase.
+Two of these went beyond picking an offered option:
 
-| Approach | Cost | Consequence |
-|---|---|---|
-| **Once per model** | ~2 calls, ~30s | Matches the plan. With a 65%-stable model, real defects are missed about a third of the time, and the report cannot tell you it happened. |
-| **N times per model** | 2N calls, ~30s wall-clock if parallel | Repetition frequency becomes a confidence signal. On the measured data this is what separates signal from noise. Costs N× the model spend. |
-| **Once, but only stable models** | ~2 calls | Requires knowing which models are stable, which requires measuring them, which is the N-times approach anyway. |
-
-My inclination is N=3 as a default with `--runs` to override, because the measurement
-says a single run of the weaker model is close to a coin toss on its own findings. But
-this is a direct spend decision and it is yours.
-
-### Q2 — Does `atom review` exit non-zero when it finds problems?
-
-- **Always 0 unless the tool itself failed.** `review` reports; it does not judge.
-  Composes cleanly; useless as a CI gate on its own.
-- **Non-zero at or above a severity threshold.** Usable as a gate. But severity is
-  measurably unstable (B123) — gating on an unstable signal makes builds flaky.
-- **Configurable, defaulting to 0.**
-
-The severity instability is the thing I would weigh most heavily here, and it is an
-argument I only have because the spike was run twenty times per cell rather than once.
-
-### Q3 — Whole diff in one call, or one call per file?
-
-The spike used a 48-line single-file diff, so this is **unmeasured** (D8). Per-file
-bounds context and parallelises; whole-diff preserves cross-file context, which is
-where some of the most valuable findings live — a caller that no longer matches its
-callee. Guessing here would be exactly the move that "justifiably skipped" made twice.
-
-If this matters to you, the honest answer is a second short spike rather than a
-decision in this document.
-
-### Q4 — How wide is the proximity window, and who sets it?
-
-Both failure modes are silent (B119). I propose a default of 3 lines based on the
-observed near misses, with an override — but that default is derived from one fixture
-diff and should be labelled as such rather than presented as a tuned value.
+- **Q2 was answered in two parts.** The developer's rule — *0 unless the tool failed* —
+  left a seam in the middle: a partial review produces a real report while missing half
+  the evidence. Asked separately, the developer closed it toward non-zero, on the grounds
+  that a CI job silently losing a model every run would stay green forever.
+- **Q3 was answered with a methodology argument rather than a technical one.** The spec
+  had framed it as measurable and unmeasured. The developer's position is that it is
+  neither: phases exist precisely so diffs stay small enough for one call. That is an
+  assumption about how the framework is used, so B106b makes diff size visible rather than
+  letting the assumption fail quietly, and D8 stays open.
 
 ---
 
@@ -294,16 +342,21 @@ diff and should be labelled as such rather than presented as a tuned value.
   the defects were planted by the person evaluating the result. That is suggestive, not
   conclusive. The Phase 4 **gate** settles this by running `atom review` over the Phase
   1 diff and triaging the findings.
-- **D8 — large diffs.** Untested. See Q3.
+- **D8 — large diffs.** Untested. P4-4 sends the whole diff in one call on the grounds
+  that phase decomposition keeps diffs small; nobody has measured where that stops being
+  true. B106b makes the size visible instead of guessing at a limit.
 - **D10 — non-Windows behaviour.** Consistent with D2 from Phase 3.
 - **Whether two models are enough.** Three would give a majority rather than a tie.
   Unmeasured.
-- **Cost.** Nobody has measured what a review costs in tokens or credits, and Q1 makes
-  that question sharper.
+- **D11 — cost.** Nobody has measured what a review costs in tokens or credits, and
+  P4-2 tripled the call count, so the question is now three times as sharp.
+- **Whether A5 is too strict.** Failing the whole review because one run of six timed
+  out is the behaviour most likely to irritate in daily use. It needs real timeout-rate
+  data, which does not exist yet.
 
 ---
 
 ## Size
 
-Roughly 400 lines of production Python, larger than the plan's 350 because Q1's
+Roughly 400 lines of production Python, larger than the plan's 350 because P4-2's
 repetition and B121's agreement tracking add a layer the plan did not anticipate.

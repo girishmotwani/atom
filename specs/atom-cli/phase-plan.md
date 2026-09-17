@@ -42,7 +42,7 @@ scope.
 | 1 | `check` | `atom check` — build, vet, gofmt, test, race, coverage, one verdict | M | No — see justification | Shipped | — |
 | 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | ~~No~~ **Yes — and it refuted an assumption** | Shipped | 1 |
 | 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | ~~No~~ **Yes — 3 of 5 predictions refuted** | Complete | 1 |
-| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | POC done — 2 of 6 predictions refuted | 1, 3 |
+| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | Spec approved — TDD next | 1, 3 |
 | 5 | `ship` | `atom ship` — commit, push, PR from artifacts | L | ~~No~~ **Challenged — see Phase 5 detail** | Not started | 1, 3 |
 
 > The struck-through entries are left visible rather than rewritten. This table
@@ -163,8 +163,12 @@ underestimate is the locking and recovery machinery the spike made necessary.
 
 **Objective.** Run a diff past two or more different models and merge the findings.
 
-**Scope in.** Diff extraction, per-file parallel review, structured findings, dedupe
-and merge, severity ranking, markdown report.
+**Scope in.** Diff extraction, repeated parallel review across models, structured
+findings, dedupe and merge, severity ranking, markdown report.
+
+~~Per-file parallel review.~~ **Struck at the design gate.** The whole diff goes in one
+call (P4-4): cross-file context is where the most valuable findings live, and phase
+decomposition is what keeps diffs small enough to afford it.
 
 **Scope out.** Posting to GitHub. Automatic fixes.
 
@@ -184,6 +188,15 @@ json`) made no difference at the findings level, so the simpler `--silent` wins.
 consequences C1–C9 and the debt D6–D10 — **and note that the decision rule was amended
 after the data came in, which is recorded there rather than absorbed silently.**
 
+**Design outcome — the objective above was understated.** "Run a diff past two or more
+models" silently assumed **one call per model**. An agreement analysis over the same 40
+saved responses refuted that: `claude-haiku-4.5`'s best finding appeared in only 13 of 20
+runs, so a single call omits real defects about a third of the time with nothing in the
+output to say so. The approved spec calls each model **three times** and turns repetition
+frequency into a confidence signal. See
+[`phase-04-review/design-spec.md`](phase-04-review/design-spec.md) (B103–B137) and
+[`phase-04-review/decisions.md`](phase-04-review/decisions.md) (P4-1 … P4-5, A1–A6).
+
 **Done when.** Two distinct models review a real diff; findings merge and deduplicate;
 malformed model output degrades to a readable report rather than a crash. **And** the
 Phase 1 diff has been run through `atom review` — see below.
@@ -195,7 +208,8 @@ reviewed by it. **This phase's gate does not close until `atom review` has been 
 the Phase 1 diff (commit `4d8dee1` onward) and its findings triaged.** Recorded in
 `phase-01-check/decisions.md` under Tracked debt.
 
-**Size.** ~350 lines production.
+**Size.** ~400 lines production — revised up from 350 at the design gate, because P4-2's
+repetition and the agreement tracking it enables add a layer the plan did not anticipate.
 
 ### Phase 5 — `ship`
 
