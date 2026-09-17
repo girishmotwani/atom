@@ -193,6 +193,47 @@ plausible reason, without the tool pretending to know where the cliff is.
 
 ---
 
+### A7 — No vendor-specific MCP server names ship in the code
+
+**Decision.** `review_command` always passes `--disable-builtin-mcps` (B109), but the
+*named* servers the spike also disabled — `azure-mcp` and `azure-devops` — are **not**
+hard-coded. They become an optional `disable_mcp_servers` argument that defaults to
+empty.
+
+**Why.** The 84s → 30s measurement behind B109 was taken inside one company's
+environment, where those two servers happened to be ambient. B109's wording ("and
+disables ambient MCP servers") reads as though the names are part of the behaviour. They
+are not: they are a property of the machine the spike ran on. Hard-coding them would put
+one organisation's internal tooling names inside an open-source tool, which is the exact
+class of contamination this project was asked to avoid.
+
+**What is lost.** A developer who *does* have ambient MCP servers gets the slower path
+until they name them. That is the right default: the fast path should not be bought with
+somebody else's server names baked into the binary.
+
+**Overturnable.** If measurement shows `--disable-builtin-mcps` alone does not recover
+most of the speed-up, the gap should be closed with a documented flag, not with a
+built-in list.
+
+---
+
+### A8 — Nonsensical invocation settings are refused, not clamped
+
+**Decision.** `runs < 1`, `concurrency < 1` and an empty model list raise `ValueError`
+rather than being silently corrected to a working value.
+
+**Why.** `--runs 0` was measured doing something worse than failing: it made zero calls,
+reported `is_partial = False`, and printed `0/3 → 0/0 runs completed`. That output is
+indistinguishable from a clean review in which every model was consulted and found
+nothing. It is precisely the confusion B130 exists to prevent, reached through a door
+B130 does not cover. Clamping to 1 would have hidden the developer's mistake; refusing
+shows it.
+
+**Overturnable.** If `--runs 0` turns out to be a useful "just show me the diff" mode, it
+should be a separate flag with its own output, not a review that reports nothing.
+
+---
+
 ## Tracked Debt
 
 | # | Item | Status |

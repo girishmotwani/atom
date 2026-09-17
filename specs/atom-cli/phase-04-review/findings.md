@@ -99,3 +99,87 @@ whichever is easier to change.
 
 The rule that resolves it: **ask whether the input is real before asking whether
 the code is right.** Real `git diff` output always carries a hunk header.
+
+---
+
+## 3. A test that bounds a maximum can prove nothing at all
+
+Cycle 2's concurrency test counted how many calls were in flight and asserted
+`peak <= 2`. It passed. It also passes when parallelism is removed entirely —
+measured by monkey-patching the concurrency helper to a plain serial loop:
+
+```
+parallelism REMOVED -> peak=1.  Test asserts peak<=2 -> STILL PASSES
+```
+
+An upper bound is satisfied by doing less work, so it can never detect a
+version that does *no* concurrent work. B111 exists to make reviews fast; a
+silently sequential implementation would have satisfied every test in the
+module while taking six times as long as designed, and nothing would have said
+so.
+
+The fix is a runner that refuses to return until a second call joins it. If
+execution is serial the first call waits alone and the barrier times out, so
+the test can only pass when two calls are genuinely in flight. The assertion
+also tightened from `peak <= 2` to `peak == 2`.
+
+**The general shape:** an assertion of the form "not more than N" is a safety
+property, and safety properties are trivially satisfied by inaction. Anything
+that must actually *happen* needs a liveness assertion to go with it — bound
+the maximum *and* require the minimum.
+
+This is the same failure as Cycle 1's finding 1 seen from the other side.
+There, the tests shared a wrong assumption with the code. Here, the test was
+simply too weak to distinguish the working implementation from a broken one.
+Both are green suites that are not asking hard questions.
+
+---
+
+## 4. `--runs 0` produced a clean-looking review that consulted nobody
+
+Found by asking what the new `--runs` flag does at its boundary:
+
+```
+runs=0 -> calls=0, is_partial=False, participation='gpt-5.4: 0/0 runs completed'
+```
+
+Zero model calls, and a report that says nothing is wrong with it. `is_partial`
+is false because "completed equals requested" holds trivially when both are
+zero, and `0/0` reads as a complete fraction rather than an absent one.
+
+B130 already guards the neighbouring case — *no model available* fails loudly,
+precisely because an empty report is indistinguishable from a clean one. The
+same danger simply arrived through a door B130 does not cover. The guard was
+written against one cause of emptiness rather than against emptiness itself.
+
+Refused with a `ValueError` rather than clamped to 1: clamping would hide the
+mistake, and the whole point is that this output is *unreadable as a mistake*.
+
+**Worth generalising:** when a behaviour exists to prevent a dangerous output,
+ask what else produces that same output. B130's rationale is about the *report*
+being empty; its implementation is about *models* being unavailable. Wherever a
+rule's stated reason is broader than its trigger, the gap is where the next bug
+lives.
+
+---
+
+## 5. The spike's speed fix contained one company's internal server names
+
+B109 is backed by a real measurement — disabling MCP servers took a call from
+84 seconds to about 30. But the spike achieved it with three flags, and two of
+them named specific servers that happened to be ambient on the machine it ran
+on: `azure-mcp` and `azure-devops`.
+
+Only `--disable-builtin-mcps` is a property of the CLI. The other two are a
+property of that environment. Copying all three into the implementation — which
+is what "reproduce the spike's command" naturally means — would have shipped
+one organisation's internal tooling names inside an open-source tool.
+
+Recorded as A7: the built-in flag is always sent, the named servers become an
+optional argument defaulting to empty.
+
+**The pattern to watch:** a POC is run somewhere, and "somewhere" leaks into the
+result. The measurement was sound and the conclusion was sound; the *command*
+carried an assumption about the host that neither of them did. When promoting
+spike commands to production, each argument needs asking separately whether it
+describes the tool or the machine.
