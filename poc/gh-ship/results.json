@@ -1,0 +1,165 @@
+{
+  "gh_path": "C:\\Users\\gimotwan\\AppData\\Local\\copilot-desktop-gh-2.96.0\\gh.EXE",
+  "branch": "spike/gh-ship-1789747170",
+  "questions": {
+    "Q3_unauthenticated": {
+      "argv_bytes": 78,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "HTTP 401: Requires authentication (https://api.github.com/graphql)\nTry authenticating with:  gh auth login -h github.com",
+      "duration_seconds": 0.58
+    },
+    "Q2a_argv_wall": [
+      {
+        "requested_bytes": 1000,
+        "argv_bytes": 1086,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "duration_seconds": 2.07
+      },
+      {
+        "requested_bytes": 4000,
+        "argv_bytes": 4086,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "duration_seconds": 1.32
+      },
+      {
+        "requested_bytes": 8000,
+        "argv_bytes": 8086,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "duration_seconds": 1.31
+      },
+      {
+        "requested_bytes": 16000,
+        "argv_bytes": 16086,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "duration_seconds": 2.96
+      },
+      {
+        "requested_bytes": 32000,
+        "argv_bytes": 32086,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "duration_seconds": 5.11
+      },
+      {
+        "requested_bytes": 64000,
+        "argv_bytes": 64086,
+        "timed_out": false,
+        "exit_code": null,
+        "os_error": "FileNotFoundError: [WinError 206] The filename or extension is too long",
+        "stdout": "",
+        "stderr": "",
+        "duration_seconds": 0.01
+      }
+    ],
+    "Q4_Q5_hang_and_push": {
+      "remote_branch_existed_before": false,
+      "with_inherited_stdin": {
+        "argv_bytes": 119,
+        "timed_out": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "Post \"https://api.github.com/graphql\": write tcp 192.168.0.20:57112->140.82.121.6:443: wsasend: An existing connection was forcibly closed by the remote host.",
+        "duration_seconds": 44.39
+      },
+      "remote_branch_after_inherited": false,
+      "with_empty_stdin": {
+        "argv_bytes": 119,
+        "timed_out": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "aborted: you must first push the current branch to a remote, or use the --head flag",
+        "duration_seconds": 8.12
+      },
+      "remote_branch_after_empty": false
+    },
+    "Q1_duplicate_pr": {
+      "explicit_push": {
+        "argv_bytes": 39,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "branch 'spike/gh-ship-1789747170' set up to track 'origin/spike/gh-ship-1789747170'.",
+        "stderr": "remote: \nremote: Create a pull request for 'spike/gh-ship-1789747170' on GitHub by visiting:        \nremote:      https://github.com/gimotwan_microsoft/atom/pull/new/spike/gh-ship-1789747170        \nremote: \nTo https://github.com/gimotwan_microsoft/atom.git\n * [new branch]      spike/gh-ship-1789747170 -> spike/gh-ship-1789747170",
+        "duration_seconds": 5.04
+      },
+      "first_create": {
+        "argv_bytes": 172,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stderr": "",
+        "duration_seconds": 4.26
+      },
+      "duplicate_create": {
+        "argv_bytes": 148,
+        "timed_out": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "a pull request for branch \"spike/gh-ship-1789747170\" into branch \"main\" already exists:\nhttps://github.com/gimotwan_microsoft/atom/pull/1",
+        "duration_seconds": 4.32
+      }
+    },
+    "Q2b_body_cap": [
+      {
+        "body_bytes": 30000,
+        "argv_bytes": 152,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stderr": "",
+        "duration_seconds": 4.2
+      },
+      {
+        "body_bytes": 65536,
+        "argv_bytes": 152,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stderr": "",
+        "duration_seconds": 3.74
+      },
+      {
+        "body_bytes": 70000,
+        "argv_bytes": 152,
+        "timed_out": false,
+        "exit_code": 0,
+        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stderr": "",
+        "duration_seconds": 4.71
+      }
+    ]
+  },
+  "cleanup": [
+    {
+      "step": "close PR #1",
+      "exit_code": 0
+    },
+    {
+      "step": "remove worktree",
+      "exit_code": 0
+    },
+    {
+      "step": "delete remote branch",
+      "exit_code": 0
+    },
+    {
+      "step": "delete local branch",
+      "exit_code": 0
+    }
+  ]
+}
