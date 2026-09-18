@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 
 from atom.runner import CommandOutcome, CommandResult, SubprocessRunner
@@ -92,7 +93,9 @@ class TestFileNotFoundErrorIsDiagnosed:
         """A tool that PATH resolves but the system cannot start is a broken install."""
         monkeypatch.setattr(
             "atom.runner.shutil.which",
-            lambda name: r"C:\WindowsApps\stale-alias.exe" if name == "stale-alias" else None,
+            lambda name, path=None: (
+                r"C:\WindowsApps\stale-alias.exe" if name == "stale-alias" and path is None else None
+            ),
         )
 
         result = SubprocessRunner().run(["stale-alias"], tmp_path, timeout_seconds=5.0)
@@ -101,6 +104,32 @@ class TestFileNotFoundErrorIsDiagnosed:
         assert "not found on PATH" not in result.stderr
         assert r"C:\WindowsApps\stale-alias.exe" in result.stderr
         assert "Reinstall the tool." in result.stderr
+
+    def test_a_working_copy_hidden_behind_the_broken_one_is_named(self, tmp_path, monkeypatch):
+        """Reinstalling cannot fix shadowing, so the shadowed copy must be named.
+
+        Installing the Copilot CLI while a dead App Execution Alias sat earlier
+        on PATH produced a working binary that was never reached. Advising a
+        reinstall here would send the developer round the same loop again.
+        """
+        broken_first = r"C:\WindowsApps\tool.exe"
+        working_second = r"C:\npm\tool.cmd"
+
+        def fake_which(name, path=None):
+            if name != "tool":
+                return None
+            if path is None:
+                return broken_first
+            return {r"C:\WindowsApps": broken_first, r"C:\npm": working_second}.get(path)
+
+        monkeypatch.setattr("atom.runner.shutil.which", fake_which)
+        monkeypatch.setenv("PATH", os.pathsep.join([r"C:\WindowsApps", r"C:\other", r"C:\npm"]))
+
+        result = SubprocessRunner().run(["tool"], tmp_path, timeout_seconds=5.0)
+
+        assert working_second in result.stderr
+        assert "shadowed by the entry above" in result.stderr
+        assert "Reinstall" not in result.stderr
 
     def test_missing_working_directory_is_not_blamed_on_the_tool(self, tmp_path):
         """A directory that does not exist raises the same error as a missing tool."""
@@ -111,3 +140,31 @@ class TestFileNotFoundErrorIsDiagnosed:
         assert result.outcome is CommandOutcome.TOOL_MISSING
         assert result.stderr == f"Working directory does not exist: {absent_directory}"
         assert sys.executable not in result.stderr
+
+class TestStdinIsNeverInherited:
+    """A child that reads an inherited stdin blocks until an EOF that may never come.
+
+    Observed for real: the availability probe printed its answer and then timed
+    out after 60 seconds, because the CLI reads stdin whenever stdin is not a
+    terminal and Atom was itself running from a pipe.
+    """
+
+    def test_a_child_reading_stdin_sees_end_of_input_immediately(self, tmp_path):
+        reads_stdin = "import sys; sys.stdout.write(repr(sys.stdin.read()))"
+
+        result = SubprocessRunner().run(
+            [sys.executable, "-c", reads_stdin], tmp_path, timeout_seconds=30.0
+        )
+
+        assert result.outcome is CommandOutcome.COMPLETED
+        assert result.stdout == "''"
+
+    def test_supplied_text_reaches_the_child(self, tmp_path):
+        reads_stdin = "import sys; sys.stdout.write(sys.stdin.read().upper())"
+
+        result = SubprocessRunner().run(
+            [sys.executable, "-c", reads_stdin], tmp_path,
+            timeout_seconds=30.0, stdin_text="piped prompt",
+        )
+
+        assert result.stdout == "PIPED PROMPT"

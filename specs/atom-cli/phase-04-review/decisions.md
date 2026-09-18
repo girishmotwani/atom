@@ -370,3 +370,42 @@ one `shutil.which` call on a path that has already failed, where latency is irre
 **What is deliberately not done.** Atom does not try to repair a broken alias, guess an
 alternative install location, or fall back to `shell=True` — all three were tested and none
 launch a stale alias. A tool that cannot start is reported, not worked around.
+
+### A16 — the prompt travels on stdin, and the invariant pinned is argv size
+
+**Decision.** `review_command` does not carry the prompt. `SubprocessRunner` grew a
+`stdin_text` parameter, and the test asserts argv is byte-identical for a 100-character
+prompt and a 500,000-character one.
+
+**Why the invariant rather than a limit.** Finding 15 measured three different thresholds on
+one machine (~8,000, ~30,000, ~60,000), each from a different layer. A test pinning any one
+of them would pass on a machine with different limits while the defect remained. "Argv does
+not grow with the diff" is the property that actually has to hold.
+
+**What is given up.** `-p` is the documented scripting entry point; piped stdin is documented
+but less travelled. Accepted, because B106 requires the whole diff in one call and argv
+cannot carry it.
+
+### A17 — children get an explicitly empty stdin
+
+**Decision.** Every subprocess receives empty stdin unless the caller supplies text.
+
+**Why.** Finding 16. Inheriting stdin makes correctness depend on how Atom itself was
+launched — the same command succeeds from a terminal and times out from a pipe or CI job.
+
+**The trade-off, named.** A POC that reads stdin now sees end-of-input immediately rather
+than the developer's keyboard. That is the better failure: EOF is a value a program can
+handle, while a never-closing inherited pipe is an unbreakable hang.
+
+### A18 — usability is decided after extraction, not after the process exits
+
+**Decision.** `has_no_usable_response` consults extraction results. A run is discounted only
+when extraction failed *and* recovered nothing from it.
+
+**Why.** Finding 17. A process exiting zero with prose in stdout proves the CLI worked, not
+that a review happened. B130 forbids an infrastructure failure from printing as a clean bill
+of health, and the process boundary is one layer too early to tell the difference.
+
+**Why not simply require findings.** A model that answers `[]` has reviewed the diff and
+found nothing. Treating an empty finding list as failure would make a clean review
+unreportable — the exact inversion B130 warns about.

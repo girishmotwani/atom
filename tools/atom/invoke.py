@@ -211,12 +211,20 @@ def review_command(
     named servers there; shipping those names would bake one organisation's
     setup into an open-source tool. Callers who have ambient servers of their
     own can name them.
+
+    The prompt is deliberately absent. `-p <text>` puts the entire diff into
+    argv, which on Windows silently corrupts the call as the diff grows: near
+    8,000 characters the shim reports a syntax error and near 30,000 the command
+    line is rejected outright, both surfacing as an ordinary non-zero exit that
+    is indistinguishable from a model failing to answer. The CLI reads a piped
+    prompt from stdin, which has no such ceiling, so `prompt` is accepted here
+    only to keep one obvious place to document why it is not used.
     """
+
+    _ = prompt
 
     command = [
         _CLI,
-        "-p",
-        prompt,
         "--silent",
         "--model",
         model,
@@ -305,7 +313,9 @@ def invoke_models(
 
     def execute(plan: tuple[str, int]) -> ModelRun:
         model, run_index = plan
-        result = runner.run(command_for[model], working_directory, timeout_seconds)
+        result = runner.run(
+            command_for[model], working_directory, timeout_seconds, stdin_text=prompt
+        )
         return _to_run(model, run_index, result)
 
     completed = _map_bounded(execute, planned, concurrency)

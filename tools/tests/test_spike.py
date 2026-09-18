@@ -59,6 +59,7 @@ class ScriptedRunner:
         command: Sequence[str],
         working_directory: Path,
         timeout_seconds: float = 300.0,
+        stdin_text: str | None = None,
     ) -> CommandResult:
         command_tuple = tuple(command)
         self.calls.append((command_tuple, working_directory, timeout_seconds))
@@ -625,3 +626,4 @@ def test_library_spike_panicking_is_also_crashed(command_spike: Path, library_sp
     result = run_spike(library_spike, ScriptedRunner({"test": _failed(2, stderr=GO_PANIC_STDERR)}))
 
     assert result.verdict is Verdict.CRASHED
+

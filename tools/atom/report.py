@@ -585,7 +585,10 @@ def _review_finding_lines(outcome: "ReviewOutcome") -> list[str]:
 def _single_finding_lines(finding) -> list[str]:
     """Render one merged finding, span first."""
 
-    lines: list[str] = [f"#### {finding.file}:{_line_span(finding)} — {finding.highest_severity}", ""]
+    # An em dash here arrives as mojibake wherever stdout is not UTF-8, and a
+    # redirected report file keeps the damage permanently. A hyphen reads the
+    # same and survives every console code page.
+    lines: list[str] = [f"#### {finding.file}:{_line_span(finding)} - {finding.highest_severity}", ""]
 
     if finding.has_severity_disagreement:
         # B123. Naming the disagreement is the point: presenting one severity

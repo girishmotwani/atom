@@ -403,3 +403,75 @@ not, and no test was ever that careless.
 platform actually raises for every case the handler claims to cover. Exception
 hierarchies are an interface, and this one does not group by meaning — three
 causes of "the process never started" span two unrelated exception classes.
+
+## Finding 15 — the whole diff travelled in argv, and Windows truncated it silently
+
+`review_command` passed the prompt as `-p <text>`, so the entire diff sat in
+argv. Measured on Windows against the npm-installed CLI:
+
+| Prompt size | Result |
+|---|---|
+| ~1,000 chars | works |
+| ~8,000 chars | "The syntax of the command is incorrect" |
+| ~30,000 chars | "The command line is too long" |
+| ~60,000 chars | the process refuses to start at all |
+
+The first two arrive as `COMPLETED` with a non-zero exit — **indistinguishable
+from a model that answered badly**. The last arrives as `TOOL_MISSING`, which
+reads as a broken install. A review of any diff past roughly 150 lines was
+being silently destroyed by the plumbing and blamed on the model.
+
+The POC never saw it because the spike reviewed one small fixture file. The
+unit tests never saw it because a test double has no command-line limit — the
+constraint lives in the operating system, and mocking the operating system
+mocks the constraint away.
+
+**The fix is not a bigger limit.** The prompt now travels on stdin, which has
+no such ceiling, and a test asserts that argv is *identical* for a 100-character
+prompt and a 500,000-character one. Pinning the invariant rather than a
+threshold is what keeps this from regressing at some new boundary.
+
+## Finding 16 — closing stdin was as important as opening it
+
+Moving the prompt to stdin exposed the next layer. The availability probe
+printed its answer and then timed out after 60 seconds. The CLI reads stdin
+whenever stdin is not a terminal, Atom was itself running from a pipe, and that
+pipe never reached EOF — so a correct answer became a timeout.
+
+`subprocess.run` inherits the parent's stdin unless told otherwise, and
+inheriting is the wrong default for a non-interactive tool: immediate EOF is
+recoverable, an inherited never-closing pipe is not. Every child now gets an
+explicitly empty stdin unless given text.
+
+Worth noting how this presented: the model **answered correctly** and the run
+was recorded as a failure. Every symptom pointed at the model.
+
+## Finding 17 — "usable" was measured at the wrong boundary
+
+With the calls finally working, a real run reported `1/1 runs completed`, `No
+findings were reported`, and **exit 0** — while stderr said the reply was not
+valid JSON. A total failure to obtain any opinion printed as a clean review.
+
+`has_no_usable_response` consulted `invocation.usable_runs`, which asks whether
+the *process* completed and returned text. A model replying "I reviewed the
+diff and found nothing" satisfies that and contributes nothing. B130 is about
+usable *answers*, and the check was one layer short of the answer.
+
+It now consults extraction, excluding a run only when extraction failed *and*
+salvaged nothing — a reply with two good findings and one malformed element
+still contributed an opinion and still counts.
+
+**The pattern across 15–17:** each fix revealed the next defect, and none of
+the three was reachable without running the program against the real tool. The
+suite was green at 475, 478 and 482 tests respectively while the command could
+not produce a single review.
+
+## Finding 18 — `atom review` cannot review a historical range
+
+Closing the Phase 1 bootstrap debt requires reviewing a diff from the past, and
+there is no way to ask for one. `--branch REF` always diffs the working HEAD
+against `REF`, so the only reviewable ranges are ones ending at HEAD.
+
+Not a defect in anything built, but a capability the gate itself needs, which
+is the kind of gap a gate is supposed to find. Recorded for the Phase 5 plan
+rather than fixed here.

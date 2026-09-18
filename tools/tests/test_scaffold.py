@@ -37,6 +37,7 @@ class FakeGoModInit:
         command: Sequence[str],
         working_directory: Path,
         timeout_seconds: float = 300.0,
+        stdin_text: str | None = None,
     ) -> CommandResult:
         command_tuple = tuple(command)
         self.calls.append((command_tuple, working_directory))
@@ -249,3 +250,4 @@ def test_scaffold_reports_every_file_it_created(poc_root: Path) -> None:
     result = scaffold_spike(poc_root, "json-streaming", "A question", FakeGoModInit())
 
     assert sorted(path.name for path in result.files_created) == ["README.md", "go.mod", "main.go"]
+

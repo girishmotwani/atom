@@ -75,16 +75,41 @@ class ReviewOutcome:
 
     @property
     def has_no_usable_response(self) -> bool:
-        """Return true when not one run produced something parseable (B130).
+        """Return true when not one run produced a reply Atom could read (B130).
 
         Note what this does *not* consult: the finding list. A review where
         every model answered and reported nothing has an empty finding list and
         is a perfectly good result. Conflating the two would let a total
         infrastructure failure print as a clean bill of health, which is the
         specific confusion B130 calls dangerous.
+
+        Note also what it *does* consult: extraction, not just the process exit.
+        A model that replies "I reviewed the diff and found nothing" exits zero
+        and counts as a completed run, yet contributes no opinion. Measuring
+        usability at the process boundary let exactly that case report "No
+        findings were reported" and exit 0 -- the same dangerous confusion,
+        arriving through a door one layer further in.
         """
 
-        return not self.invocation.usable_runs
+        return not self._runs_that_answered
+
+    @property
+    def _runs_that_answered(self) -> set[tuple[str, int]]:
+        """Identify runs that survived both invocation and extraction.
+
+        A run is excluded only when extraction failed *and* salvaged nothing.
+        A reply holding two good findings and one malformed element is recorded
+        as a failure yet still contributed an opinion, so it stays counted.
+        """
+
+        completed = {(run.model, run.run_index) for run in self.invocation.usable_runs}
+        contributed = {
+            (finding.model, finding.run_index) for finding in self.extraction.findings
+        }
+        unreadable = {
+            (failure.model, failure.run_index) for failure in self.extraction.failures
+        }
+        return completed - (unreadable - contributed)
 
     @property
     def runs_per_model(self) -> dict[str, int]:

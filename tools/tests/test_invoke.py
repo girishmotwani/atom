@@ -71,7 +71,7 @@ class SequencedRunner:
         self.calls: list[tuple[str, ...]] = []
         self._lock = threading.Lock()
 
-    def run(self, command, working_directory, timeout_seconds=300.0):
+    def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
         command_tuple = tuple(command)
         with self._lock:
             self.calls.append(command_tuple)
@@ -120,8 +120,9 @@ class TestMandatoryFlags:
     def test_carries_the_prompt_and_the_model(self):
         command = review_command("claude-haiku-4.5", PROMPT)
 
-        assert PROMPT in command
         assert "claude-haiku-4.5" in command
+        # The prompt travels on stdin now; see TestThePromptDoesNotTravelInArgv.
+        assert PROMPT not in command
 
 
 class TestAvailabilityProbing:
@@ -371,7 +372,7 @@ class TestConcurrency:
         lock = threading.Lock()
 
         class CountingRunner:
-            def run(self, command, working_directory, timeout_seconds=300.0):
+            def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
                 nonlocal peak, live
                 command_tuple = tuple(command)
                 with lock:
@@ -403,10 +404,10 @@ class TestConcurrency:
         lock = threading.Lock()
 
         class RendezvousRunner:
-            def run(self, command, working_directory, timeout_seconds=300.0):
+            def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
                 nonlocal peak, live
                 command_tuple = tuple(command)
-                if PROMPT in command_tuple:  # probes must not deadlock here
+                if stdin_text == PROMPT:  # probes must not deadlock here
                     with lock:
                         live += 1
                         peak = max(peak, live)
@@ -520,3 +521,59 @@ class TestNonsensicalSettings:
 
         with pytest.raises(ValueError, match="model"):
             invoke_models([], PROMPT, runner, WORKDIR)
+
+
+class TestThePromptDoesNotTravelInArgv:
+    """A diff on the command line breaks silently once it grows.
+
+    Measured on Windows with the npm-installed CLI: a prompt near 8,000
+    characters fails with "The syntax of the command is incorrect", near 30,000
+    with "The command line is too long", and past roughly 60,000 CreateProcess
+    itself refuses to start. The first two arrive as COMPLETED with a non-zero
+    exit, so they are indistinguishable from a model that answered badly.
+    """
+
+    def test_review_command_does_not_contain_the_prompt(self):
+        """The prompt is delivered on stdin, so argv must not carry it."""
+        prompt = "REVIEW-THIS-DIFF-MARKER"
+
+        command = review_command("gpt-5.4", prompt)
+
+        assert prompt not in command
+        assert "-p" not in command
+
+    def test_command_length_stays_flat_as_the_prompt_grows(self):
+        """Argv size must not depend on diff size, which is the whole defect."""
+        small = review_command("gpt-5.4", "x" * 100)
+        enormous = review_command("gpt-5.4", "x" * 500_000)
+
+        assert small == enormous
+
+    def test_the_prompt_reaches_the_runner_as_stdin(self, tmp_path):
+        """B106: the review still has to receive the diff -- just not via argv."""
+        recorder = _StdinRecordingRunner()
+
+        invoke_models(
+            models=["gpt-5.4"],
+            prompt="the diff text",
+            runner=recorder,
+            working_directory=tmp_path,
+            runs=1,
+        )
+
+        assert recorder.stdin_texts == ["the diff text"]
+
+
+class _StdinRecordingRunner:
+    """Records what each call would have written to the child's stdin."""
+
+    def __init__(self):
+        self.stdin_texts = []
+
+    def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
+        if "--version" in command or "ping" in command:
+            return CommandResult(tuple(command), working_directory, CommandOutcome.COMPLETED, 0, "ok", "", 0.01)
+        self.stdin_texts.append(stdin_text)
+        return CommandResult(tuple(command), working_directory, CommandOutcome.COMPLETED, 0, "[]", "", 0.01)
+
+

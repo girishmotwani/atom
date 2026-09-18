@@ -22,6 +22,7 @@ class FakeRunner:
         command: Sequence[str],
         working_directory: Path,
         timeout_seconds: float = 300.0,
+        stdin_text: str | None = None,
     ) -> CommandResult:
         command_tuple = tuple(command)
         self.calls.append((command_tuple, working_directory, timeout_seconds))
@@ -49,3 +50,4 @@ def fake_runner_factory():
     """Create FakeRunner instances without hiding command/result setup in tests."""
 
     return FakeRunner
+

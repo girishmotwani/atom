@@ -56,9 +56,11 @@ class ScriptedRunner:
         self.failing_models = failing_models
         self.unavailable_models = unavailable_models
         self.commands: list[list[str]] = []
+        self.stdin_texts: list[str | None] = []
 
-    def run(self, command, working_directory, timeout_seconds):
+    def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
         self.commands.append(list(command))
+        self.stdin_texts.append(stdin_text)
 
         def result(outcome, exit_code, stdout, stderr, duration):
             return CommandResult(
@@ -171,7 +173,7 @@ class TestExitCodes:
 
     def test_a_git_failure_is_not_reported_as_a_clean_review(self, monkeypatch, capsys):
         class BrokenGit(ScriptedRunner):
-            def run(self, command, working_directory, timeout_seconds):
+            def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
                 if command[0] == "git":
                     return CommandResult(
                         command=tuple(command), working_directory=working_directory,
@@ -218,9 +220,8 @@ class TestCommandsIssued:
         review("--working", "--runs", "2")
 
         review_calls = [
-            command for command in scripted.commands
-            if command[0] != "git" and "-p" in command
-            and "Here is the diff:" in command[command.index("-p") + 1]
+            text for text in scripted.stdin_texts
+            if text is not None and "Here is the diff:" in text
         ]
 
         assert len(review_calls) == 4
@@ -246,11 +247,10 @@ class TestCommandsIssued:
         # that would also destroy cross-hunk context.
         review("--working", "--runs", "1")
 
-        prompts = [
-            c[c.index("-p") + 1] for c in scripted.commands
-            if c[0] != "git" and "-p" in c
+        full = [
+            text for text in scripted.stdin_texts
+            if text is not None and "Here is the diff:" in text
         ]
-        full = [p for p in prompts if "Here is the diff:" in p]
 
         assert full and all("var y = 2" in p for p in full)
 
@@ -314,3 +314,4 @@ class TestTheProgramActuallyRuns:
         _, _, tail = source.partition('if __name__ == "__main__":')
 
         assert tail.strip() == "raise SystemExit(main())"
+

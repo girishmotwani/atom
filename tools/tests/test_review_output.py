@@ -22,6 +22,7 @@ from atom.report import (
     render_review_markdown,
     render_review_problems,
 )
+from atom.cli import main
 from atom.review import ReviewOutcome
 
 DIFF_TEXT = """diff --git a/store/cache.go b/store/cache.go
@@ -434,3 +435,61 @@ class TestReviewOutcome:
         # answered, nothing was wrong" produce the same empty finding list and
         # must not produce the same outcome.
         assert not outcome().has_no_usable_response
+
+
+class TestAnUnreadableReplyIsNotACleanReview:
+    """B130 is about usable *answers*, not about processes that exited zero.
+
+    Seen on a real run: the CLI exited 0 having printed nothing, every run was
+    counted as completed, and the report said "No findings were reported" with
+    exit code 0. A total failure to obtain any opinion printed as a clean bill
+    of health -- exactly the confusion B130 exists to prevent.
+    """
+
+    def _outcome_with_one_unparseable_run(self):
+        run = ModelRun(
+            model="gpt-5.4", run_index=1, outcome=RunOutcome.COMPLETED,
+            response_text="I reviewed the diff and found nothing.", duration_seconds=0.1, detail="",
+        )
+        invocation = InvocationReport(
+            models=("gpt-5.4",), runs_requested=1, runs=(run,),
+            availability=(ModelAvailability("gpt-5.4", True),),
+        )
+        extraction = ExtractionReport(
+            findings=(),
+            failures=(ExtractionFailure(model="gpt-5.4", run_index=1, reason="reply is not valid json"),),
+        )
+        return ReviewOutcome(
+            diff=CapturedDiff(text="diff --git a/a.go b/a.go", request=DiffRequest(source=DiffSource.WORKING, base_ref=None)),
+            invocation=invocation, extraction=extraction, findings=(),
+        )
+
+    def test_a_completed_run_whose_reply_was_unreadable_yields_no_usable_response(self):
+        assert self._outcome_with_one_unparseable_run().has_no_usable_response
+
+    def test_such_a_review_does_not_exit_zero(self, tmp_path, monkeypatch):
+        outcome = self._outcome_with_one_unparseable_run()
+        monkeypatch.setattr("atom.cli.run_review", lambda *a, **k: outcome)
+
+        exit_code = main(["review", "--working"])
+
+        assert exit_code != 0
+
+
+
+
+
+
+class TestTheReportSurvivesEveryConsoleEncoding:
+    """Non-ASCII in a redirected report is permanent corruption, not a glyph.
+
+    An em dash in the finding header rendered as a replacement character on a
+    Windows console, and a report redirected to a `.md` file would keep that
+    damage. The same reasoning already banned ANSI colour from this output.
+    """
+
+    def test_rendered_markdown_is_pure_ascii(self):
+        report = render_review_markdown(outcome((finding(42),)))
+
+        report.encode("ascii")
+
