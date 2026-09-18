@@ -7,6 +7,8 @@ import json
 from atom.check import CheckReport
 from atom.gates import GateStatus
 from atom.index import SpikeSummary
+from atom.invoke import RunOutcome
+from atom.review import ReviewOutcome
 from atom.spike import SpikeKind, SpikeResult, Stage, Verdict
 
 # Bump when the JSON shape changes incompatibly, so consumers can branch on it
@@ -377,3 +379,283 @@ def render_status_json(report: "StatusReport") -> str:
 
     payload = {"schema_version": SCHEMA_VERSION, **report.to_dict()}
     return json.dumps(payload, indent=2, sort_keys=True)
+
+
+# --- review output (Phase 4, B125-B131) -------------------------------------
+#
+# These renderers deliberately take no `use_colour` argument, unlike everything
+# above. B125 makes the review report markdown, and B128 expects
+# `atom review > review.md` to produce a usable file. ANSI escape codes in a
+# .md file are invisible corruption -- they survive redirection and show up as
+# noise in whatever reads the file next. The terminal-facing half of the output
+# is `render_review_problems`, which is where colour would belong if it were
+# ever wanted.
+
+
+def render_review_markdown(outcome: "ReviewOutcome") -> str:
+    """Render the review as markdown: what was reviewed, then what was found.
+
+    The header comes first and is not optional. B127 exists because a report
+    that omits a missing model reads exactly like a report where that model had
+    no concerns, and the reader cannot tell the difference from the findings
+    alone.
+    """
+
+    lines: list[str] = ["# Code review", ""]
+    lines.extend(_review_header_lines(outcome))
+    lines.extend(_review_finding_lines(outcome))
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_review_problems(outcome: "ReviewOutcome") -> str:
+    """Render operational problems for stderr. Empty string when there are none.
+
+    Following P3-5 and B128, this is the only place a failure's *detail* is
+    printed. The markdown report states that a run is missing so a redirected
+    file is still honest, but it does not carry the diagnostics -- otherwise
+    every review file would accumulate transport errors that belong to the
+    terminal session, not to the review.
+    """
+
+    problems: list[str] = []
+
+    for run in outcome.invocation.runs:
+        if run.outcome is not RunOutcome.COMPLETED:
+            detail = run.detail or run.outcome.value
+            problems.append(f"{run.model} run {run.run_index}: {detail}")
+
+    for entry in outcome.invocation.unavailable_models():
+        problems.append(f"{entry.model}: {entry.detail}")
+
+    for failure in outcome.extraction.failures:
+        problems.append(
+            f"{failure.model} run {failure.run_index}: {failure.reason}"
+        )
+
+    if not problems:
+        return ""
+
+    lines = ["Problems:"]
+    lines.extend(f"  - {problem}" for problem in problems)
+
+    return "\n".join(lines) + "\n"
+
+
+def render_review_json(outcome: "ReviewOutcome") -> str:
+    """Render the review as the machine contract described by B126."""
+
+    invocation = outcome.invocation
+
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "is_partial": outcome.is_partial,
+        "has_no_usable_response": outcome.has_no_usable_response,
+        "diff": {
+            "source": invocation and outcome.diff.request.source.value,
+            "files": list(outcome.diff.files),
+            "changed_lines": outcome.diff.changed_lines,
+        },
+        "models": [
+            {
+                "model": model,
+                "runs_requested": invocation.requested_for(model),
+                "runs_completed": invocation.completed_for(model),
+            }
+            for model in invocation.models
+        ],
+        "unavailable_models": [
+            {"model": entry.model, "detail": entry.detail}
+            for entry in invocation.unavailable_models()
+        ],
+        "unparsed_responses": [
+            {
+                "model": failure.model,
+                "run_index": failure.run_index,
+                "reason": failure.reason,
+                "excerpt": failure.excerpt,
+            }
+            for failure in outcome.extraction.failures
+        ],
+        "findings": [_finding_payload(finding) for finding in outcome.findings],
+    }
+
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def _review_header_lines(outcome: "ReviewOutcome") -> list[str]:
+    """Build the "what was reviewed, and by whom" preamble (B127)."""
+
+    invocation = outcome.invocation
+    lines: list[str] = []
+
+    request = outcome.diff.request
+    scope = request.describe() if request is not None else "an unknown diff"
+    lines.append(f"Reviewed {scope}: {outcome.diff.describe_size()}.")
+    lines.append("")
+
+    for path in outcome.diff.files:
+        lines.append(f"- `{path}`")
+    if outcome.diff.files:
+        lines.append("")
+
+    lines.append("| Model | Runs completed |")
+    lines.append("| --- | --- |")
+    for model in invocation.models:
+        completed = invocation.completed_for(model)
+        requested = invocation.requested_for(model)
+        lines.append(f"| `{model}` | {completed}/{requested} |")
+    lines.append("")
+
+    unavailable = invocation.unavailable_models()
+    if unavailable:
+        # Named, but without the tool's error text. B127 requires the report to
+        # admit that a model's opinion is missing; B128 requires operational
+        # detail not to appear in both channels. The fact belongs in a file
+        # someone may read months later, the diagnostic belongs to the terminal
+        # session that produced it. See A14.
+        lines.append("Models that could not be called:")
+        lines.append("")
+        for entry in unavailable:
+            lines.append(f"- `{entry.model}` (see stderr for the reason)")
+        lines.append("")
+
+    failures = outcome.extraction.failures
+    if failures:
+        # Named, not counted, and without the reason — same split as A14 above.
+        # A response nobody could parse is an opinion that went missing, so the
+        # report must admit it; why it could not be parsed is a tool problem
+        # belonging to stderr.
+        lines.append("Responses that could not be read:")
+        lines.append("")
+        for failure in failures:
+            lines.append(
+                f"- `{failure.model}` run {failure.run_index} "
+                "(see stderr for the reason)"
+            )
+        lines.append("")
+
+    if outcome.is_partial:
+        missing = sum(
+            invocation.requested_for(model) - invocation.completed_for(model)
+            for model in invocation.models
+        )
+        lines.append(
+            f"> **This review is partial.** {missing} of "
+            f"{len(invocation.models) * invocation.runs_requested} runs did not "
+            "answer, so the agreement fractions below are out of fewer runs than "
+            "were asked for. Details were written to stderr."
+        )
+        lines.append("")
+
+    return lines
+
+
+def _review_finding_lines(outcome: "ReviewOutcome") -> list[str]:
+    """Build the findings section, grouped by file and led by severity."""
+
+    if not outcome.findings:
+        lines = ["## Findings", ""]
+        lines.append(
+            "No findings were reported." if not outcome.has_no_usable_response
+            else "No findings were reported, because no model answered."
+        )
+        return lines
+
+    lines: list[str] = ["## Findings", ""]
+
+    # Files are ordered by their most severe finding rather than alphabetically,
+    # so the first thing on screen is the worst thing found. `outcome.findings`
+    # already arrives in severity order (B124), so first appearance is enough.
+    files: list[str] = []
+    for finding in outcome.findings:
+        if finding.file not in files:
+            files.append(finding.file)
+
+    for path in files:
+        lines.append(f"### `{path}`")
+        lines.append("")
+        for finding in outcome.findings:
+            if finding.file == path:
+                lines.extend(_single_finding_lines(finding))
+
+    return lines
+
+
+def _single_finding_lines(finding) -> list[str]:
+    """Render one merged finding, span first."""
+
+    lines: list[str] = [f"#### {finding.file}:{_line_span(finding)} — {finding.highest_severity}", ""]
+
+    if finding.has_severity_disagreement:
+        # B123. Naming the disagreement is the point: presenting one severity
+        # as the severity would invent an agreement the measurement denies.
+        claimed = ", ".join(finding.severities)
+        lines.append(f"Severity is disputed: {claimed}.")
+        lines.append("")
+
+    if len(finding.lines) > 1:
+        # A13. A group can cover more than one real defect, so the reader is
+        # told the span is a grouping rather than a single reported line.
+        reported = ", ".join(str(line) for line in finding.lines)
+        lines.append(
+            f"Reported at lines {reported}; nearby lines are grouped, so this "
+            "entry may cover more than one problem."
+        )
+        lines.append("")
+
+    agreement = ", ".join(
+        f"`{entry.model}` {entry.fraction}" for entry in finding.agreement
+    )
+    lines.append(f"Reported by: {agreement}")
+    lines.append("")
+
+    for message in finding.messages:
+        lines.append(
+            f"- `{message.model}` run {message.run_index}, line {message.line} "
+            f"({message.severity}): {message.message}"
+        )
+    lines.append("")
+
+    return lines
+
+
+def _line_span(finding) -> str:
+    """Return `41` for a single line, `42-45` for a group (A13)."""
+
+    if len(finding.lines) <= 1:
+        return str(finding.line)
+
+    return f"{finding.lines[0]}-{finding.lines[-1]}"
+
+
+def _finding_payload(finding) -> dict:
+    """Convert one merged finding to its JSON form."""
+
+    return {
+        "file": finding.file,
+        "line": finding.line,
+        "lines": list(finding.lines),
+        "highest_severity": finding.highest_severity,
+        "severities": list(finding.severities),
+        "is_corroborated": finding.is_corroborated,
+        "has_severity_disagreement": finding.has_severity_disagreement,
+        "agreement": [
+            {
+                "model": entry.model,
+                "runs_reporting": entry.runs_reporting,
+                "runs_total": entry.runs_total,
+            }
+            for entry in finding.agreement
+        ],
+        "messages": [
+            {
+                "model": message.model,
+                "run_index": message.run_index,
+                "line": message.line,
+                "severity": message.severity,
+                "message": message.message,
+            }
+            for message in finding.messages
+        ],
+    }

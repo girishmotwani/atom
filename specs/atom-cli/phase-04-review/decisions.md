@@ -341,3 +341,32 @@ that was never observed.
 so it is raised rather than absorbed. The specific thing to decide: whether a merged finding
 spanning several lines should say so prominently, given that its headline count can
 understate the number of real defects.
+
+### A14 — the report names what is missing, stderr explains why
+
+**Decision.** When a model cannot be called, or a response cannot be parsed, the markdown
+report states *that* the opinion is missing and stderr states *why*. Neither repeats the other.
+
+**Why.** B127 requires the report to admit when a model's opinion is absent, so a reader
+cannot mistake a partial review for a clean one. B128 requires operational problems to go to
+stderr and forbids duplicating them. Written naively the two collide: the reason a model is
+missing is both a fact about the review and an operational problem.
+
+Splitting by *question answered* resolves it. The report answers "is this review complete?"
+— a permanent fact belonging in the artefact. stderr answers "what went wrong on this run?"
+— a transient diagnostic belonging in the terminal. The same split applies to unavailable
+models and to unparseable responses.
+
+### A15 — `SubprocessRunner` diagnoses the cause rather than reporting the exception
+
+**Decision.** A failure to start a process is explained by cause — absent tool, unlaunchable
+PATH entry, or missing working directory — instead of mapping one exception to one message.
+
+**Why.** Findings 13 and 14. The operating system uses two exception classes for three causes
+and gives the same `WinError 2` to both "absent" and "present but dead". Reporting the
+exception reports the operating system's vocabulary, not the developer's problem. The cost is
+one `shutil.which` call on a path that has already failed, where latency is irrelevant.
+
+**What is deliberately not done.** Atom does not try to repair a broken alias, guess an
+alternative install location, or fall back to `shell=True` — all three were tested and none
+launch a stale alias. A tool that cannot start is reported, not worked around.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import enum
+import shutil
 import subprocess
 import time
 from dataclasses import dataclass
@@ -98,18 +99,48 @@ class SubprocessRunner:
             timeout_message = f"Command timed out after {timeout_seconds:g} seconds."
             stderr = f"{stderr}\n{timeout_message}" if stderr else timeout_message
             return CommandResult(command_tuple, working_directory, CommandOutcome.TIMED_OUT, None, stdout, stderr, duration_seconds)
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
+            # Windows raises NotADirectoryError (WinError 267) for a bad working
+            # directory and FileNotFoundError for a bad executable. Both mean the
+            # process never started, and both must become data rather than a crash.
             duration_seconds = time.perf_counter() - started_at
-            tool_name = command_tuple[0] if command_tuple else "<empty command>"
             return CommandResult(
                 command_tuple,
                 working_directory,
                 CommandOutcome.TOOL_MISSING,
                 None,
                 "",
-                f"Executable not found on PATH: {tool_name}",
+                _diagnose_missing_file(command_tuple, working_directory),
                 duration_seconds,
             )
+
+
+def _diagnose_missing_file(command: tuple[str, ...], working_directory: Path) -> str:
+    """Explain which of the three causes of FileNotFoundError actually applies.
+
+    The operating system raises the same exception when the tool is absent, when
+    the tool is present on PATH but cannot be launched, and when the working
+    directory does not exist. Reporting all three as "not on PATH" sends the
+    developer hunting through their PATH for a problem that is not there.
+    """
+
+    if not working_directory.is_dir():
+        return f"Working directory does not exist: {working_directory}"
+
+    tool_name = command[0] if command else "<empty command>"
+    resolved_path = shutil.which(tool_name)
+    if resolved_path is None:
+        return f"Executable not found on PATH: {tool_name}"
+
+    # PATH resolved the name, yet the operating system refused to start it. On
+    # Windows this is the signature of a stale App Execution Alias: a zero-byte
+    # stub left behind by an uninstalled package. Reinstalling the tool is the
+    # fix, so say that rather than blaming PATH.
+    return (
+        f"Found '{tool_name}' at {resolved_path} but the system could not start it. "
+        "The entry on PATH is present but not launchable, which usually means a "
+        "broken or stale install. Reinstall the tool."
+    )
 
 
 def _normalise_stream(stream: bytes | str | None) -> str:

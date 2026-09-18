@@ -8,10 +8,25 @@ from pathlib import Path
 from typing import Sequence
 
 from atom.check import NotAGoModuleError, run_check
+from atom.diff import (
+    DiffUnavailable,
+    NoDiffSourceSelected,
+    TooManyDiffSourcesSelected,
+    select_source,
+)
 from atom.gates import default_gates
 from atom.index import list_spikes
+from atom.invoke import (
+    DEFAULT_CONCURRENCY,
+    DEFAULT_RUNS,
+    NoModelAvailable,
+)
+from atom.merge import DEFAULT_PROXIMITY_WINDOW
 from atom.report import (
     render_json,
+    render_review_json,
+    render_review_markdown,
+    render_review_problems,
     render_spike_json,
     render_spike_list_json,
     render_spike_list_text,
@@ -21,6 +36,7 @@ from atom.report import (
     render_status_text,
     render_text,
 )
+from atom.review import DEFAULT_REVIEW_MODELS, run_review
 from atom.runner import SubprocessRunner
 from atom.scaffold import ScaffoldError, SlugError, scaffold_spike
 from atom.spike import NotASpikeError, run_spike
@@ -57,6 +73,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if arguments.command == "status":
         return _run_status_command(arguments)
+
+    if arguments.command == "review":
+        return _run_review_command(arguments)
 
     parser.print_help()
     return EXIT_USAGE_ERROR
@@ -98,8 +117,63 @@ def _build_parser() -> argparse.ArgumentParser:
 
     _add_poc_parser(subparsers)
     _add_state_parsers(subparsers)
+    _add_review_parser(subparsers)
 
     return parser
+
+
+def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
+    review_parser = subparsers.add_parser(
+        "review",
+        help="Ask several models to review a diff and merge what they agree on.",
+    )
+
+    # No default source. B104 makes choosing one explicit, because each option
+    # reviews genuinely different code and a wrong guess reviews the wrong
+    # thing silently.
+    review_parser.add_argument(
+        "--working", action="store_true",
+        help="Review uncommitted changes in the working tree.",
+    )
+    review_parser.add_argument(
+        "--staged", action="store_true",
+        help="Review staged changes only.",
+    )
+    review_parser.add_argument(
+        "--branch", metavar="REF",
+        help="Review this branch's changes against REF.",
+    )
+    review_parser.add_argument(
+        "--model", action="append", dest="models", metavar="NAME",
+        help="Model to consult; repeat for several (default: gpt-5.4 and claude-haiku-4.5).",
+    )
+    review_parser.add_argument(
+        "--runs", type=int, default=DEFAULT_RUNS,
+        help=(
+            "Times to ask each model (default: %(default)s). Repetition is the "
+            "confidence signal: compliance and findings both vary between runs."
+        ),
+    )
+    review_parser.add_argument(
+        "--concurrency", type=int, default=DEFAULT_CONCURRENCY,
+        help="Calls to run at once (default: %(default)s).",
+    )
+    review_parser.add_argument(
+        "--window", type=int, default=DEFAULT_PROXIMITY_WINDOW,
+        help=(
+            "Lines apart that findings may be and still be treated as one "
+            "problem (default: %(default)s)."
+        ),
+    )
+    review_parser.add_argument(
+        "--disable-mcp-server", action="append", dest="disable_mcp_servers",
+        default=[], metavar="NAME",
+        help="MCP server to disable for each call; repeat for several.",
+    )
+    review_parser.add_argument(
+        "--json", action="store_true", dest="as_json",
+        help="Emit machine-readable JSON instead of markdown.",
+    )
 
 
 def _add_state_parsers(subparsers: argparse._SubParsersAction) -> None:
@@ -334,6 +408,78 @@ def _run_status_command(arguments: argparse.Namespace) -> int:
     # B95: a command that could not answer its question has not succeeded, even
     # though it ran without error. Same reasoning as Phase 2's crashed spike.
     return EXIT_PASSED if report.could_answer else EXIT_CHECK_FAILED
+
+
+def _run_review_command(arguments: argparse.Namespace) -> int:
+    """Ask several models about a diff and report what they said (B103-B137)."""
+
+    try:
+        request = select_source(
+            staged=arguments.staged,
+            branch=arguments.branch,
+            working=arguments.working,
+        )
+    except (NoDiffSourceSelected, TooManyDiffSourcesSelected) as error:
+        print(f"atom review: {error}", file=sys.stderr)
+        return EXIT_USAGE_ERROR
+
+    try:
+        outcome = run_review(
+            request=request,
+            models=arguments.models or list(DEFAULT_REVIEW_MODELS),
+            runner=SubprocessRunner(),
+            working_directory=Path.cwd(),
+            runs=arguments.runs,
+            concurrency=arguments.concurrency,
+            window=arguments.window,
+            disable_mcp_servers=arguments.disable_mcp_servers,
+        )
+    except ValueError as error:
+        # Nonsensical settings are refused rather than clamped (A8): `--runs 0`
+        # would otherwise produce a clean-looking review that consulted nobody.
+        print(f"atom review: {error}", file=sys.stderr)
+        return EXIT_USAGE_ERROR
+    except DiffUnavailable as error:
+        print(f"atom review: {error}", file=sys.stderr)
+        return EXIT_CHECK_FAILED
+    except NoModelAvailable as error:
+        # The other door to B130. Reaching the same dangerous state through a
+        # different path must not produce a less clear message, so the sentence
+        # that names the confusion is attached here too.
+        print(
+            f"atom review: {error}\n"
+            "atom review: no model returned a usable response; "
+            "this is not a clean review.",
+            file=sys.stderr,
+        )
+        return EXIT_CHECK_FAILED
+
+    # The report goes to stdout on both paths so `atom review > review.md`
+    # captures it; problems go to stderr so they stay visible when it is
+    # redirected, and appear exactly once (B128, P3-5).
+    if arguments.as_json:
+        print(render_review_json(outcome))
+    else:
+        print(render_review_markdown(outcome))
+
+    problems = render_review_problems(outcome)
+    if problems:
+        print(problems.rstrip(), file=sys.stderr)
+
+    if outcome.has_no_usable_response:
+        # B130. Loudly, because an empty report is indistinguishable from a
+        # clean one, and this is the case where that confusion is dangerous.
+        print(
+            "atom review: no model returned a usable response; "
+            "this is not a clean review.",
+            file=sys.stderr,
+        )
+        return EXIT_CHECK_FAILED
+
+    # B136: findings never change the exit code, but an incomplete review does.
+    # A CI job where one model failed every run would otherwise stay green
+    # forever while nobody read the banner.
+    return EXIT_CHECK_FAILED if outcome.is_partial else EXIT_PASSED
 
 
 def _exit_code_for_spike(result) -> int:

@@ -144,10 +144,10 @@ def merge_findings(
         raise ValueError(f"window must be zero or positive, got {window}.")
 
     for model, total in runs_per_model.items():
-        if total < 1:
+        if total < 0:
             raise ValueError(
                 f"Model {model!r} is recorded as having completed {total} runs, "
-                "so it cannot have reported anything."
+                "which is not a possible number of runs."
             )
 
     collected = list(findings)

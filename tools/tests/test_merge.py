@@ -383,6 +383,19 @@ class TestImpossibleAgreementIsRefused:
         with pytest.raises(ValueError, match="runs"):
             merge_findings([finding(44)], {"gpt-5.4": 0})
 
+    def test_a_model_that_completed_no_runs_is_allowed_to_report_nothing(self):
+        # The distinction the previous test nearly destroyed. A model that
+        # timed out on every run still belongs in the denominators -- it was
+        # asked, and B127 says the report must say it answered 0 times. Only
+        # *reporting a finding* on zero runs is impossible.
+        merged = merge_findings(
+            [finding(44, "gpt-5.4", 1)],
+            {"gpt-5.4": 3, "claude-haiku-4.5": 0},
+        )
+
+        assert len(merged) == 1
+        assert [entry.model for entry in merged[0].agreement] == ["gpt-5.4"]
+
     def test_a_negative_run_count_is_rejected(self):
         with pytest.raises(ValueError, match="runs"):
             merge_findings([finding(44)], {"gpt-5.4": -1})

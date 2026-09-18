@@ -355,3 +355,51 @@ Four for four is no longer an observation about individual cycles. Green on the
 first attempt should be treated as an unexplored area, and the probe is the step
 that actually finds things — in this cycle, running the module over real POC
 data and feeding it deliberately inconsistent arguments.
+
+## Finding 13 — `shutil.which` found an executable that could not be started
+
+Running `atom review` by hand for the first time produced:
+
+    atom review: No review model could be called: gpt-5.4
+    (Executable not found on PATH: copilot)
+
+The message was wrong. `copilot` *was* on PATH — `shutil.which` resolved it to
+`...\WindowsApps\copilot.EXE` and `os.access(..., os.X_OK)` returned true. The
+file is a zero-byte Windows App Execution Alias: a reparse stub left behind
+after the package it pointed at was removed. `subprocess.run` refused to start
+it with `WinError 2`, the same error Windows reports for a file that is absent.
+
+`shell=True` failed identically, and so did passing the fully resolved absolute
+path. Nothing about the call site was wrong; the entry on PATH was a corpse.
+
+**Why it matters more than the bug.** A developer reading "not found on PATH"
+checks their PATH, finds `copilot` there, and concludes the tool is lying — the
+most expensive possible failure mode, because the message actively directs the
+investigation away from the cause. `SubprocessRunner` now distinguishes the
+cases and tells the developer to reinstall.
+
+This is the sixth time an external interface has reported something untrue
+(after `gofmt -l`, `go run` exit flattening, Go's panic exit code, `os.replace`
+on Windows, and `[1,2,3]` parsing as valid JSON).
+
+## Finding 14 — the test for one lie uncovered another
+
+Writing the regression test for finding 13 required a third cause of the same
+exception: a working directory that does not exist. That test failed, but not
+by producing the wrong message — the process **crashed**.
+
+Windows raises `NotADirectoryError` (`WinError 267`) for a bad working
+directory. It is an `OSError`, but it is *not* a subclass of
+`FileNotFoundError`, so it escaped the handler entirely. `SubprocessRunner.run`
+is documented as "turning expected process failures into data", and for one of
+the three ways a process can fail to start it raised instead.
+
+The defect shipped in Phase 1 and survived four phases and 475 tests, because
+every existing test supplied a working directory that existed — `tmp_path`
+always does. The bug needed a caller careless enough to pass a path that did
+not, and no test was ever that careless.
+
+**The habit worth keeping:** when catching an exception by type, check what the
+platform actually raises for every case the handler claims to cover. Exception
+hierarchies are an interface, and this one does not group by meaning — three
+causes of "the process never started" span two unrelated exception classes.

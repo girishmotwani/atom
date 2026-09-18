@@ -70,3 +70,44 @@ def test_subprocess_runner_returns_tool_missing_without_raising(tmp_path):
     assert result.outcome is CommandOutcome.TOOL_MISSING
     assert result.exit_code is None
     assert "definitely-not-an-atom-test-tool" in result.stderr
+
+
+class TestFileNotFoundErrorIsDiagnosed:
+    """The same exception has three causes; each gets its own explanation.
+
+    A real Windows install left a zero-byte App Execution Alias on PATH after
+    the package behind it was removed. shutil.which() resolved it and
+    subprocess.run() refused to start it, and Atom reported 'not found on PATH'
+    for an executable that was demonstrably on PATH.
+    """
+
+    def test_absent_tool_is_reported_as_missing_from_path(self, tmp_path):
+        """B3: When the name resolves nowhere, PATH really is the problem."""
+        result = SubprocessRunner().run(["atom-no-such-tool-anywhere"], tmp_path, timeout_seconds=5.0)
+
+        assert result.outcome is CommandOutcome.TOOL_MISSING
+        assert "Executable not found on PATH: atom-no-such-tool-anywhere" == result.stderr
+
+    def test_unlaunchable_path_entry_is_not_blamed_on_path(self, tmp_path, monkeypatch):
+        """A tool that PATH resolves but the system cannot start is a broken install."""
+        monkeypatch.setattr(
+            "atom.runner.shutil.which",
+            lambda name: r"C:\WindowsApps\stale-alias.exe" if name == "stale-alias" else None,
+        )
+
+        result = SubprocessRunner().run(["stale-alias"], tmp_path, timeout_seconds=5.0)
+
+        assert result.outcome is CommandOutcome.TOOL_MISSING
+        assert "not found on PATH" not in result.stderr
+        assert r"C:\WindowsApps\stale-alias.exe" in result.stderr
+        assert "Reinstall the tool." in result.stderr
+
+    def test_missing_working_directory_is_not_blamed_on_the_tool(self, tmp_path):
+        """A directory that does not exist raises the same error as a missing tool."""
+        absent_directory = tmp_path / "never-created"
+
+        result = SubprocessRunner().run([sys.executable, "-c", "pass"], absent_directory, timeout_seconds=10.0)
+
+        assert result.outcome is CommandOutcome.TOOL_MISSING
+        assert result.stderr == f"Working directory does not exist: {absent_directory}"
+        assert sys.executable not in result.stderr
