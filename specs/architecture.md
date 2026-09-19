@@ -123,6 +123,10 @@ not failed, and an advisory signal must never gate a merge.
 
 ## Phase State
 
+> **Status: specified, not yet built.** The rules below are the target design.
+> The shipped tool stores a declared phase instead; that is what this section
+> replaces.
+
 The pipeline has five phases:
 
 ```
