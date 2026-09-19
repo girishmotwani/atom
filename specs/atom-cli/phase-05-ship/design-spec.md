@@ -122,8 +122,25 @@ not editorialise about its absence.
 recorded result from an earlier run is not accepted, because the point of the
 evidence is that it describes the commit being shipped.
 
+**B145a.** When the repository is **not a Go module** — no `go.mod` at the root —
+the gates are skipped and the body records *"not a Go module; no gates run"*. This
+is **not** a check failure and does not trigger B147.
+
+> Found while reading `check.py` rather than by the POC, which probed `gh` and
+> never touched the check integration. `run_check` raises `NotAGoModuleError` on
+> any directory without a `go.mod`, and **the Atom repository has none**, because
+> Atom's own tooling is Python. B145 unqualified would have made `atom ship`
+> unable to ship Atom — including this phase's own pull request.
+>
+> Treating the absence as a failure would be the wrong reading. `check.py` already
+> settles the principle for the analogous case: *"SKIPPED and WARNING are both
+> non-failures by design: a tree with no tests has not failed."* A tree with no Go
+> module has not failed either. The body reports the absence as an absence, which
+> is the honest description and also the useful one.
+
 **B146.** The body carries a verdict table — one row per gate, bounded at five
-rows. It does not carry the gates' full output.
+rows. It does not carry the gates' full output. When B145a applies, the table is
+replaced by the single recorded line.
 
 **B147.** When the fresh `atom check` fails, ship **refuses to open or update the
 pull request**, naming the failing gates. `--allow-failing-checks` overrides it.
