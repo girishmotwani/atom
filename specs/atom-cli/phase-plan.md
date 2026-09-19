@@ -42,13 +42,16 @@ scope.
 | 1 | `check` | `atom check` — build, vet, gofmt, test, race, coverage, one verdict | M | No — see justification | Shipped | — |
 | 2 | `poc` | `atom poc new/run/list` — scaffold, execute and list spikes | M | ~~No~~ **Yes — and it refuted an assumption** | Shipped | 1 |
 | 3 | `state` | `atom init`, `atom phase …`, `atom status` — config and phase tracking | L | ~~No~~ **Yes — 3 of 5 predictions refuted** | Complete | 1 |
-| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | Spec approved — TDD next | 1, 3 |
-| 5 | `ship` | `atom ship` — commit, push, PR from artifacts | L | ~~No~~ **Challenged — see Phase 5 detail** | Not started | 1, 3 |
+| 4 | `review` | `atom review` — multi-model diff review, merged report | H | **Yes** | Shipped | 1, 3 |
+| 5 | `ship` | `atom ship` — PR assembled from commits and artifacts that already exist | L | ~~No~~ **Yes — 4 of 6 predictions refuted** | POC done — spec next | 1, 3 |
+| 6 | `state` (derived) | Phase computed from artifacts on disk; `.atom/state.json` reduced to approvals | M | Undecided — see Phase 6 detail | Not started | 3 |
 
 > The struck-through entries are left visible rather than rewritten. This table
-> asserted that Phases 2 and 3 needed no POC; running them anyway produced the
-> two most consequential findings in the project. **"No" in this column is now
-> 0 for 2**, which is why Phase 5's entry is challenged before it is believed.
+> asserted that Phases 2, 3 and 5 needed no POC; running them anyway produced the
+> three most consequential findings in the project. **"No" in this column is now
+> 0 for 3.** It is no longer a column that carries any weight: a claim that has
+> been wrong every time it was tested is not evidence, and no future phase should
+> be allowed to skip a POC on the strength of it.
 
 ## Phase Detail
 
@@ -215,11 +218,15 @@ repetition and the agreement tracking it enables add a layer the plan did not an
 
 **Objective.** Assemble a PR from the artifacts already written.
 
-**Scope in.** Commit message assembly, PR body from artifacts, `gh` invocation.
+**Scope in.** PR body assembled from artifacts, fresh `atom check` evidence, `gh`
+invocation, `--push` behind an explicit flag.
 
-**Scope out.** Merging. Review response. Branch management beyond the current branch.
+**Scope out.** Merging. Review response. **Committing** — ship assembles a PR from
+commits that already exist and never creates one. Branch management beyond the
+current branch.
 
-**Technical risk.** ~~Low. Shelling out to `git` and `gh`.~~ **Unassessed.** See below.
+**Technical risk.** ~~Low. Shelling out to `git` and `gh`.~~ **Measured. Higher than
+"low".** Four of six predictions were refuted; see the POC report.
 
 **POC question — ~~justifiably skipped. No technical uncertainty.~~ Challenged in advance.**
 
@@ -242,12 +249,89 @@ and `gh`" is precisely the kind of description that made Phase 3 sound like
 Q1 and Q3 are cheap. Q2 decides what the body can be. None of them is settled by
 reasoning about them.
 
+**POC outcome — the challenge was justified.** See
+[`phase-05-ship/poc-report.md`](phase-05-ship/poc-report.md). Six predictions were
+recorded before the spike ran; **four were refuted**, including two that change the
+design:
+
+- **`gh` refuses to push.** The plan assumed `gh pr create` would push the branch as
+  a convenience. It does not — it aborts in 1.4 s telling you to push first. The
+  `--push` flag therefore guards an action Atom must perform itself, not one it is
+  merely choosing to delegate.
+- **The argv limit belongs to the launcher, not the platform.** `gh` is a native
+  `.exe` and takes ~32 KB of arguments; `copilot` is a `.cmd` shim routed through
+  `cmd.exe` and dies at ~8 KB. This retroactively explains Phase 4's failure, and it
+  means the safe limit depends on *what kind of file* the executable is.
+
+Q2's answer also moved: a 70,000-character body was **stored intact**, above the
+documented 65,536 cap. `gh pr edit` exited 0 either way, so the exit code proved
+nothing — the body had to be read back to learn what had actually been stored. That
+is the tenth time an API has reported success without delivering it.
+
 **Done when.** A PR is opened with real `atom check` output and POC verdicts in the
 body; the tool never pushes without an explicit instruction.
 
 **Size.** ~200 lines production. *Phase 3 was estimated at 250 and came in at
 ~430 once the spike revealed what was actually required; treat this figure as a
 lower bound.*
+
+### Phase 6 — `state`, derived
+
+**Objective.** Make `atom status` tell the truth.
+
+**The defect.** `state.py` implements a complete, tested phase state machine —
+a `Phase` enum, `transition_to()` with written refusal messages, `advance_to()`,
+`next_phase()`, and forward/backward rules. **Nothing calls it.** `cli.py` imports
+only `Project`, and uses it only to read `state.phase.value` for display. So
+`.atom/state.json` is written once by `atom init` and never changes again: the tool
+reports `poc` forever, through every phase, no matter what has been built. The file
+is also `.gitignore`d, so the one place the project's progress is recorded is
+invisible to everyone but its author.
+
+This is not a bug in the state machine. The state machine works and has tests. It is
+a wiring gap, and it survived four phases precisely because the tests pass — they
+exercise `state.py` directly and never ask whether anything drives it. **Unit tests
+do not prove a program runs** is now five phases running, and this is its quietest
+instance: no crash, no error, just a number that is silently always wrong.
+
+**Approach — derive, don't declare.** Rather than wire the state machine up, delete
+most of it. Phase is computed from the artifacts on disk: a phase directory with a
+`poc-report.md` and a `design-spec.md` and a test suite *is* a phase in TDD. Derived
+state cannot drift from reality, because the claim and the evidence are the same
+thing.
+
+The one fact that cannot be derived is whether a **human approved** something — a
+`design-spec.md` existing does not mean the developer accepted it, and that
+distinction is the entire point of the two gates. So `.atom/state.json` survives,
+reduced to an approvals record, and is **committed** rather than ignored.
+
+**Scope in.** Derivation rules; the reduced approvals file; `atom status` rewritten
+against it; removal of the unreachable machinery; un-ignoring the state file.
+
+**Scope out.** Any new command for advancing phases — derivation makes one
+unnecessary. Migration of existing `.atom/state.json` files; the format is unreleased
+and this repo is its only user.
+
+**Technical risk.** Medium, and not where it looks. The derivation rules are simple;
+the risk is that **deriving from artifacts means guessing at intent from file
+existence**, and a half-written `design-spec.md` looks exactly like a finished one.
+Whether that matters is the POC question.
+
+**POC question — undecided, and to be decided by the rule, not by the estimate.**
+
+The honest position is that this phase *looks* like it has no uncertainty, which is
+the exact sentence that was wrong three times. At least one question is real:
+
+| # | Question | Why it is not obvious |
+|---|---|---|
+| Q1 | What do the artifacts of the five phases already in this repo actually derive to? | The rules can be written to fit the phases in the abstract and still misclassify every real directory. This repo contains five worked examples with known correct answers — running the derivation against them is a free, decisive test, and it is the only way to find out whether "looks finished" and "is finished" are distinguishable on disk. |
+
+**Done when.** `atom status`, run at any point in any phase of this repo, reports the
+phase a developer would report by looking at the directory — and the approvals it
+shows were each recorded by a human.
+
+**Size.** ~150 lines production, and a **net reduction** overall: it removes more of
+`state.py` than it adds.
 
 ## Sequencing Rationale
 
@@ -263,8 +347,15 @@ Phase 4 carries the only real unknown. It would be tempting to front-load it on 
 testable at all, and a failure there degrades `atom review` alone rather than
 invalidating the plan. Risk is front-loaded *within* what the dependency graph allows.
 
-Phase 5 is last because it has the least uncertainty and the least value before there
-is something to ship.
+Phase 5 comes before 6 because it has the least uncertainty and the least value
+before there is something to ship.
+
+Phase 6 is last, and it is worth being explicit that this is a **deliberate choice
+not to bundle it with 5**. The two are adjacent in time and unrelated in substance:
+`ship` assembles a pull request, `state` changes how a phase is computed. Merging
+them would produce one diff that does two things, which contradicts the rule that a
+phase must be small enough to review in one sitting — the same rule that makes
+sending a whole diff to a model in one call affordable. Adjacency is not cohesion.
 
 Every phase leaves the tree green and is independently useful: `atom check` alone is
 worth installing.
@@ -287,6 +378,8 @@ worth installing.
 | Coverage parsing differs across Go versions | Medium | Low | Treat coverage as advisory; never fail `atom check` on a parse miss alone |
 | POC dirs committed without `go.mod` by hand | Medium | High | `atom check` warns on any `poc/*` directory lacking a `go.mod` |
 | Platform differences (paths, signals) outside Windows | Medium | Medium | Use `pathlib` and `subprocess` portably; add CI on Linux and macOS in phase 3 |
+| Derived phase state misreads a half-written artifact as a finished one | Medium | Medium | Phase 6 Q1 runs the rules against this repo's five known-correct phases before the rules are fixed; when derivation is ambiguous, report the ambiguity rather than picking a phase |
+| A second wiring gap like Phase 6's — tested code that nothing calls | Medium | High | Unit tests cannot detect this by construction; every phase must exercise its command end to end through the real CLI, not only through its modules |
 
 ## Completeness Checklist
 
