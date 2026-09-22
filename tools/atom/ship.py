@@ -142,9 +142,10 @@ def run_ship(
     """Turn the current branch's finished phase into a pull request.
 
     The pipeline is fixed and its order is load-bearing: preconditions, resolve
-    the phase, push (only with ``--push``), a fresh ``atom check``, assemble the
+    the phase, a fresh ``atom check``, push (only with ``--push``), assemble the
     body, then create or update the PR. Push precedes assembly so the body's
-    commit-pinned links reference a commit the remote already holds (B149).
+    commit-pinned links reference a commit the remote already holds (B149), and
+    the check precedes the push so a refusal leaves the remote untouched.
 
     Raises:
         ShipRefused: any unmet precondition, a missing phase directory, or a
