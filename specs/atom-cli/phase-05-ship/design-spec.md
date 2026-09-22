@@ -173,7 +173,7 @@ The summary is assembled from, in order:
 | Part | Source | Bounded by |
 |---|---|---|
 | Title | The design spec's `H1`, else the branch name; `--title` overrides | one line |
-| Why | The design spec's **Purpose** paragraph, quoted | one paragraph |
+| Why | The design spec's **Purpose** section, quoted | the section, however many paragraphs |
 | What changed | Commit subjects on the branch | commit count |
 | Evidence | The `atom check` verdict table (B146) | five rows |
 | Artifacts | One link per file in the phase directory (B144) | file count |
