@@ -547,7 +547,7 @@ def _run_ship_command(arguments: argparse.Namespace) -> int:
     """Assemble the pull request for the current branch's phase."""
 
     runner = SubprocessRunner()
-    gates = default_gates(include_race=not arguments.no_race)
+    gates = default_gates(enable_race=not arguments.no_race)
 
     try:
         outcome = run_ship(
