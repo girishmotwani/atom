@@ -63,16 +63,27 @@ Branch management beyond the current branch. Reaching backwards over history
 ## The Pipeline
 
 ```
-preconditions ──► resolve phase ──► push (only with --push)
+preconditions ──► resolve phase ──► fresh atom check
                                           │
                                           ▼
-                        fresh atom check ──► assemble body ──► create or update PR
+                   push (only with --push) ──► assemble body ──► create or update PR
 ```
 
-The order is not arbitrary. **Push happens before the body is assembled**, because
+The order is not arbitrary, and two separate constraints fix it.
+
+**Push happens before the body is assembled**, because
 the body links to artifacts at a specific commit, and a link to a commit the remote
 has never seen is a 404. Assembling first and pushing afterwards would produce a PR
 whose every link was broken until the moment it wasn't.
+
+**The check happens before the push**, because a refusal should leave no trace. Ship
+refuses on a failing gate unless `--allow-failing-checks` is given, and if the push
+came first, that refusal would already have published the branch and set its
+upstream — a command that declines to act would have changed the remote on its way
+to declining. Ordering the check first costs nothing: it is local and fast, and the
+push still happens in both cases that reach it, the passing run and the overridden
+one. *(Found during implementation, not during the POC: the POC probed `gh` and the
+check separately and never asked what their ordering implied.)*
 
 ## Preconditions
 
