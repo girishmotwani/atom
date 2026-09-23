@@ -377,8 +377,16 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
         return EXIT_CHECK_FAILED
 
     print(f"Initialised {project.state_directory}")
-    print(f"  module: {arguments.module_path}")
-    print(f"  phase:  {state.phase.value} ({state.status.value.replace('_', ' ')})")
+    print(f"  module:    {state.module_path}")
+    print(f"  approvals: {len(state.approvals)}")
+    print()
+    # B176: init no longer announces a phase. It used to print "phase: 1
+    # (not started)", which was a claim about progress made by a command that
+    # has observed no progress -- and which then went stale the moment the
+    # developer created a phase directory. Where the project is, is derived
+    # from the filesystem now, so init points at the command that derives it.
+    print("Atom derives where you are from specs/. To see it:")
+    print("  atom status")
     print()
     print("Atom starts by proving things, not describing them:")
     print("  atom poc new <slug> --question \"...\"")
@@ -410,8 +418,18 @@ def _run_status_command(arguments: argparse.Namespace) -> int:
             use_colour = not arguments.no_colour and sys.stderr.isatty()
             print(render_status_problems(report, use_colour=use_colour), file=sys.stderr)
 
-    # B95: a command that could not answer its question has not succeeded, even
-    # though it ran without error. Same reasoning as Phase 2's crashed spike.
+    # B181: exit 0 whenever Atom could answer the question -- which, now that
+    # the phase is derived from the filesystem, is nearly always. Missing
+    # artifacts are *information*, not failure: a phase in progress is the
+    # normal case, and the old behaviour (absent state file -> exit 1) is the
+    # precise bug this phase exists to fix. Non-zero is reserved for a project
+    # root Atom cannot read at all.
+    #
+    # The accepted cost: `atom status` can never be a CI gate asserting a phase
+    # is finished. That gate would have to decide what "finished" means, and the
+    # POC proved Atom cannot compute it -- a truncated four-section document
+    # passed every completeness rule tried. A gate that goes green on seven
+    # stubs is worse than no gate.
     return EXIT_PASSED if report.could_answer else EXIT_CHECK_FAILED
 
 

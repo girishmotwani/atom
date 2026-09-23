@@ -97,12 +97,12 @@ tests — `--help` never reaches the command function, so it proves nothing.
 
 | Group | Behaviours | Cases |
 |---|---|---:|
-| Resolving the current phase | B158–B164 | 27 |
+| Resolving the current phase | B158–B164 | 30 |
 | Artifact presence | B165–B171 | 32 |
 | The approvals record | B172–B176 | 19 |
 | Output | B177–B181 | 22 |
 | What is removed | B182–B185 | 8 |
-| **Behaviour tests** | **B158–B185** | **108** |
+| **Behaviour tests** | **B158–B185** | **111** |
 | Program-level (real subprocess) | — | 5 |
 | End-to-end tier 1 (real repository) | — | 5 |
 | End-to-end tier 2 (real `git`) | — | 3 |
@@ -118,6 +118,7 @@ document, with none left over.
 | Behaviour | One-line description | Test(s) pinning it |
 |---|---|---|
 | B158 | A phase directory matches `^phase-(\d{2})-([a-z0-9-]+)$`; the anchors stop a stray folder masquerading as one. | `test_a_well_formed_phase_directory_is_recognised`; `test_a_single_digit_phase_number_is_not_a_phase_directory`; `test_an_uppercase_slug_is_not_a_phase_directory`; `test_a_directory_merely_containing_a_phase_name_is_not_one`; `test_a_file_named_like_a_phase_directory_is_not_one` |
+| B158a | The project directory is the immediate subdirectory of `specs/` holding at least one phase directory: none means no phases rather than an error, and more than one is reported by name with the lexically first used. | `test_a_specs_directory_without_a_project_reports_no_phases`; `test_more_than_one_project_directory_is_reported_and_the_first_used`; `test_the_real_repository_resolves_to_the_atom_cli_project` |
 | B159 | Non-matching directories are ignored silently — a non-match is not a problem to report. | `test_a_non_phase_directory_is_ignored`; `test_a_non_phase_directory_produces_no_problem`; `test_the_phase_plan_document_beside_the_phases_is_not_a_phase` |
 | B160 | Phases are ordered lexically on the full directory name; mtime is never read. | `test_phases_are_ordered_lexically`; `test_the_two_digit_prefix_makes_lexical_order_numeric`; `test_phase_ten_sorts_after_phase_nine` |
 | B161 | A branch matching the phase pattern names the current phase. | `test_a_phase_branch_names_the_current_phase`; `test_the_branch_wins_over_the_lexically_greatest_phase` |

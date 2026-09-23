@@ -139,6 +139,21 @@ otherwise.
 inside `specs/<project>/`. The anchors are deliberate: a stray folder cannot
 masquerade as a phase.
 
+**B158a** — `<project>` is resolved by looking one level down: the project
+directory is the immediate subdirectory of `specs/` that contains at least one
+phase directory. If none does, there are no phases (B164). If more than one
+does, that is a genuine ambiguity — Atom reports it as a problem naming the
+candidates and uses the lexically first, so `status` still answers rather than
+refusing.
+
+This was missed in the first draft of this spec, which said `specs/<project>/`
+and never said how `<project>` was chosen. Today the question is invisible
+because this repository has exactly one such directory (`specs/atom-cli/`,
+alongside two loose `.md` files that are correctly ignored) — which is
+precisely why it was easy to miss and would have been resolved by whichever
+implementer hit it first. A rule that is unambiguous on the only data you have
+is still an unwritten rule.
+
 **B159** — Directories that do not match are ignored silently. `specs/` holds
 `phase-plan.md` and will hold more; a non-match is not a problem to report.
 
@@ -164,7 +179,7 @@ and then runs `atom status` is asking "what do I owe?" — and the useful answer
 is the list of seven artifacts, not an error. The cost is that a typo
 (`phase-09-ghost`) reports as a pristine new phase rather than a mistake. Atom
 cannot tell those apart, so it reports what it sees and says where it got it
-(B172) rather than guessing.
+(B177) rather than guessing.
 
 **B164** — If there are no phase directories and the branch names none, there
 is no current phase. Reported as such; not an error. A project that has not

@@ -1,0 +1,150 @@
+# TDD Log — Phase 6: `state`, derived
+
+A record of how the code was built, kept because the order things happened in is
+itself evidence.
+
+Four cycles, run as two pairs. The phase's defining fact is that it produced
+**seven defects in its own design spec, every one of them found by implementing
+it** — none by reading it, including the two readings that went looking for
+exactly this.
+
+Suite: **618 before the phase, 727 after.**
+
+| Cycle | File | Tests | Coverage | Commit |
+|---|---|---:|---:|---|
+| 1 | `phases.py` | 68 | 100% | `2615fc5` |
+| 2 | `state.py` | 24 | 100% | `b92a1fd` |
+| 3 | `status.py` + `report.py` renderers | 40 | 100% | working tree |
+| 4 | `cli.py` | 30 | — | working tree |
+
+---
+
+## Cycles 1 and 2 — run in parallel on disjoint files
+
+`phases.py` (derivation) and `state.py` (the approvals record) touch no shared
+code, so they were built concurrently by two agents with an explicit file
+ownership split. The split held: neither agent's commit contains a line from the
+other's file.
+
+**RED.** 68 tests for derivation, 24 for the record.
+
+**GREEN.** `phases.py` derives the phase from the branch and the directory
+listing and refuses to judge what it finds. `state.py` loses the `Phase` enum,
+the `Status` enum, `phase_index`, `next_phase`, `InvalidTransition`, and the
+transition logic — the phase is a net deletion of a state machine.
+
+**The check that mattered was not a test.** Whether any dataclass still carried a
+completeness field was verified by reflecting over `dataclasses.fields` for
+`Phase`, `PhaseArtifacts` and `Derivation`, rather than by reading the source and
+concluding it looked absent. The field genuinely does not exist, and that is now
+established by something other than an assurance.
+
+### Three defects found here, all by implementation
+
+1. **B172 contradicted Phase 3's B73** by merging `module_path` into
+   `state.json`. The implementing agent found it, called it "the only
+   ambiguity", and then **resolved it toward the spec** — which was wrong. This
+   is worth dwelling on: the agent did everything right, reported the conflict,
+   and still produced wrong code, because a reported ambiguity that is answered
+   in conversation leaves the defect in the document. The practice that came out
+   of it is A-5 in `decisions.md`.
+2. **B183 read as an exhaustive removal list** and an implementer deleted the
+   working event log. It was not exhaustive; it was a summary. Rule adopted: a
+   removal list must **name** what goes, and must never be inferable from what a
+   summary happens to mention.
+3. **B168/B170 leaned the wrong way** on a missing POC report. Resolved on the
+   direction of the error rather than the frequency — see P6-3.
+
+---
+
+## Cycle 3 — `status.py` and the three renderers
+
+**RED.** 40 tests: 22 named output tests, 2 for the B184 sweep, 1 prohibition
+test, and 15 for branches, defaults and enrichment.
+
+**GREEN.** `collect_status` assembles the report; three renderers in `report.py`
+turn it into text, JSON and the stderr problem block.
+
+**Two more defects, both found while writing the layer above:**
+
+4. **B158 never defined how `<project>` resolves** under `specs/`. The spec said
+   phases live in `specs/<project>/` and stopped. Added as **B158a**, and the
+   implementing agent was told mid-flight.
+5. **B163 cited B172 where it meant B177.** Found by extracting every `B`-number
+   citation programmatically and checking each resolved to a definition — not by
+   reading. Nothing in the repository does this check routinely, which is F6-D5.
+
+**The JSON contract test asserts a subset, not equality.** B179 names eight keys;
+B183 independently requires `last_event` and damaged-line reporting survive. An
+equality assertion would have made B183 unimplementable, so the test pins the
+eight as a guaranteed subset and `to_dict()` carries twelve. See A-2.
+
+---
+
+## Cycle 4 — `cli.py`
+
+**RED.** 30 tests, including five that run the real program as a subprocess.
+
+**GREEN.** `atom init` no longer claims a phase — it reports the module and the
+approvals count and points at `atom status`. `atom status` exits 0 whenever it
+could answer.
+
+**Three tests failed against the finished code, and all three were the tests.**
+Two called `record_approval(Approval(...))` when the signature is keyword-only;
+one still asserted the pre-B181 non-zero exit on a corrupt state file. Fixing
+tests rather than code is usually the wrong instinct, so each was checked against
+the spec first: B181 is explicit that a damaged state file is a *reported
+problem*, not an unreadable root, and the keyword-only signature is what the
+committed `state.py` actually exposes.
+
+---
+
+## The measurement that ended the phase
+
+Six phases of this project have now shown that a green suite does not prove a
+program runs. Phase 1: 55 green, unbuildable. Phase 2: 169 green, `NameError`.
+Phase 3: 273 green, overlapping messages. Phase 4: 482 green while `atom review`
+produced no review. Phase 5: 595 green and a clean `--help`, crashing on first
+real invocation.
+
+So 727 green ended nothing. The phase ended when the program was run:
+
+```
+$ python -m atom.cli status --no-colour
+Project: C:\Users\gimotwan\work\atom
+Phase:   phase-05-ship (resolved from the git branch)
+Artifacts:
+  [x] poc-brief.md   [x] poc-report.md   [x] design-spec.md
+  [x] test-spec.md   [x] tdd-log.md      [x] findings.md   [x] decisions.md
+Other phases:
+  phase-01-check   6/6      phase-02-poc     7/7
+  phase-03-state   7/7      phase-04-review  7/7
+  phase-06-state   5/7
+No problems found.
+EXIT=0
+```
+
+The baseline it had to beat was `Phase: unknown`, exit 1. The JSON surface was
+run separately and parsed, rather than eyeballed: 13 keys, `phase_source`
+`branch`, six phases, no problems.
+
+`phase-01-check` reading **6/6** rather than 6/7 is P6-3 working — that phase
+declared its POC skipped, and the only thing that excuses a missing POC report is
+that explicit declaration.
+
+## Two defects found after the code worked
+
+6. **The test spec never received B158a.** The amendment reached `status.py` and
+   three tests and stopped. An amendment has more than one destination
+   (`findings.md` §9).
+7. **B181's non-zero exit is unreachable**, and so is the red problem rendering
+   tied to it, because the root is always the working directory. Measured:
+   `could_answer` is false only for inputs that also produce **zero** problems,
+   so the red branch cannot execute. Left unfixed on purpose — the repair is a
+   design fork belonging to the developer (A-6, F6-D6).
+
+The seventh is the phase's sharpest lesson. This phase also added a framework
+rule that a branch which cannot fail is decoration rather than robustness. It
+was written about tests, on the same day, and the production code shipped with
+an instance of exactly that shape sitting in it — found only because a
+subordinate agent's report was checked instead of believed.
