@@ -2,7 +2,7 @@
 project: "atom-cli"
 phase: "phase-01-check"
 date: "2026-09-23"
-status: "POC deliberately skipped - no spike was run"
+status: "skipped"
 written: "retrospectively, during Phase 6"
 ---
 

@@ -2,7 +2,7 @@
 project: "atom-cli"
 phase: "phase-06-state"
 date: "2026-09-23"
-status: "observations recorded after the spike ran"
+status: "ran"
 spike: "poc/derived-state/spike.py, poc/derived-state/probe_mtime.py"
 ---
 

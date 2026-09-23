@@ -2,6 +2,7 @@
 project: "atom-cli"
 phase: "phase-05-ship"
 date: "2026-09-18"
+status: "ran"
 brief: "poc-brief.md"
 spike: "../../../poc/gh-ship/spike.py"
 raw: "../../../poc/gh-ship/results.json"

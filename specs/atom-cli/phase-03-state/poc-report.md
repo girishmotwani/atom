@@ -1,3 +1,11 @@
+---
+project: "atom-cli"
+phase: "phase-03-state"
+date: "2026-09-16"
+status: "ran"
+spike: "../../../poc/state-persistence-on-windows/spike.py"
+---
+
 # POC Report — Phase 3: state persistence on Windows
 
 **Spike:** `poc/state-persistence-on-windows/spike.py`

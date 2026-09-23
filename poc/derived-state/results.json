@@ -4,21 +4,18 @@
       "complete": [
         "phase-02-poc",
         "phase-03-state",
-        "phase-04-review"
+        "phase-04-review",
+        "phase-05-ship"
       ],
       "detail": {
         "phase-01-check": [
-          "poc-brief.md",
-          "poc-report.md"
+          "poc-brief.md"
         ],
         "phase-02-poc": [],
         "phase-03-state": [],
         "phase-04-review": [],
-        "phase-05-ship": [
-          "tdd-log.md"
-        ],
+        "phase-05-ship": [],
         "phase-06-state": [
-          "poc-report.md",
           "design-spec.md",
           "test-spec.md",
           "tdd-log.md",
@@ -31,21 +28,18 @@
       "complete": [
         "phase-02-poc",
         "phase-03-state",
-        "phase-04-review"
+        "phase-04-review",
+        "phase-05-ship"
       ],
       "detail": {
         "phase-01-check": [
-          "poc-brief.md",
-          "poc-report.md"
+          "poc-brief.md"
         ],
         "phase-02-poc": [],
         "phase-03-state": [],
         "phase-04-review": [],
-        "phase-05-ship": [
-          "tdd-log.md"
-        ],
+        "phase-05-ship": [],
         "phase-06-state": [
-          "poc-report.md",
           "design-spec.md",
           "test-spec.md",
           "tdd-log.md",
@@ -58,21 +52,18 @@
       "complete": [
         "phase-02-poc",
         "phase-03-state",
-        "phase-04-review"
+        "phase-04-review",
+        "phase-05-ship"
       ],
       "detail": {
         "phase-01-check": [
-          "poc-brief.md",
-          "poc-report.md"
+          "poc-brief.md"
         ],
         "phase-02-poc": [],
         "phase-03-state": [],
         "phase-04-review": [],
-        "phase-05-ship": [
-          "tdd-log.md"
-        ],
+        "phase-05-ship": [],
         "phase-06-state": [
-          "poc-report.md",
           "design-spec.md",
           "test-spec.md",
           "tdd-log.md",
@@ -85,22 +76,19 @@
       "complete": [
         "phase-02-poc",
         "phase-03-state",
-        "phase-04-review"
+        "phase-04-review",
+        "phase-05-ship"
       ],
       "detail": {
         "phase-01-check": [
           "poc-brief.md",
-          "poc-report.md",
           "tdd-log.md"
         ],
         "phase-02-poc": [],
         "phase-03-state": [],
         "phase-04-review": [],
-        "phase-05-ship": [
-          "tdd-log.md"
-        ],
+        "phase-05-ship": [],
         "phase-06-state": [
-          "poc-report.md",
           "design-spec.md",
           "test-spec.md",
           "tdd-log.md",
@@ -113,20 +101,18 @@
       "complete": [
         "phase-02-poc",
         "phase-03-state",
-        "phase-04-review"
+        "phase-04-review",
+        "phase-05-ship"
       ],
       "detail": {
         "phase-01-check": [
           "poc-brief.md",
-          "poc-report.md",
           "tdd-log.md"
         ],
         "phase-02-poc": [],
         "phase-03-state": [],
         "phase-04-review": [],
-        "phase-05-ship": [
-          "tdd-log.md"
-        ],
+        "phase-05-ship": [],
         "phase-06-state": [
           "poc-brief.md",
           "poc-report.md",
@@ -213,6 +199,14 @@
       "phase-06-state"
     ],
     "mtime_here": [
+      "phase-02-poc",
+      "phase-03-state",
+      "phase-04-review",
+      "phase-06-state",
+      "phase-05-ship",
+      "phase-01-check"
+    ],
+    "lexical_clone": [
       "phase-01-check",
       "phase-02-poc",
       "phase-03-state",
@@ -220,28 +214,23 @@
       "phase-05-ship",
       "phase-06-state"
     ],
-    "lexical_clone": [
-      "phase-01-check",
-      "phase-02-poc",
-      "phase-03-state",
-      "phase-04-review",
-      "phase-05-ship"
-    ],
     "mtime_clone": [
       "phase-01-check",
       "phase-02-poc",
       "phase-03-state",
       "phase-04-review",
-      "phase-05-ship"
+      "phase-05-ship",
+      "phase-06-state"
     ],
-    "distinct_mtimes": 5,
-    "total": 5,
+    "distinct_mtimes": 6,
+    "total": 6,
     "clone_stamps": {
-      "phase-01-check": 1790154568.394127,
-      "phase-02-poc": 1790154568.583635,
-      "phase-03-state": 1790154568.7710917,
-      "phase-04-review": 1790154568.961186,
-      "phase-05-ship": 1790154569.1329398
+      "phase-01-check": 1790155034.0516944,
+      "phase-02-poc": 1790155034.0577338,
+      "phase-03-state": 1790155034.0675428,
+      "phase-04-review": 1790155034.07016,
+      "phase-05-ship": 1790155034.1049871,
+      "phase-06-state": 1790155034.1462252
     }
   },
   "q4": {
