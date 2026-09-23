@@ -236,3 +236,30 @@ claim.
 deliberately rather than learned again: the design spec (B181, with the
 correction recorded in place), the test spec (B181's row and its test names),
 the code, and the tests.
+
+## Cycle 7 -- F6-D10: the mixed `specs/` layout
+
+**Red.** Three tests added to `test_status.py` beside the existing B158a cases:
+a mixed tree must report the ignored loose phase directories *by name*; the
+mixed tree must still report the project directory's phases; and two guards --
+the flat tree and the nested tree must each stay at zero problems. Run: **1
+failed, 43 passed**. The two guards passing immediately is correct here and was
+checked rather than assumed: they pin behaviour that must not change, so a
+guard that failed would have meant the fix had already leaked.
+
+**Green.** `_resolve_project_dir` now scans `specs/` for phase-shaped
+directories once a project directory has been chosen, and appends a problem
+naming them and the directory that won. The zero-candidate branch is untouched
+and stays silent. Full suite: **747 passed** (744 + 3).
+
+**Verified by running it.** A scratch mixed-layout project was built in `%TEMP%`
+and `python -m atom.cli status` run against it. The advisory appeared naming
+both ignored directories, `phase-05-ship` was still reported with its artifact
+list, and the exit code was 0 -- P6-5 holding under a new problem type. The
+body goes to stdout and the advisory to stderr; the two streams interleaved on
+screen, which was confirmed to be a display artifact by capturing them
+separately, not assumed to be one.
+
+**Four destinations** (F6-D7): design spec B158a amended in place, test spec
+B158a row rewritten with the three new test names, findings §12 added and the
+deferred row marked Resolved, decision P6-6 recorded.

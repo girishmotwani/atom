@@ -141,10 +141,25 @@ masquerade as a phase.
 
 **B158a** — `<project>` is resolved by looking one level down: the project
 directory is the immediate subdirectory of `specs/` that contains at least one
-phase directory. If none does, there are no phases (B164). If more than one
-does, that is a genuine ambiguity — Atom reports it as a problem naming the
-candidates and uses the lexically first, so `status` still answers rather than
-refusing.
+phase directory. If none does, resolution falls back to `specs/` itself, so a
+flat `specs/phase-NN-slug` layout keeps working — unambiguous, therefore silent.
+If more than one does, that is a genuine ambiguity — Atom reports it as a problem
+naming the candidates and uses the lexically first, so `status` still answers
+rather than refusing.
+
+> **Amended after implementation (F6-D10).** This rule originally stopped at the
+> two clean cases and said nothing about a third: a project directory sitting
+> *beside* loose phase directories. Measuring it showed the resolver picks the
+> project directory and the loose phases are then never scanned — two phases
+> disappearing from the report with nothing said. That is not the deliberate
+> leniency above; it is silent data loss, and it is the exact shape of a
+> half-finished migration to this very layout, i.e. the moment a developer most
+> needs telling. It is also inconsistent with the multi-candidate case, which
+> already treats "I had to choose" as reportable. **A project directory beside
+> loose phase directories is reported as a problem naming every ignored
+> directory and what to do about it; the project directory is still used, so
+> `status` still answers.** The pure flat layout stays silent — the leniency is
+> intended where there is nothing to be ambiguous with.
 
 This was missed in the first draft of this spec, which said `specs/<project>/`
 and never said how `<project>` was chosen. Today the question is invisible

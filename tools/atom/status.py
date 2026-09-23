@@ -211,11 +211,15 @@ def _resolve_project_dir(specs_directory: Path, report: StatusReport) -> Path:
 
     Returns the resolved directory, or ``specs_directory`` itself when nothing
     under it looks like a project. Returning the parent in that case is
-    deliberate: ``derive`` then finds no phase directories and reports "no
-    current phase" (B164), while a branch that names a phase still resolves
-    (B163). More than one candidate is a genuine ambiguity -- reported as a
-    problem naming the candidates, with the lexically first used so status still
-    answers rather than refusing.
+    deliberate: it lets the flat ``specs/phase-NN-slug`` layout keep working
+    unambiguously, and when there are no phase directories either, ``derive``
+    reports "no current phase" (B164) while a branch that names a phase still
+    resolves (B163).
+
+    Two shapes are reported as problems rather than resolved silently: more than
+    one candidate project directory, and a candidate sitting beside loose phase
+    directories that will therefore not be read (F6-D10). Both are ambiguities,
+    and in both cases status still answers using the lexically first candidate.
     """
 
     if not specs_directory.is_dir():
@@ -230,6 +234,9 @@ def _resolve_project_dir(specs_directory: Path, report: StatusReport) -> Path:
     ]
 
     if not candidates:
+        # No project directory. Loose `specs/phase-NN-slug` directories are
+        # unambiguous on their own, so the pre-B158a flat layout keeps working
+        # and keeps quiet: returning the parent lets derive scan them directly.
         return specs_directory
 
     if len(candidates) > 1:
@@ -239,6 +246,26 @@ def _resolve_project_dir(specs_directory: Path, report: StatusReport) -> Path:
             f"using {candidates[0].name}. If this is intentional, Atom reports "
             "against a single project -- move the others aside or configure which "
             "one to read."
+        )
+
+    # A project directory *and* loose phase directories is the shape of a
+    # half-finished move to the B158a layout. The project directory wins, which
+    # is defensible -- but the loose phases are then never scanned, and dropping
+    # them in silence is not (F6-D10). Atom already treats two project
+    # directories as an ambiguity worth reporting; this is the same ambiguity
+    # wearing different clothes, and the moment a developer most needs telling
+    # is precisely mid-migration.
+    loose = [
+        child.name
+        for child in sorted(specs_directory.iterdir(), key=lambda path: path.name)
+        if child.is_dir() and PHASE_DIR.match(child.name)
+    ]
+    if loose:
+        report.problems.append(
+            f"specs/ holds phase directories ({', '.join(loose)}) beside the "
+            f"project directory {candidates[0].name}; they are not being read. "
+            f"Move them into {candidates[0].name}/, or move the project "
+            "directory aside, so every phase is reported from one place."
         )
 
     return candidates[0]

@@ -225,7 +225,7 @@ An amendment has more than one destination. Recorded as F6-D7.
 | F6-D7 | `phase-06-state/test-spec.md` | B158a reached the code and the tests but not the test spec; a mid-flight amendment has more than one destination (see §9) | Fixed in this phase |
 | F6-D8 | `status.py` | B179 does not say whether the `artifacts` JSON key is all seven names or only the required subset; the full map was chosen and the count put in `phases[].required` | Pending |
 | F6-D9 | `status.py` | "a root that cannot be read at all" was implemented as `is_dir()`, so a permission-denied but existing directory would still report readable; not portably testable on Windows | Pending |
-| F6-D10 | `status.py` | `_resolve_project_dir` returns `specs/` itself when no child holds a phase, so the pre-B158a flat layout (`specs/phase-01-x`) is silently accepted as valid instead of reporting "no phases". Lenient rather than dangerous, and the leniency may be wanted — but it is undeclared either way | Pending — developer decision |
+| F6-D10 | `status.py` | **Resolved — see §12.** Recorded as leniency about the flat layout; measurement showed the important half was elsewhere. The flat layout is now a declared, supported, silent case; a project directory *beside* loose phase directories is reported | Resolved |
 
 ## 11. The review gate found what two readings and 727 tests did not
 
@@ -280,7 +280,7 @@ news.** Rewritten to name the actual pre-fix wording.
 | v1 file called corrupt | Real, mis-stated | Fixed — `_outdated_file_problem` names it and says to delete it |
 | `{}` becomes a blank approval | Real | Fixed — every field must be present *and* a string |
 | Problems scoped to the current phase | Real (two sites) | Fixed — `derive` collects across all phases, which is safe because every message is already phase-prefixed |
-| `specs/` fallback when no project dir | Low | Deferred as F6-D10 |
+| `specs/` fallback when no project dir | Low | Deferred as F6-D10 — later measured and resolved, see §12 |
 
 
 
@@ -316,3 +316,38 @@ news.** Rewritten to name the actual pre-fix wording.
   missing artifacts, while B180 actually governed it.
 - **Code can perform diligence without exercising it.** A branch that cannot run
   and a coercion that cannot complain are the same defect facing opposite ways.
+
+## 12. F6-D10: the recorded half of a finding was the less important half
+
+F6-D10 was filed as leniency: `_resolve_project_dir` falls back to `specs/`
+itself when no child holds a phase, so the pre-B158a flat layout is accepted
+without comment. Rather than argue about whether that leniency was wanted, four
+layouts were built and measured:
+
+| Layout | Resolves to | Phases found | Problems |
+|---|---|---|---:|
+| A -- flat `specs/phase-01-a`, `phase-02-b` | `specs/` | both | 0 |
+| B -- nested `specs/proj/phase-*` | `proj` | both | 0 |
+| **C -- mixed: `specs/proj/phase-05-e` plus loose `phase-01-a`, `phase-02-b`** | `proj` | **only `phase-05-e`** | **0** |
+| D -- two project directories | `alpha` | alpha's only | 1 |
+
+Row A is the filed finding, and on inspection it is fine: with nothing to be
+ambiguous with, a flat tree has exactly one reading. Row C is the defect. Two
+phases vanish from the report and nothing is said -- not leniency but silent
+data loss. It is also inconsistent with row D, where the code already treats
+"I had to choose" as reportable; a candidate beside loose phases is the same
+ambiguity wearing different clothes. And a mixed tree is precisely what a
+half-finished migration to B158a looks like, which is the moment a developer
+most needs to be told what is being ignored.
+
+Resolution: the mixed layout is reported as a problem naming every ignored
+directory and what to do about it, with the project directory still used so
+`status` still answers; the flat layout is now declared supported and stays
+silent. B158a amended in the design spec and the test spec; three tests added,
+two of them guards that the flat and nested cases stay quiet.
+
+**Learning.** *A finding is a report of a symptom, not a description of the
+defect.* This one named a real behaviour, explained it accurately, and pointed
+at the least interesting instance of it. Building the neighbouring cases cost
+ten minutes and moved the finding from "developer decision about a preference"
+to "two phases disappear without a word."

@@ -563,6 +563,55 @@ def test_more_than_one_project_directory_is_reported_and_the_first_used(tmp_path
     assert [phase.name for phase in report.derivation.phases] == ["phase-01-check"]
 
 
+def test_a_project_directory_beside_loose_phase_directories_is_reported(tmp_path):
+    """F6-D10: a half-migrated layout must not drop phases in silence.
+
+    `specs/` holding both a project directory and loose phase directories is the
+    shape of an unfinished move to B158a. Resolution picks the project directory
+    and the loose phases are never scanned -- which is defensible -- but saying
+    nothing is not: the developer sees a phase list with entries missing and no
+    indication that anything was skipped.
+    """
+    materialise(tmp_path / "specs" / "proj", {"phase-05-ship": full_files()})
+    materialise(tmp_path / "specs", {"phase-01-check": full_files(), "phase-02-poc": full_files()})
+
+    report = _collect_with_defaults(tmp_path)
+
+    ignored = [problem for problem in report.problems if "phase-01-check" in problem]
+    assert ignored, "the ignored loose phase directories should be reported"
+    assert "phase-02-poc" in ignored[0], "every ignored phase is named, not just the first"
+    assert "proj" in ignored[0], "the report says which directory won"
+
+
+def test_the_mixed_layout_still_reports_the_project_directory_phases(tmp_path):
+    """Reporting the ambiguity must not change which phases are used."""
+    materialise(tmp_path / "specs" / "proj", {"phase-05-ship": full_files()})
+    materialise(tmp_path / "specs", {"phase-01-check": full_files()})
+
+    report = _collect_with_defaults(tmp_path)
+
+    assert [phase.name for phase in report.derivation.phases] == ["phase-05-ship"]
+
+
+def test_a_flat_layout_is_accepted_without_comment(tmp_path):
+    """The deliberate other half of F6-D10: loose phases *alone* are supported.
+
+    With no project directory to compete with, `specs/phase-NN-slug` is
+    unambiguous. Atom reads it and says nothing, so the pre-B158a layout keeps
+    working. This test exists to stop the mixed-layout fix above from leaking
+    into the unambiguous case.
+    """
+    materialise(tmp_path / "specs", {"phase-01-check": full_files(), "phase-02-poc": full_files()})
+
+    report = _collect_with_defaults(tmp_path)
+
+    assert [phase.name for phase in report.derivation.phases] == [
+        "phase-01-check",
+        "phase-02-poc",
+    ]
+    assert report.problems == []
+
+
 def test_the_real_repository_resolves_to_the_atom_cli_project():
     # The best fixture this rule will ever have: this repository's own specs/
     # tree, resolved from the test file's location rather than the cwd. It holds

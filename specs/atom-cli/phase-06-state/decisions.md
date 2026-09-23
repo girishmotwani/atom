@@ -276,3 +276,26 @@ exercised it; asserting the new behaviour alone would leave the same blind spot,
 since a reintroduced `could_answer` would sit unused and green. This mirrors the
 `exposes_no_*` guards Phase 6 already uses to keep the deleted state machine
 deleted. **A deletion that is not asserted is a deletion that comes back.**
+
+## P6-6. Report the mixed layout; keep the flat layout silent (resolves F6-D10)
+
+**Question.** F6-D10 asked whether `_resolve_project_dir` should keep accepting
+a flat `specs/phase-NN-slug` tree without comment.
+
+**What measurement changed.** Four layouts were built and run rather than
+reasoned about (findings §12). The flat tree is unambiguous and harmless. The
+*mixed* tree -- a project directory beside loose phase directories -- silently
+dropped two of three phases.
+
+**Decision.** Keep the flat layout supported and silent. Report the mixed
+layout as a problem naming every ignored directory, still resolving to the
+project directory so `status` answers rather than refuses.
+
+**Why not refuse.** Refusing would make `status` fail exactly when a developer
+is mid-migration and most wants to see where they are. B180 says every problem
+is reported; P6-5 says `status` always exits 0. Reporting and continuing is the
+only resolution consistent with both.
+
+**Why not stay silent.** The code already reports the two-project-directory
+case. A candidate beside loose phases is the same ambiguity, and the argument
+for reporting one is the argument for reporting the other.
