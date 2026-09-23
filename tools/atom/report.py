@@ -426,24 +426,22 @@ def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
 def render_status_problems(report: "StatusReport", use_colour: bool = True) -> str:
     """Render just the problems, for stderr. Empty string when there are none (B180).
 
-    Colour still carries meaning after Phase 6, even though ``could_answer`` is
-    now almost always true. Red is reserved for the single case where Atom could
-    *not* answer -- an unreadable project root -- which is exactly the case that
-    also drives a non-zero exit (B181). Everything else is an advisory: the
-    report was produced in full, and the problems are recoverable (a swept temp
-    file, unsaved work, a corrupt state file whose loss did not stop derivation).
-    So red is a rare, strong signal rather than a constant, and the amber heading
-    reads "Advisories" to match.
+    Every problem status reports is an advisory: the report was produced in
+    full, and the problem is recoverable (a swept temp file, unsaved work, a
+    corrupt state file whose loss did not stop derivation, a phase whose POC
+    report cannot be parsed). So there is one colour and one heading.
+
+    An earlier version reserved red for the case where Atom could not answer at
+    all. That case turned out to be unreachable -- status has no ``--root``, so
+    the root is the process's cwd, which necessarily exists -- and the red
+    branch was therefore decoration claiming to carry a signal it never carried
+    (F6-D6). Colour that never varies is not information.
     """
 
     if not report.problems:
         return ""
 
-    could_not_answer = not report.could_answer
-    colour = _RED if could_not_answer else _YELLOW
-    heading = "Problems:" if could_not_answer else "Advisories:"
-
-    lines = [f"{colour}{heading}{_RESET}" if use_colour else heading]
+    lines = [f"{_YELLOW}Advisories:{_RESET}" if use_colour else "Advisories:"]
     for problem in report.problems:
         # Problems are multi-line by design -- they carry recovery steps.
         for index, part in enumerate(str(problem).splitlines()):

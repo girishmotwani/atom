@@ -192,3 +192,47 @@ Advisories:
 The first line is the fix that matters most: before this cycle, `phase-01-old`
 was rendered in the phase list with no indication that its report could not be
 read.
+
+## Cycle 6 — deleting the exit code that could not fire
+
+The developer resolved F6-D6 by declaring `atom status` a report: it always
+exits 0, and there is one problem colour. This is the first change in the phase
+driven by a *decision* rather than a defect, and it is a deletion.
+
+**Red.** Two new guards failed as intended — the report still exposed
+`could_answer`, and the renderer still painted an unreadable root red. The
+scenario tests that previously asserted `could_answer is True` were rewritten to
+assert what actually matters (the report still answered), because an assertion
+about a property being deleted has to move to the property's replacement, not
+follow it into deletion.
+
+**Green.** `could_answer` removed from `status.py`; `cli.py` returns
+`EXIT_PASSED` unconditionally; `render_status_problems` reduced to one heading
+and one colour. A fourth test, at CLI level, drives four unrelated failure
+shapes through `main(["status"])` and asserts 0 each time *and* that stderr is
+non-empty — exiting 0 must not become a synonym for staying quiet.
+
+One test outside the changed files failed on the full run
+(`test_the_default_path_without_a_specs_directory_reports_no_phases`, which
+asserted `could_answer is True` in passing). **That is the argument for running
+the whole suite rather than the files you touched**: the property had a reader
+three hundred lines away from anything this cycle edited.
+
+**Verified.** 744 passing. Then the real CLI against a scratch project holding
+both a corrupt state file and an unparseable POC status:
+
+```
+2 problems reported below.
+Advisories:
+  - phase-01-old: poc-report.md declares an unrecognised status 'wibble'; ...
+  - ...\.atom\state.json does not contain Atom state: expected a JSON object, found a list.
+EXIT=0
+```
+
+Two genuine problems, an honest heading, and a zero exit — which is the whole
+claim.
+
+**The amendment had four destinations**, which is the F6-D7 lesson applied
+deliberately rather than learned again: the design spec (B181, with the
+correction recorded in place), the test spec (B181's row and its test names),
+the code, and the tests.

@@ -179,11 +179,24 @@ a branch that cannot fail is not robustness, it is decoration that tells a
 reader the program handles a case it does not. Colour and exit code are both
 claiming to carry a signal they never carry.
 
-Not fixed here — the repair is a design choice between three real options
+Not fixed when found — the repair was a design choice between three real options
 (declare `status` a report that always exits 0 and delete the dead branch; give
-`could_answer` a reachable meaning such as an unreadable `specs/` tree; or add
-`--root` so a caller can name a bad path) and that belongs to the developer, not
-to the implementer who found it. Recorded as F6-D6.
+`could_answer` a reachable meaning; or add `--root` so a caller can name a bad
+path) and that belonged to the developer, not to the implementer who found it.
+Recorded as F6-D6.
+
+**Resolved.** The developer chose the first option. `could_answer` is deleted,
+the exit is unconditionally 0, and there is a single problem colour. Three
+guards now pin the *absence* of the machinery rather than its behaviour — the
+report exposes no `could_answer`, the renderer never emits red, and the CLI
+exits 0 across four unrelated failure shapes. Pinning an absence is the only way
+this stays deleted: the original branch was invisible precisely because nothing
+exercised it, so a test asserting it is gone is the thing that was missing the
+first time.
+
+A detail worth keeping: the amendment's *cost* did not change. B181 always
+accepted that `status` cannot be a CI gate. What changed is the pretence that it
+was one for a sliver of cases it could never reach.
 
 ## 9. The test spec drifted from the design spec that amended it
 
@@ -208,7 +221,7 @@ An amendment has more than one destination. Recorded as F6-D7.
 | F6-D3 | `state.py` | `record_approval` emits no event, leaving the log silent about approvals (see §7) | Pending |
 | F6-D4 | `phases.py` | B158a resolves multiple candidate project directories by taking the lexically first and reporting a problem; never exercised in a real multi-project repo | Pending |
 | F6-D5 | project-wide | No check that a cited `B`-number resolves to a definition; defect 5 was found by an ad-hoc script, not by anything repeatable | Pending |
-| F6-D6 | `status.py`, `report.py` | `could_answer` is unreachable from the CLI, making B181's non-zero exit and the red rendering dead (see §8) | Pending — developer decision |
+| F6-D6 | `status.py`, `report.py` | `could_answer` is unreachable from the CLI, making B181's non-zero exit and the red rendering dead (see §8) | **Resolved** — developer chose "status is a report": `could_answer` deleted, exit always 0, one problem colour; B181 amended |
 | F6-D7 | `phase-06-state/test-spec.md` | B158a reached the code and the tests but not the test spec; a mid-flight amendment has more than one destination (see §9) | Fixed in this phase |
 | F6-D8 | `status.py` | B179 does not say whether the `artifacts` JSON key is all seven names or only the required subset; the full map was chosen and the count put in `phases[].required` | Pending |
 | F6-D9 | `status.py` | "a root that cannot be read at all" was implemented as `is_dir()`, so a permission-denied but existing directory would still report readable; not portably testable on Windows | Pending |

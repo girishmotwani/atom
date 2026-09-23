@@ -353,23 +353,30 @@ def test_a_problem_does_not_suppress_the_rest_of_the_report(tmp_path):
 
 
 # ===========================================================================
-# Output -- exit code (B181)
+# Output -- exit code (B181, amended)
+#
+# B181 originally reserved a non-zero exit for "a project root that cannot be
+# read at all". That condition was measured to be unreachable (F6-D6): status
+# takes no --root, so the root is the process's cwd, which necessarily exists.
+# The amended behaviour is simpler and honest -- `atom status` is a report, and
+# a report always exits 0. These tests pin that, and the guard below pins the
+# *absence* of the machinery, so it cannot quietly return.
 # ===========================================================================
 
-def test_a_phase_missing_artifacts_exits_zero(tmp_path):
+def test_a_phase_missing_artifacts_still_answers(tmp_path):
     # Missing artifacts are information, not failure: status still answered.
     partial = some_files(("design-spec.md",))
     report = collect(tmp_path, {"phase-02-poc": partial}, branch="phase-02-poc")
-    assert report.could_answer is True
+    assert report.derivation.current is not None
 
 
-def test_a_project_with_no_phases_exits_zero(tmp_path):
+def test_a_project_with_no_phases_still_answers(tmp_path):
     report = collect(tmp_path, tree={}, branch="main")
     assert report.derivation.current is None
-    assert report.could_answer is True
+    assert report.problems == []
 
 
-def test_a_corrupt_state_file_exits_zero(tmp_path):
+def test_a_corrupt_state_file_still_answers(tmp_path):
     materialise(tmp_path / "specs" / "atom-cli", {"phase-01-check": full_files()})
     corrupt_state(tmp_path)
     project = Project(tmp_path)
@@ -379,11 +386,11 @@ def test_a_corrupt_state_file_exits_zero(tmp_path):
         specs_root=tmp_path / "specs" / "atom-cli",
     )
     assert report.problems
-    assert report.could_answer is True
+    assert report.derivation.current is not None
 
 
-def test_an_unreadable_project_root_exits_non_zero(tmp_path):
-    # A root that cannot be read at all is the one case reserved for non-zero.
+def test_an_unreadable_project_root_is_reported_not_raised(tmp_path):
+    """The case B181 reserved a non-zero exit for still must not crash."""
     missing_root = tmp_path / "does-not-exist"
     project = Project(missing_root)
     report = collect_status(
@@ -391,7 +398,18 @@ def test_an_unreadable_project_root_exits_non_zero(tmp_path):
         runner=runner_on_branch("main", missing_root),
         specs_root=missing_root / "specs" / "atom-cli",
     )
-    assert report.could_answer is False
+    assert report.derivation.current is None
+
+
+def test_the_status_report_exposes_no_could_answer(tmp_path):
+    """F6-D6: the property drove a branch that could never run. It is gone.
+
+    Asserted by `hasattr` rather than by behaviour, because a reintroduced
+    `could_answer` would otherwise sit unused and untested until someone wired
+    an exit code back to it.
+    """
+    report = collect(tmp_path, tree={}, branch="main")
+    assert not hasattr(report, "could_answer")
 
 
 # ===========================================================================
@@ -514,7 +532,7 @@ def test_the_default_path_without_a_specs_directory_reports_no_phases(tmp_path):
     report = _collect_with_defaults(tmp_path)
     assert report.derivation.phases == ()
     assert report.derivation.current is None
-    assert report.could_answer is True
+    assert report.problems == []
 
 
 def test_a_specs_directory_without_a_project_reports_no_phases(tmp_path):
@@ -682,13 +700,7 @@ def test_the_text_rendering_points_at_the_problems(tmp_path):
 
 
 def _report_with_problems(root: Path, problems: list[str]):
-    """Build a minimal StatusReport carrying `problems`, rooted at `root`.
-
-    Constructed directly so the test controls ``could_answer`` (which is simply
-    whether ``root`` is a directory) independently of the problems -- the one
-    combination hard to produce through collect_status is an unreadable root that
-    also has problems to show.
-    """
+    """Build a minimal StatusReport carrying `problems`, rooted at `root`."""
 
     from atom.phases import Derivation
     from atom.status import StatusReport
@@ -705,10 +717,9 @@ def test_the_problem_renderer_is_empty_when_there_are_no_problems(tmp_path):
     assert render_status_problems(report, use_colour=False) == ""
 
 
-def test_the_problem_renderer_uses_amber_advisories_when_atom_could_answer(tmp_path):
+def test_the_problem_renderer_uses_amber_advisories(tmp_path):
     from atom.report import _YELLOW
 
-    # A readable root -> could_answer is True -> advisories, not failures.
     report = _report_with_problems(tmp_path, ["a recoverable problem\nwith a step"])
     plain = render_status_problems(report, use_colour=False)
     assert plain.startswith("Advisories:")
@@ -717,12 +728,15 @@ def test_the_problem_renderer_uses_amber_advisories_when_atom_could_answer(tmp_p
     assert _YELLOW in render_status_problems(report, use_colour=True)
 
 
-def test_the_problem_renderer_uses_red_problems_when_atom_could_not_answer(tmp_path):
+def test_the_problem_renderer_never_uses_red(tmp_path):
+    """F6-D6: red was reserved for a condition that could not occur.
+
+    The unreadable root is used deliberately -- it is the exact input the red
+    branch claimed to serve -- so this fails if the branch is ever restored.
+    """
     from atom.report import _RED
 
-    # An unreadable root -> could_answer is False -> the genuine-failure colour.
     report = _report_with_problems(tmp_path / "does-not-exist", ["the root is gone"])
-    assert report.could_answer is False
     plain = render_status_problems(report, use_colour=False)
-    assert plain.startswith("Problems:")
-    assert _RED in render_status_problems(report, use_colour=True)
+    assert plain.startswith("Advisories:")
+    assert _RED not in render_status_problems(report, use_colour=True)

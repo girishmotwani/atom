@@ -69,20 +69,6 @@ class StatusReport:
     swept: list[SweptFile] = field(default_factory=list)
     damaged_log_lines: int = 0
 
-    @property
-    def could_answer(self) -> bool:
-        """Whether Atom could answer the question at all -- this decides the exit code.
-
-        After Phase 6 the answer is nearly always yes (B181). The phase and its
-        artifacts are derived from the filesystem, so a missing or corrupt
-        ``state.json`` no longer stops status: those are *problems*, reported and
-        recovered, but the question is still answered. Non-zero is reserved for
-        the one case where nothing can be derived -- a project root that cannot be
-        read at all. A directory that merely is not an Atom project still reads
-        fine and still gets a (mostly empty) answer, so it exits 0.
-        """
-        return self.root.is_dir()
-
     def to_dict(self) -> dict[str, Any]:
         """The JSON contract (B179).
 

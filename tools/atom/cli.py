@@ -418,19 +418,25 @@ def _run_status_command(arguments: argparse.Namespace) -> int:
             use_colour = not arguments.no_colour and sys.stderr.isatty()
             print(render_status_problems(report, use_colour=use_colour), file=sys.stderr)
 
-    # B181: exit 0 whenever Atom could answer the question -- which, now that
-    # the phase is derived from the filesystem, is nearly always. Missing
-    # artifacts are *information*, not failure: a phase in progress is the
-    # normal case, and the old behaviour (absent state file -> exit 1) is the
-    # precise bug this phase exists to fix. Non-zero is reserved for a project
-    # root Atom cannot read at all.
+    # B181 (amended): `atom status` always exits 0. It is a report, not a gate.
+    # Missing artifacts are *information*, not failure -- a phase in progress is
+    # the normal case, and the old behaviour (absent state file -> exit 1) is the
+    # precise bug this phase exists to fix.
     #
-    # The accepted cost: `atom status` can never be a CI gate asserting a phase
-    # is finished. That gate would have to decide what "finished" means, and the
-    # POC proved Atom cannot compute it -- a truncated four-section document
-    # passed every completeness rule tried. A gate that goes green on seven
-    # stubs is worse than no gate.
-    return EXIT_PASSED if report.could_answer else EXIT_CHECK_FAILED
+    # The original B181 reserved non-zero for "a project root Atom cannot read at
+    # all". That condition was measured to be unreachable: status takes no
+    # --root, so the root is the process's cwd, which necessarily exists. Worse,
+    # the only inputs that cleared it produced zero problems, so it would have
+    # exited non-zero while printing nothing to explain why. A branch that cannot
+    # run is not robustness; it tells a reader the program handles a case it does
+    # not (F6-D6).
+    #
+    # The accepted cost is unchanged: `atom status` can never be a CI gate
+    # asserting a phase is finished. That gate would have to decide what
+    # "finished" means, and the POC proved Atom cannot compute it -- a truncated
+    # four-section document passed every completeness rule tried. A gate that
+    # goes green on seven stubs is worse than no gate.
+    return EXIT_PASSED
 
 
 def _run_review_command(arguments: argparse.Namespace) -> int:

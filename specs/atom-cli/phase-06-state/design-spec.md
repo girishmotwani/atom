@@ -343,14 +343,28 @@ whole picture in a single call.
 **B180** — Every problem found is reported, not just the first. This is B93,
 inherited from Phase 1's B17, and it is unchanged.
 
-**B181** — The exit code is 0 when Atom could answer the question — which,
-after this phase, is nearly always. A non-zero exit is reserved for a project
-root that cannot be read at all. Missing artifacts are **information, not
-failure**; `atom status` is a report, and a phase in progress is the normal
-case.
+**B181** — `atom status` always exits 0. Missing artifacts are **information,
+not failure**; status is a report, and a phase in progress is the normal case.
 
-This is a deliberate change from today's behaviour, where the absent state
-file produced exit 1.
+This is a deliberate change from today's behaviour, where the absent state file
+produced exit 1.
+
+> **Amended after implementation.** As first written, B181 reserved a non-zero
+> exit for "a project root that cannot be read at all", and the problem
+> renderer painted that same case red. Both were then measured to be
+> unreachable: `atom status` takes no `--root`, so the root is the process's
+> current working directory, which necessarily exists and is a directory. Worse,
+> the only inputs that could clear the condition produced **zero** problems, so
+> the red branch could not execute even when constructed by hand — and had the
+> exit fired, it would have returned non-zero while printing nothing at all to
+> explain why.
+>
+> The reserved case was not narrow; it was empty. A branch that cannot run does
+> not make a program robust, it tells a reader the program handles a case it
+> does not — the same fault this phase's redundancy audit removes from tests.
+> Rather than invent a reachable meaning for it, the simpler claim is made
+> honestly: a report always exits 0, and there is one problem colour because
+> every problem status reports is recoverable. Recorded as F6-D6.
 
 The cost is accepted knowingly: `atom status` can never serve as a CI gate
 asserting that a phase is finished. That is the correct trade. Such a gate

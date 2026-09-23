@@ -195,6 +195,34 @@ def test_status_exits_zero_when_state_is_corrupt(
     assert captured.err.strip(), "a corrupt state file must still be reported"
 
 
+def test_status_exits_zero_whatever_it_finds(
+    project_root: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """B181 (amended): `atom status` is a report, and a report always exits 0.
+
+    Four unrelated shapes -- an uninitialised directory, a project with no
+    phases, a corrupt state file, an unrecognised POC status -- are asserted
+    together rather than one per test, because the claim being pinned is that
+    *no* input produces a non-zero exit. Per-case tests would pin four points
+    and leave the general rule unstated.
+    """
+    assert main(["status", "--no-colour"]) == 0
+
+    main(["init", "--module", "example.com/thing"])
+    assert main(["status", "--no-colour"]) == 0
+
+    make_phase(project_root, "phase-03-state", "design-spec.md")
+    (project_root / ".atom" / "state.json").write_text("[1, 2, 3]", encoding="utf-8")
+    assert main(["status", "--no-colour"]) == 0
+
+    report = project_root / "specs" / "demo" / "phase-03-state" / "poc-report.md"
+    report.write_text('---\nstatus: "wibble"\n---\n\nbody\n', encoding="utf-8")
+    assert main(["status", "--no-colour"]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.err.strip(), "exiting 0 must not mean staying silent"
+
+
 def test_status_json_is_machine_readable(
     project_root: Path, capsys: pytest.CaptureFixture
 ) -> None:

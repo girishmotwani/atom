@@ -232,3 +232,47 @@ usable state file" live in exactly one place.
 **Rejected:** a local `json.loads` on the error path. It is shorter, and it is a
 second reader free to drift from the first about what counts as a JSON object —
 the same duplication B172 rejects for `module_path`, at a smaller scale.
+
+---
+
+## P6-5. `atom status` is a report, so it always exits 0 (resolves F6-D6)
+
+**Context.** B181 reserved a non-zero exit — and a red problem rendering — for
+"a project root that cannot be read at all". §8 measured that condition to be
+unreachable. Three repairs were offered: declare status a report that always
+exits 0; give `could_answer` a reachable meaning; or add `--root`.
+
+**Chosen by the developer:** the first. `could_answer` is deleted, `cli.py`
+returns `EXIT_PASSED` unconditionally, and `render_status_problems` has one
+heading and one colour.
+
+**Why it is the right one of the three.** The other two both work by inventing
+a use for machinery that already exists, which is the wrong direction of
+travel — the branch was not a feature waiting for a caller, it was a claim that
+turned out to be empty. Adding `--root` in particular would have added a flag to
+the public surface in order to justify a line of code, and B181's own reasoning
+argues against `status` carrying pass/fail meaning at all: Atom cannot compute
+whether a phase is finished (F6-1), so an exit code from it can only ever mislead.
+
+**What is given up.** Nothing that was ever available. A caller wanting a
+machine-readable verdict uses `--json` and decides for itself, which was already
+the documented path (B179).
+
+**Cost paid instead:** `status` now cannot signal catastrophe even if a future
+change makes catastrophe possible. If a `--root` flag is ever added, the exit
+code question reopens — and should be answered then, with the flag in hand,
+rather than pre-answered now by a branch nothing can reach.
+
+---
+
+## A-11. Pin the absence, not the behaviour
+
+**Chosen.** The three tests added for P6-5 assert that the machinery is *gone* —
+`hasattr(report, "could_answer")` is false, the renderer never emits red — rather
+than only asserting the new behaviour.
+
+**Reasoning.** The dead branch survived Phase 6 precisely because nothing
+exercised it; asserting the new behaviour alone would leave the same blind spot,
+since a reintroduced `could_answer` would sit unused and green. This mirrors the
+`exposes_no_*` guards Phase 6 already uses to keep the deleted state machine
+deleted. **A deletion that is not asserted is a deletion that comes back.**
