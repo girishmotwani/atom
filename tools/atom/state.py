@@ -168,7 +168,7 @@ class Project:
         module_path = self._module_path_best_effort()
         try:
             # read_json requires "approvals": a version-1 file (or any dict that
-            # forgot it) is rejected here as corrupt, which is what we want.
+            # forgot it) is rejected here, and the two cases are told apart below.
             payload = read_json(self.state_path, required_keys=("approvals",))
         except StateFileMissing:
             # The whole point of the phase: a missing file is a usable answer,
@@ -177,11 +177,46 @@ class Project:
         except StateFileCorrupt as error:
             # Valid-JSON-but-wrong-shape lands here too (e.g. a top-level array),
             # because read_json validates shape and not merely syntax (B175).
+            problem = self._outdated_file_problem() or str(error)
             return LoadedState(
-                state=ProjectState(module_path=module_path), problems=[str(error)]
+                state=ProjectState(module_path=module_path), problems=[problem]
             )
 
         return self._interpret(payload, module_path)
+
+    def _outdated_file_problem(self) -> str | None:
+        """Describe a version-1 state file, or return None if it is not one.
+
+        A v1 file is intact, not damaged -- it is simply from before Phase 6 --
+        and saying "missing required key" about it is misleading. Recognition is
+        by v1's own fields rather than by a version number, because the v1 writer
+        emitted no "version" key at all; B172's ``"version": 2`` only helps a
+        future v2->v3 move. Nothing is migrated: v1 recorded a phase and a status,
+        both of which are derived now, so there is nothing in it worth keeping.
+        """
+
+        try:
+            # Re-read with no required keys so the same parser and the same
+            # shape rules apply; only the key requirement is relaxed. Doing the
+            # parse by hand here would be a second reader free to disagree with
+            # the first about what counts as a JSON object.
+            payload = read_json(self.state_path)
+        except (StateFileMissing, StateFileCorrupt):
+            # Unreadable, not JSON, or not an object at all: that is genuine
+            # damage, and the caller's original message already says so.
+            return None
+
+        if "approvals" in payload:
+            return None
+        if not ("phase" in payload and "status" in payload):
+            return None
+
+        return (
+            f"{self.state_path} is a version 1 state file, written before phases "
+            f"and statuses were derived rather than stored. Nothing in it needs "
+            f"rescuing: delete the file and Atom will treat the project as having "
+            f"no recorded approvals."
+        )
 
     def load_config(self) -> dict[str, Any]:
         """Read config.json, the developer's chosen module path (B73).
@@ -250,11 +285,27 @@ class Project:
                         f"{type(entry).__name__}."
                     )
                     continue
+                # Every field must be present *and* a string. The previous
+                # version used str(entry.get(name, "")), which turned {} into an
+                # apparently valid approval with blank fields -- silently
+                # manufacturing a record that asserts a human approved something.
+                # Coercion is not reading: str(7) is "7", which looks like a date.
+                missing = [
+                    name
+                    for name in ("phase", "gate", "date")
+                    if not isinstance(entry.get(name), str)
+                ]
+                if missing:
+                    problems.append(
+                        f"{self.state_path} has a malformed approval at position "
+                        f"{index}: {', '.join(missing)} must each be a string."
+                    )
+                    continue
                 approvals.append(
                     Approval(
-                        phase=str(entry.get("phase", "")),
-                        gate=str(entry.get("gate", "")),
-                        date=str(entry.get("date", "")),
+                        phase=entry["phase"],
+                        gate=entry["gate"],
+                        date=entry["date"],
                     )
                 )
 

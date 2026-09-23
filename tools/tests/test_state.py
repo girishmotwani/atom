@@ -316,3 +316,146 @@ def test_the_state_module_exposes_no_transition_machinery() -> None:
     assert not hasattr(state_module, "next_phase")
     assert not hasattr(state_module, "InvalidTransition")
     assert not hasattr(ProjectState, "transition_to")
+
+
+# ---------------------------------------------------------------------------
+# Telling an outdated file from a damaged one
+#
+# Added after the Phase 6 review gate. Phase 3 wrote {"phase": ..., "status":
+# ...}; Phase 6 requires "approvals" instead. A v1 file therefore fails the
+# required-key check and was reported as *corrupt* -- which is untrue. The file
+# is intact; it is simply from before this phase. Atom's whole stance is that it
+# reports what it can actually tell, so it must say "outdated", not "damaged".
+#
+# Note the shape being matched: the v1 writer emitted no "version" key at all,
+# so version-1 is recognised by its own fields (phase + status) rather than by a
+# version number. B172's "version": 2 only helps a future v2->v3 move.
+# ---------------------------------------------------------------------------
+
+
+def write_state(path: Path, payload: object) -> None:
+    """Write a raw state.json payload, bypassing the writer's own shaping."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_a_version_one_state_file_is_reported_as_outdated(tmp_path: Path) -> None:
+    project = Project(tmp_path)
+    write_state(project.state_path, {"phase": "phase-03-state", "status": "in-progress"})
+
+    loaded = project.load()
+
+    assert len(loaded.problems) == 1
+    assert "version 1" in loaded.problems[0]
+
+
+def test_an_outdated_state_file_is_not_called_corrupt(tmp_path: Path) -> None:
+    """The distinction is the entire point: an intact old file is not damaged.
+
+    The assertion names the *current* wording deliberately. An earlier draft of
+    this test only forbade the words "corrupt" and "unusable" -- which the code
+    never said -- so it passed before the fix existed. A guard that cannot fail
+    is decoration; this one fails against the pre-fix message.
+    """
+    project = Project(tmp_path)
+    write_state(project.state_path, {"phase": "phase-03-state", "status": "in-progress"})
+
+    problem = project.load().problems[0]
+
+    assert "missing required key" not in problem
+    assert "corrupt" not in problem.lower()
+
+
+def test_an_outdated_state_file_says_what_to_do_about_it(tmp_path: Path) -> None:
+    """A problem the developer cannot act on is only half a report."""
+    project = Project(tmp_path)
+    write_state(project.state_path, {"phase": "phase-03-state", "status": "in-progress"})
+
+    assert "delete" in project.load().problems[0].lower()
+
+
+def test_an_outdated_state_file_yields_no_approvals(tmp_path: Path) -> None:
+    """Nothing is salvaged from v1: it never recorded an approval to salvage."""
+    project = Project(tmp_path)
+    write_state(project.state_path, {"phase": "phase-03-state", "status": "in-progress"})
+
+    assert project.load().state.approvals == []
+
+
+def test_a_file_missing_approvals_without_the_v1_shape_is_still_corrupt(
+    tmp_path: Path,
+) -> None:
+    """Only the actual v1 shape earns the gentler message; junk stays junk."""
+    project = Project(tmp_path)
+    write_state(project.state_path, {"something": "else"})
+
+    problem = project.load().problems[0]
+
+    assert "version 1" not in problem
+
+
+# ---------------------------------------------------------------------------
+# A malformed approval is a problem, not a blank record
+#
+# Added after the Phase 6 review gate. A non-dict entry already raised a
+# problem, but a dict missing its fields was coerced to Approval("", "", "") and
+# presented as a valid approval. That is the worse of the two failures: it
+# silently manufactures a record asserting a human approved something.
+# ---------------------------------------------------------------------------
+
+
+def test_an_approval_missing_a_field_is_a_problem(tmp_path: Path) -> None:
+    project = Project(tmp_path)
+    write_state(project.state_path, {"version": 2, "approvals": [{"phase": "phase-06-state"}]})
+
+    loaded = project.load()
+
+    assert len(loaded.problems) == 1
+    assert "gate" in loaded.problems[0] and "date" in loaded.problems[0]
+
+
+def test_an_empty_approval_object_is_not_a_valid_approval(tmp_path: Path) -> None:
+    """The case the reviewer named: `{}` must not become a blank approval."""
+    project = Project(tmp_path)
+    write_state(project.state_path, {"version": 2, "approvals": [{}]})
+
+    loaded = project.load()
+
+    assert loaded.state.approvals == []
+    assert loaded.problems != []
+
+
+def test_an_approval_with_a_non_string_field_is_a_problem(tmp_path: Path) -> None:
+    """str() would happily turn 7 into "7"; that is coercion, not reading."""
+    project = Project(tmp_path)
+    write_state(
+        project.state_path,
+        {"version": 2, "approvals": [{"phase": "phase-06-state", "gate": 7, "date": "2026-09-24"}]},
+    )
+
+    loaded = project.load()
+
+    assert loaded.state.approvals == []
+    assert "gate" in loaded.problems[0]
+
+
+def test_a_malformed_approval_names_its_position(tmp_path: Path) -> None:
+    """One bad entry among several is only findable if the report locates it."""
+    good = {"phase": "phase-06-state", "gate": "design-spec", "date": "2026-09-24"}
+    project = Project(tmp_path)
+    write_state(project.state_path, {"version": 2, "approvals": [good, {}]})
+
+    assert "position 1" in project.load().problems[0]
+
+
+def test_well_formed_approvals_still_load(tmp_path: Path) -> None:
+    """Tightening the check must not reject the shape Atom itself writes."""
+    good = {"phase": "phase-06-state", "gate": "design-spec", "date": "2026-09-24"}
+    project = Project(tmp_path)
+    write_state(project.state_path, {"version": 2, "approvals": [good]})
+
+    loaded = project.load()
+
+    assert loaded.problems == []
+    assert loaded.state.approvals == [Approval("phase-06-state", "design-spec", "2026-09-24")]

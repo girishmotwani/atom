@@ -174,7 +174,14 @@ def derive(specs_root: Path, runner: CommandRunner, working_directory: Path) -> 
         current = None
         source = "none"
 
-    problems = list(current.artifacts.problems) if current is not None else []
+    # B180: every problem found is reported, not just the first -- and not just
+    # the current phase's. `status` renders every phase, so a phase whose
+    # poc-report.md cannot be read must say why, otherwise it appears in the
+    # output with silently wrong data. Every problem message is already prefixed
+    # with its phase name, which is what makes aggregating them across phases
+    # legible. `current` is always a member of `phases` (it is either found
+    # there or appended above), so iterating `phases` counts it exactly once.
+    problems = [problem for phase in phases for problem in phase.artifacts.problems]
     return Derivation(phases=tuple(phases), current=current, source=source, problems=problems)
 
 

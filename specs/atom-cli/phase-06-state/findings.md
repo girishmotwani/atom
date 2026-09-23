@@ -212,8 +212,64 @@ An amendment has more than one destination. Recorded as F6-D7.
 | F6-D7 | `phase-06-state/test-spec.md` | B158a reached the code and the tests but not the test spec; a mid-flight amendment has more than one destination (see §9) | Fixed in this phase |
 | F6-D8 | `status.py` | B179 does not say whether the `artifacts` JSON key is all seven names or only the required subset; the full map was chosen and the count put in `phases[].required` | Pending |
 | F6-D9 | `status.py` | "a root that cannot be read at all" was implemented as `is_dir()`, so a permission-denied but existing directory would still report readable; not portably testable on Windows | Pending |
+| F6-D10 | `status.py` | `_resolve_project_dir` returns `specs/` itself when no child holds a phase, so the pre-B158a flat layout (`specs/phase-01-x`) is silently accepted as valid instead of reporting "no phases". Lenient rather than dangerous, and the leniency may be wanted — but it is undeclared either way | Pending — developer decision |
 
-## Learnings
+## 11. The review gate found what two readings and 727 tests did not
+
+The Phase 6 review gate ran two models three times each — 6/6 runs completed,
+one reply unparseable — over a 32-file, +6415/−445 diff. It produced five
+finding groups. Every one came from a single model (`gpt-5.4`); the other model
+found nothing in three runs, and most findings appeared in only 1 of 3 runs.
+
+**A 1-of-3 finding from one model is a weak signal that still has to be
+checked.** Three of the five were real defects. Had the count been treated as a
+confidence score and the low-agreement ones discarded, all three would have
+shipped. The correct use of repetition is the opposite of a vote: it widens the
+net, and the reader does the judging against source.
+
+The three that were real:
+
+| # | Defect | Why it was invisible before |
+|---|---|---|
+| 1 | A version-1 `state.json` was reported as *"missing required key"* | The code carried a recorded rationale for not migrating v1, which was correct. It answered "should we migrate?" and never asked "what do we *say*?" A defence written for one question reads as settled for a neighbouring one. |
+| 2 | `{}` in `approvals` became `Approval("", "", "")` | Non-dict entries raised a problem, so the surrounding code *looked* careful. `str(entry.get(name, ""))` reads as defensive and is the opposite: it cannot fail, so it cannot report. |
+| 3 | Only the *current* phase's status problems were reported | Flagged independently at two call sites. The behaviour was deliberate enough to be commented, and the comment cited B166 (missing artifacts) to justify scoping a rule that B180 (every problem is reported) governs. **A citation to a nearby behaviour is how a gap acquires the appearance of a decision.** |
+
+Defect 2 is the same shape as §8's unreachable exit code, inverted: there, a
+branch that could never run; here, a coercion that could never complain. Both
+are code that performs diligence without exercising it.
+
+### The version field does not do the job it was added for
+
+B172 specifies `"version": 2` in `state.json`. Implementing the v1 message
+showed the field cannot detect a v1 file: **the version-1 writer emitted no
+version key at all** (`{"phase": ..., "status": ...}` and nothing else).
+Recognition has to go by v1's own fields. The version number is useful only for
+a future v2→v3 move — that is, a version field is worth nothing until the
+*second* time it is needed, and the migration everyone actually has to handle is
+the one from before it existed.
+
+### A guard that passes on the first run is not yet a guard
+
+The first version of `test_an_outdated_state_file_is_not_called_corrupt`
+asserted the message contained neither `"corrupt"` nor `"unusable"`. It passed
+before the fix, because the pre-fix message said neither — it said *"missing
+required key"*. The test named words the code never used, so it could not fail,
+and it was caught only because the red run was read for *which* tests failed
+rather than for the count. **In TDD the red run is the assertion about the test;
+a new test that passes immediately has told you something, and it is not good
+news.** Rewritten to name the actual pre-fix wording.
+
+### What was fixed and what was not
+
+| Finding | Verdict | Action |
+|---|---|---|
+| v1 file called corrupt | Real, mis-stated | Fixed — `_outdated_file_problem` names it and says to delete it |
+| `{}` becomes a blank approval | Real | Fixed — every field must be present *and* a string |
+| Problems scoped to the current phase | Real (two sites) | Fixed — `derive` collects across all phases, which is safe because every message is already phase-prefixed |
+| `specs/` fallback when no project dir | Low | Deferred as F6-D10 |
+
+
 
 - **When an implementer reports an ambiguity, fix the document, not the
   conversation.** An ambiguity resolved in discussion leaves the defective text
@@ -233,3 +289,17 @@ An amendment has more than one destination. Recorded as F6-D7.
 - **"My reasoning was wrong and my conclusion was right" is a normal result.**
   Record both halves; dropping the first is how a lucky guess becomes received
   wisdom.
+- **Read the red run for names, not for a count.** A new test that passes on its
+  first run is not a guard yet — it is a sentence about words the code never
+  said.
+- **Agreement between reviewers is not confidence.** A finding one model raised
+  once in three runs was a real defect three times over. Repetition widens the
+  net; it does not rank what the net catches.
+- **A recorded rationale settles the question it was written for and no other.**
+  The v1 comment correctly argued against migrating and was silently read as
+  having also decided what to *say* about a v1 file.
+- **A citation to a nearby behaviour is how a gap acquires the look of a
+  decision.** Scoping problems to the current phase cited B166, which is about
+  missing artifacts, while B180 actually governed it.
+- **Code can perform diligence without exercising it.** A branch that cannot run
+  and a coercion that cannot complain are the same defect facing opposite ways.

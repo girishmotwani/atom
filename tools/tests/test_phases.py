@@ -759,3 +759,87 @@ def test_a_real_clone_preserves_phase_ordering(tmp_path):
 
     clone_specs = clone / "specs" / "atom-cli"
     assert [p.name for p in discover_phases(clone_specs)] == ["phase-01-a", "phase-02-b", "phase-03-c"]
+
+
+# ---------------------------------------------------------------------------
+# Problems are collected from every phase, not only the current one (B180).
+#
+# Added after the Phase 6 review gate. Two models' worth of runs flagged the
+# same shape at two separate call sites: `derive` rendered every phase but
+# reported only the *current* phase's status-parsing problems, so a phase whose
+# poc-report.md could not be read appeared in the output with no explanation of
+# why its data was wrong. B180 says every problem found is reported; these tests
+# pin that promise across phases rather than within one.
+# ---------------------------------------------------------------------------
+
+
+def test_a_problem_in_a_non_current_phase_is_still_reported(tmp_path: Path) -> None:
+    """A phase Atom is not working in can still hold an unreadable report."""
+    specs = phase_tree(
+        tmp_path / "specs",
+        {
+            "phase-01-old": full_files(status="wibble"),
+            "phase-02-new": full_files(status="ran"),
+        },
+    )
+
+    result = derive(specs, runner_on_branch("phase-02-new", tmp_path), tmp_path)
+
+    assert result.current is not None and result.current.name == "phase-02-new"
+    assert any("phase-01-old" in problem for problem in result.problems)
+
+
+def test_a_reported_problem_names_the_phase_it_came_from(tmp_path: Path) -> None:
+    """Aggregating across phases is only safe if each problem says where it is."""
+    specs = phase_tree(
+        tmp_path / "specs",
+        {
+            "phase-01-old": full_files(status="wibble"),
+            "phase-02-new": full_files(include_status=False),
+        },
+    )
+
+    result = derive(specs, runner_on_branch("phase-02-new", tmp_path), tmp_path)
+
+    assert len(result.problems) == 2
+    assert all(problem.startswith("phase-0") for problem in result.problems)
+
+
+def test_problems_are_reported_in_phase_order(tmp_path: Path) -> None:
+    """Lexical phase order (B160) carries through to the problem list."""
+    specs = phase_tree(
+        tmp_path / "specs",
+        {
+            "phase-01-a": full_files(status="wibble"),
+            "phase-02-b": full_files(status="nonsense"),
+            "phase-03-c": full_files(status="ran"),
+        },
+    )
+
+    result = derive(specs, runner_on_branch("phase-03-c", tmp_path), tmp_path)
+
+    assert [problem.split(":")[0] for problem in result.problems] == [
+        "phase-01-a",
+        "phase-02-b",
+    ]
+
+
+def test_the_current_phase_problem_is_reported_exactly_once(tmp_path: Path) -> None:
+    """Collecting across phases must not double-count the current one."""
+    specs = phase_tree(tmp_path / "specs", {"phase-01-a": full_files(status="wibble")})
+
+    result = derive(specs, runner_on_branch("phase-01-a", tmp_path), tmp_path)
+
+    assert len(result.problems) == 1
+
+
+def test_a_clean_tree_still_reports_no_problems(tmp_path: Path) -> None:
+    """Widening the net must not invent problems where there are none."""
+    specs = phase_tree(
+        tmp_path / "specs",
+        {"phase-01-a": full_files(status="ran"), "phase-02-b": full_files(status="skipped", brief=False)},
+    )
+
+    result = derive(specs, runner_on_branch("phase-02-b", tmp_path), tmp_path)
+
+    assert result.problems == []

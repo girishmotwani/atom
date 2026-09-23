@@ -169,3 +169,66 @@ framework rule against exactly this shape — a branch that cannot fail is
 decoration claiming to be robustness. The rule was written against *tests*; here
 it applies to production code, and the finding stands unfixed. Recorded as
 F6-D6.
+
+---
+
+## A-7. Triage the review gate against source, not against agreement counts
+
+**Context.** The review gate produced five finding groups. All five came from
+one of the two models; four appeared in 1 of 3 runs.
+
+**Chosen.** Read every finding against the actual code before judging it, and
+ignore the run counts entirely when deciding what is real. Three of the five
+were genuine defects, and two of those three were 1-of-3 findings — so treating
+low agreement as low confidence would have shipped all three.
+
+**Rejected:** ranking by how many runs reproduced a finding. Repetition is a
+recall mechanism, not a precision one. The reviewer that raised each defect once
+was right each time; the reviewer that stayed silent across three runs was not
+casting a vote against them.
+
+---
+
+## A-8. Fix three of five, defer the fourth, and say which is which
+
+**Chosen.** Fixed the two state-file defects and the problem-scoping defect;
+deferred the `specs/` fallback as F6-D10. The three fixed share a property that
+made them in-scope: each is a case where Atom *says something untrue* — an
+intact file called broken, a blank record presented as an approval, a phase
+rendered without its reason for being unreadable. The deferred one is a case
+where Atom is merely more permissive than its spec, which is a behaviour
+question for the developer rather than a correctness one.
+
+**Rejected:** fixing all five in the same pass. F6-D10 changes what layouts
+Atom accepts, and widening or narrowing that is a gate decision.
+
+---
+
+## A-9. Recognise a version-1 file by its fields, not by its version number
+
+**Context.** B172 adds `"version": 2` to `state.json`, which reads like the
+mechanism for telling file generations apart. It is not: the v1 writer emitted
+no version key.
+
+**Chosen.** Detect v1 by the simultaneous presence of `phase` and `status` and
+the absence of `approvals`. Requiring both v1 fields keeps the gentler message
+away from arbitrary junk that merely lacks `approvals`.
+
+**Rejected:** trusting `payload.get("version") == 1`, which no real file carries
+and which would therefore have produced a fix that never fires — the §8 mistake
+repeated in a new place.
+
+**Also rejected:** migrating v1 to v2. Nothing in v1 is worth keeping; it stored
+a phase and a status, both of which this phase derives.
+
+---
+
+## A-10. Re-read through the existing parser rather than parse again
+
+**Chosen.** `_outdated_file_problem` calls `read_json` with no required keys
+instead of calling `json.loads` directly, so the shape rules that define "a
+usable state file" live in exactly one place.
+
+**Rejected:** a local `json.loads` on the error path. It is shorter, and it is a
+second reader free to drift from the first about what counts as a JSON object —
+the same duplication B172 rejects for `module_path`, at a smaller scale.

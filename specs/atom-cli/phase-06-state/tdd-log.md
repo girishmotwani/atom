@@ -148,3 +148,47 @@ rule that a branch which cannot fail is decoration rather than robustness. It
 was written about tests, on the same day, and the production code shipped with
 an instance of exactly that shape sitting in it — found only because a
 subordinate agent's report was checked instead of believed.
+
+## Cycle 5 — three defects the review gate found
+
+The gate ran after the phase was believed finished: two models, three runs each,
+6/6 completed, over 32 files and +6415/−445 lines. Five finding groups, three of
+them real. The cycle that followed was ordinary TDD, with one instructive
+stumble.
+
+**Red.** Fifteen tests written first across `test_state.py` and
+`test_phases.py`. Nine failed, six passed — and the six were deliberate guards
+against over-correcting (a clean tree must still report no problems; the current
+phase's problem must not be double-counted; well-formed approvals must still
+load). But one of the nine *intended* failures passed as well:
+`test_an_outdated_state_file_is_not_called_corrupt` forbade the words
+`"corrupt"` and `"unusable"`, and the pre-fix message used neither — it said
+*"missing required key"*. The test named vocabulary the code never had, so it
+could not fail. Rewritten to forbid the actual pre-fix wording, at which point
+it failed properly. **Reading the red run for which names appear, rather than
+for how many, is what caught it.**
+
+**Green.** Three changes:
+
+| File | Change |
+|---|---|
+| `state.py` | `_outdated_file_problem` recognises a version-1 file by its own fields and says to delete it, instead of reporting a missing key |
+| `state.py` | An approval's `phase`, `gate` and `date` must each be present *and* a string; `{}` is a reported problem, not a blank record |
+| `phases.py` | `derive` collects problems from every phase, not only the current one — safe because every message is already phase-prefixed |
+
+**Verified.** 742 passing (727 + 15). Then — because six phases have now shown
+that a green suite does not mean a working program — all three paths were driven
+through the real CLI against a scratch project holding a broken non-current
+phase, a v1 state file, and a malformed approval. Each produced its intended
+advisory, and the pre-existing output was unchanged on the real repository:
+
+```
+2 problems reported below.
+Advisories:
+  - phase-01-old: poc-report.md declares an unrecognised status 'wibble'; poc-brief.md is treated as required.
+  - ...\.atom\state.json is a version 1 state file, written before phases and statuses were derived rather than stored. Nothing in it needs rescuing: delete the file and Atom will treat the project as having no recorded approvals.
+```
+
+The first line is the fix that matters most: before this cycle, `phase-01-old`
+was rendered in the phase list with no indication that its report could not be
+read.
