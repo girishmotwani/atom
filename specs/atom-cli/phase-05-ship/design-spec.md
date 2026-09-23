@@ -107,8 +107,18 @@ the base branch itself. There is nothing to open a pull request *from*.
 > are not in the commit it points at. The refusal is what keeps the body's claims
 > and the body's links describing the same thing.
 
-**B141.** Ship requires an upstream branch. Without one, and without `--push`, it
-refuses and prints the exact command that would fix it. *(C13.)*
+**B141.** Ship requires that the remote already hold the commit it is about to
+link to. Without an upstream, and without `--push`, it refuses and prints the
+exact command that would fix it. *(C13.)*
+
+**B141a.** An upstream *existing* is not the same fact as the remote *holding
+this commit*, and ship checks both. A branch that is configured and ahead of its
+upstream is refused, naming how far ahead it is. Conflating the two was a real
+defect: B149 pins every artifact link to `HEAD`, so a branch three unpushed
+commits ahead produced a body whose every link 404ed — the precise failure B149
+exists to prevent. *(Found by `atom review` on Phase 5's own branch, in three of
+six model runs, after 104 tests had missed it. `--push` skips the check, because
+pushing resolves the problem rather than describing it.)*
 
 **B142.** With `--push`, ship pushes the branch itself and sets the upstream. It
 never delegates the push to `gh`, because `gh` does not do it. *(C13, Q5.)*

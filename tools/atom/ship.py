@@ -329,12 +329,18 @@ def _refuse_dirty_tree(runner: CommandRunner, working_directory: Path) -> None:
 
 
 def _require_upstream(runner: CommandRunner, working_directory: Path, branch: str) -> None:
-    """Refuse a branch with no upstream, naming the command that fixes it (B141).
+    """Refuse unless the remote already holds the commit ship is about to cite (B141).
 
-    Ship requires an upstream because `gh` will not push (C13); without one and
-    without ``--push`` there is nothing for the PR's links to resolve against. The
-    refusal prints the exact `git push` that would set the upstream, so the fix is
-    a copy rather than a lookup.
+    Two separate facts are checked here, and conflating them was a real bug. An
+    upstream *existing* says only that the branch has somewhere to push to; it
+    says nothing about whether the current `HEAD` has been pushed there. A branch
+    that is configured and three commits ahead passes the first check and fails
+    the thing the check was for: B149 pins every artifact link to `HEAD`, so a
+    commit the remote has never seen produces a PR body whose every link 404s.
+
+    The refusal prints the exact `git push` that fixes it, so the fix is a copy
+    rather than a lookup. `--push` skips this function entirely, because pushing
+    resolves the problem rather than describing it.
     """
 
     result = runner.run(
@@ -342,15 +348,47 @@ def _require_upstream(runner: CommandRunner, working_directory: Path, branch: st
         working_directory,
         stdin_text="",
     )
-    if result.outcome is CommandOutcome.COMPLETED and result.exit_code == 0:
-        return
+    if result.outcome is not CommandOutcome.COMPLETED or result.exit_code != 0:
+        raise ShipRefused(
+            f"atom ship needs branch '{branch}' to have an upstream, and it has none. "
+            "Either push it yourself:\n"
+            f"  git push --set-upstream origin {branch}\n"
+            "or re-run with --push, which does exactly that."
+        )
 
-    raise ShipRefused(
-        f"atom ship needs branch '{branch}' to have an upstream, and it has none. "
-        "Either push it yourself:\n"
-        f"  git push --set-upstream origin {branch}\n"
-        "or re-run with --push, which does exactly that."
+    ahead = _commits_ahead_of_upstream(runner, working_directory)
+    if ahead != 0:
+        # `ahead is None` means the count could not be read. Ship refuses on that
+        # too, rather than assuming zero: it cannot show that the remote holds
+        # this commit, and a PR whose links it cannot vouch for is worse than a
+        # refusal the developer can clear with one command.
+        measured = "an unknown number of commits" if ahead is None else f"{ahead} commit(s)"
+        raise ShipRefused(
+            f"atom ship needs the remote to already have the commit it links to, "
+            f"and branch '{branch}' is {measured} ahead of its upstream. Every "
+            "artifact link in the body would point at a commit GitHub has not "
+            "seen. Either push first:\n"
+            f"  git push origin {branch}\n"
+            "or re-run with --push, which does exactly that."
+        )
+
+
+def _commits_ahead_of_upstream(
+    runner: CommandRunner, working_directory: Path
+) -> int | None:
+    """Return how many commits HEAD is ahead of its upstream, or None if unreadable."""
+
+    result = runner.run(
+        ("git", "rev-list", "--count", "@{u}..HEAD"),
+        working_directory,
+        stdin_text="",
     )
+    if result.outcome is not CommandOutcome.COMPLETED or result.exit_code != 0:
+        return None
+    try:
+        return int(result.stdout.strip())
+    except ValueError:
+        return None
 
 
 def _push_branch(runner: CommandRunner, working_directory: Path, branch: str) -> None:

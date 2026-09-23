@@ -65,6 +65,7 @@ class ShipRunner:
         branch: str = "phase-05-ship",
         status_porcelain: str = "",
         has_upstream: bool = True,
+        commits_ahead: int = 0,
         head_sha: str = HEAD_SHA,
         remote_url: str = "https://github.com/octocat/atom.git",
         subjects: tuple[str, ...] = ("[Phase 5] Add atom ship",),
@@ -87,6 +88,7 @@ class ShipRunner:
         self.branch = branch
         self.status_porcelain = status_porcelain
         self.has_upstream = has_upstream
+        self.commits_ahead = commits_ahead
         self.head_sha = head_sha
         self.remote_url = remote_url
         self.subjects = subjects
@@ -183,6 +185,9 @@ class ShipRunner:
             if self.has_upstream:
                 return result(CommandOutcome.COMPLETED, 0, f"origin/{self.branch}", "")
             return result(CommandOutcome.COMPLETED, 128, "", "fatal: no upstream configured for branch")
+
+        if cmd[:2] == ("git", "rev-list") and any("@{u}" in part for part in cmd):
+            return result(CommandOutcome.COMPLETED, 0, str(self.commits_ahead), "")
 
         if cmd == ("git", "rev-parse", "HEAD"):
             if not self.head_ok:
@@ -1169,3 +1174,61 @@ class TestRefusalLeavesTheRemoteAlone:
         _ship(runner, tree, push=True, allow_failing_checks=True)
 
         assert any(c[0] == "git" and "push" in c for c in runner.commands)
+
+
+class TestTheRemoteActuallyHasTheCommit:
+    """B141, amended -- an upstream existing is not the same fact as the
+    remote holding this commit.
+
+    Found by `atom review` on this very branch, reported independently in three
+    of six model runs, and missed by all 104 tests written before it. The
+    original precondition asked only whether an upstream was configured. A
+    branch with an upstream and three unpushed commits passed it, and then B149
+    pinned every artifact link to a commit GitHub had never seen -- the exact
+    404 that B149 exists to prevent.
+    """
+
+    def test_a_branch_ahead_of_its_upstream_is_refused(self, tmp_path):
+        tree = _make_tree(tmp_path)
+        runner = ShipRunner(has_upstream=True, commits_ahead=3)
+
+        with pytest.raises(ShipRefused):
+            _ship(runner, tree)
+
+    def test_the_refusal_says_how_far_ahead_and_how_to_fix_it(self, tmp_path):
+        tree = _make_tree(tmp_path)
+        runner = ShipRunner(has_upstream=True, commits_ahead=3)
+
+        with pytest.raises(ShipRefused) as excinfo:
+            _ship(runner, tree)
+
+        message = str(excinfo.value)
+        assert "3" in message
+        assert "--push" in message
+
+    def test_a_branch_level_with_its_upstream_ships(self, tmp_path):
+        tree = _make_tree(tmp_path)
+        runner = ShipRunner(has_upstream=True, commits_ahead=0)
+
+        outcome = _ship(runner, tree)
+
+        assert outcome.pr_url
+
+    def test_being_ahead_is_irrelevant_when_push_was_requested(self, tmp_path):
+        # --push resolves the problem rather than describing it, so the
+        # ahead-count must not refuse a run that is about to push.
+        tree = _make_tree(tmp_path)
+        runner = ShipRunner(has_upstream=True, commits_ahead=3)
+
+        outcome = _ship(runner, tree, push=True)
+
+        assert outcome.pushed is True
+
+    def test_no_pr_is_opened_when_the_commit_is_not_on_the_remote(self, tmp_path):
+        tree = _make_tree(tmp_path)
+        runner = ShipRunner(has_upstream=True, commits_ahead=1)
+
+        with pytest.raises(ShipRefused):
+            _ship(runner, tree)
+
+        assert not any(c[1:3] == ("pr", "create") for c in runner.commands if c[0] == "gh")
