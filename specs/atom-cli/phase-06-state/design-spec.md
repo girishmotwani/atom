@@ -204,6 +204,22 @@ exactly two tokens:
 | `ran` | a spike was executed | yes |
 | `skipped` | the POC was deliberately not run | no |
 
+**Only an explicit `skipped` excuses the brief.** Every other condition —
+`ran`, an unrecognised token, a missing `status:` line, or no `poc-report.md`
+at all — leaves it required.
+
+This is stated as a single rule because the alternative was measurably
+inconsistent. An unrecognised token led to the brief being required (B169),
+while a *missing report* — strictly the more unknown case — excused it. The
+more ignorant Atom was, the less it asked for. A phase that had not yet
+written its report would show six artifacts owed when it will almost certainly
+owe seven: five of this project's six phases ran a POC.
+
+The direction of the error matters more than its size. Over-requiring shows a
+developer a document they may not owe, and they resolve it by declaring the
+skip — which is exactly the record the framework wants. Under-requiring hides
+a document they do owe, and nothing ever surfaces it.
+
 **B169** — An unrecognised `status:` value is reported as a problem, and
 `poc-brief.md` is treated as **required**. The failure leans toward asking for
 more evidence, never less. A typo must not silently excuse an artifact.
@@ -212,6 +228,11 @@ more evidence, never less. A typo must not silently excuse an artifact.
 answer. Both `poc-report.md` and `poc-brief.md` are reported absent, and no
 problem beyond those two absences is raised — the missing report already says
 everything.
+
+Absent is a statement about **presence**, not about **requirement**. The brief
+stays required (B168), so it is reported as *absent and owed* rather than
+quietly dropped from the tally. This phase reports what exists; it does not
+shrink the list of what a phase owes just because it cannot yet see it.
 
 **B171** — The vocabulary is closed and matched exactly, not by substring. A
 rule that substring-matches prose breaks the first time someone rephrases the
