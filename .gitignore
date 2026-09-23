@@ -1,6 +1,13 @@
-# Atom framework state (machine-generated, not source)
+# Atom framework state
+#
+# events.jsonl is a machine-generated append-only log -- genuinely not source.
+#
+# .atom/state.json is deliberately NOT ignored (B173). It records project
+# configuration and human approvals, which are project history. Ignoring it is
+# what made `atom status` report "Phase: unknown" in this very repository: the
+# file Atom treated as its sole source of truth never survived a clone. What is
+# left in it now cannot be derived from the filesystem, so it has to be kept.
 .atom/events.jsonl
-.atom/state.json
 
 # Python
 __pycache__/

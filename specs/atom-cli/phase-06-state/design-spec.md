@@ -125,7 +125,7 @@ The distinction is the whole design, so it is stated once, explicitly:
 | Whether an artifact is *complete* | **neither** — not reported | F6-1: not derivable, and a declaration would be a lie with a checkbox |
 | Whether a POC was skipped | declared — `poc-report.md` frontmatter | a skip leaves no trace to observe; absence of a spike is indistinguishable from a spike not yet run |
 | Whether a gate was approved | declared — `.atom/state.json` | a human said yes; nothing on disk records consent |
-| The Go module path | declared — `.atom/state.json` | configuration, not evidence |
+| The Go module path | declared — `.atom/config.json` | configuration, not evidence; kept separate from state per B73 |
 
 The two declarations are honest about being declarations. A `status: "skipped"`
 line sits **in the same file** as the reasoning that justifies it, where a
@@ -228,12 +228,11 @@ Against the real repository the rule scores:
 
 ## The Approvals Record
 
-**B172** — `.atom/state.json` is reduced to configuration and approvals:
+**B172** — `.atom/state.json` is reduced to a version and an approvals list:
 
 ```json
 {
   "version": 2,
-  "module_path": "github.com/example/project",
   "approvals": [
     {"phase": "phase-06-state", "gate": "design-spec", "date": "2026-09-24"}
   ]
@@ -242,6 +241,15 @@ Against the real repository the rule scores:
 
 No `phase`. No `status`. Those are derived now, and a file that repeats a
 derived fact is a file that can disagree with reality.
+
+`module_path` stays in `.atom/config.json`, where Phase 3 put it. **B73 is not
+repealed by this phase**: config is what the developer chose, state is what the
+tool tracks, and they are separate files on purpose. An earlier draft of this
+spec folded `module_path` into `state.json`; that was an error, caught during
+implementation, and it is recorded here rather than quietly corrected because
+the split it violated is load-bearing. The two files now have cleanly different
+lifetimes — config is written once at `init` and read-only in practice, while
+approvals accumulate.
 
 **B173** — The file is **removed from `.gitignore` and committed**. It records
 human decisions, which are project history, not machine scratch. That it was
@@ -259,9 +267,10 @@ B174 and B175 are the point of the whole phase, expressed as behaviour: the
 question `atom status` exists to answer is now answerable when the state file
 is missing, stale, or wrecked. Today, it is not.
 
-**B176** — `atom init` keeps its job: it writes `module_path` and an empty
-approvals list. It no longer writes a phase or a status. Initialising a project
-is configuration, not a claim about progress.
+**B176** — `atom init` keeps its job: it writes `config.json` with the
+`module_path` exactly as before, and a `state.json` holding an empty approvals
+list. It no longer writes a phase or a status. Initialising a project is
+configuration, not a claim about progress.
 
 ## Output
 
@@ -324,8 +333,18 @@ command.
 and transition logic on `ProjectState`. They encode a state machine whose every
 fact is now derived.
 
-**B183** — `ProjectState` is replaced by an approvals-shaped record, and
-`Project` keeps only what `init` and the approvals record need.
+**B183** — `ProjectState` is replaced by an approvals-shaped record. `Project`
+keeps the approvals surface, `initialise`, `is_initialised`, the config
+accessor, **and the event log accessor**.
+
+The event log is **not** in scope for removal. `.atom/events.jsonl` remains a
+machine-generated append-only log, still gitignored, and `atom status` keeps
+reporting the last event and any damaged lines — Phase 3 behaviour that this
+phase does not repeal. It is named explicitly because an earlier draft of this
+sentence read "keeps only what `init` and the approvals record need", which is
+narrower than intended and led an implementation to delete a working feature.
+A removal list must name what goes; it must not be inferred from what a
+summary happens to mention.
 
 **B184** — `status.py` is rewritten against derivation. `StatusReport` loses
 `state`/`initialised` in favour of the derived phase and artifact map.
