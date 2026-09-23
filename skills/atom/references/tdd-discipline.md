@@ -73,6 +73,45 @@ Anything in the spec with no test is either not implemented or not specified
 precisely enough. Fix the spec or add the test; do not leave the gap silent.
 
 ---
+## Do Not Test What the Toolchain Proves
+
+Before writing a case, ask:
+
+> Could this test ever fail, given the code compiles and `go vet` passes?
+
+If the answer is no, it is not a weak test — it is **not a test**. It can never
+run, never fail, and never catch a regression.
+
+Measured against `go1.23.4` across 24 candidate properties:
+
+| Bucket | Count | What to do |
+|---|---|---|
+| Compiler refuses it | 12 | Write no test; one cannot exist |
+| `go vet` flags it | 3 | Rely on the `atom check` gate |
+| Toolchain accepts it | 9 | **Only a test catches this — write it** |
+
+The most common inherited mistake is demanding a `nil` test for every string
+parameter. **A Go `string` cannot be nil**; `var s string = nil` does not
+compile. The empty string, however, sails through the toolchain and returns a
+silently wrong answer — so `""` is worth testing and `nil` is impossible.
+
+The inverse error is worse. These *look* compiler-checked and are not, and five
+of them fail with **no panic and no diagnostic at all**:
+
+| Looks checked | Actually |
+|---|---|
+| Exhaustive switch over an enum-like const block | No check. Missing case returns the zero value |
+| A consumed `error` return | Ignoring a return value is legal |
+| `err != nil` for a nil pointer | A typed nil in an interface is **not** nil |
+| Integer overflow | Silently wraps: `int8` 127+1 becomes -128 |
+| Bounds and divisors | Only checked for *constants*, never variables |
+
+Full tables, evidence, and the reasoning are in
+[what-the-toolchain-proves.md](what-the-toolchain-proves.md). A case removed as
+redundant is a decision — record it in `decisions.md` with its bucket, because a
+deleted test and a forgotten test look identical afterwards.
+
+---
 ## Go Test Shape
 
 Table-driven tests are the default. Give each case a `name` and run it with
