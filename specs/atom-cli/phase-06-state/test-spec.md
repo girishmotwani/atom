@@ -98,15 +98,15 @@ tests — `--help` never reaches the command function, so it proves nothing.
 | Group | Behaviours | Cases |
 |---|---|---:|
 | Resolving the current phase | B158–B164 | 27 |
-| Artifact presence | B165–B171 | 31 |
-| The approvals record | B172–B176 | 17 |
+| Artifact presence | B165–B171 | 32 |
+| The approvals record | B172–B176 | 19 |
 | Output | B177–B181 | 22 |
 | What is removed | B182–B185 | 8 |
-| **Behaviour tests** | **B158–B185** | **105** |
+| **Behaviour tests** | **B158–B185** | **108** |
 | Program-level (real subprocess) | — | 5 |
 | End-to-end tier 1 (real repository) | — | 5 |
 | End-to-end tier 2 (real `git`) | — | 3 |
-| **Total** | | **118** |
+| **Total** | | **121** |
 
 These counts are recounted from the tables below rather than estimated, and the
 arithmetic is checked: the five behaviour groups plus the thirteen end-to-end
@@ -144,7 +144,7 @@ That is what makes it a guard rather than a restatement.
 | B165 | The required set is exactly the seven measured artifact names. | `test_the_required_artifacts_are_the_seven_named`; `test_an_unexpected_file_in_a_phase_directory_is_not_required`; `test_an_unexpected_file_does_not_appear_in_the_artifact_report` |
 | B166 | Each artifact is reported present or absent; there is no third state. | `test_an_existing_artifact_is_present`; `test_a_missing_artifact_is_absent`; `test_an_empty_artifact_file_is_still_present`; `test_a_directory_named_like_an_artifact_is_not_present`; `test_the_artifact_report_has_exactly_two_states` |
 | B167 | Atom never reads an artifact's size, sections, headings, or content to judge it. | `test_a_one_byte_artifact_is_present`; `test_a_document_with_no_headings_is_present`; `test_a_document_of_only_headings_is_present`; `test_no_artifact_but_the_poc_report_is_ever_opened` |
-| B168 | `poc-brief.md` is required only when `poc-report.md` declares `status: "ran"`. | `test_a_ran_poc_requires_a_brief`; `test_a_skipped_poc_does_not_require_a_brief`; `test_a_skipped_phase_with_no_brief_is_complete`; `test_a_skipped_phase_requires_the_other_six` |
+| B168 | `poc-brief.md` is required only when `poc-report.md` declares `status: "ran"`; only an explicit `skipped` excuses it. | `test_a_ran_poc_requires_a_brief`; `test_a_skipped_poc_does_not_require_a_brief`; `test_a_skipped_phase_with_no_brief_is_complete`; `test_a_skipped_phase_requires_the_other_six`; `test_a_phase_with_no_poc_report_still_requires_the_brief` |
 | B169 | An unrecognised `status:` is a problem, and the brief is treated as required. | `test_an_unrecognised_status_is_reported_as_a_problem`; `test_an_unrecognised_status_still_requires_the_brief`; `test_a_missing_status_field_is_reported_and_requires_the_brief`; `test_the_unrecognised_status_problem_names_the_value_it_found` |
 | B170 | An absent `poc-report.md` leaves the question unanswerable: both it and the brief are absent, with no extra problem. | `test_an_absent_poc_report_makes_both_it_and_the_brief_absent`; `test_an_absent_poc_report_raises_no_problem_beyond_the_absences` |
 | B171 | The vocabulary is closed and matched exactly, never by substring. | `test_the_status_vocabulary_is_exactly_two_tokens`; `test_a_status_containing_skipped_as_a_substring_is_not_skipped`; `test_the_prose_status_values_this_repo_used_before_are_not_accepted`; `test_status_matching_is_case_sensitive` |
@@ -175,11 +175,11 @@ drift away from the thing it was built to protect.
 
 | Behaviour | One-line description | Test(s) pinning it |
 |---|---|---|
-| B172 | `.atom/state.json` holds version, `module_path`, and approvals — no phase, no status. | `test_the_state_file_holds_configuration_and_approvals`; `test_the_state_file_has_no_phase_field`; `test_the_state_file_has_no_status_field`; `test_an_approval_records_phase_gate_and_date` |
+| B172 | `.atom/state.json` holds version and approvals — no phase, no status, and no `module_path`, which stays in `config.json` per Phase 3's B73. | `test_the_state_file_holds_configuration_and_approvals`; `test_the_state_file_has_no_phase_field`; `test_the_state_file_has_no_status_field`; `test_an_approval_records_phase_gate_and_date`; `test_the_module_path_stays_in_config_not_state` |
 | B173 | The file is committed, not ignored. | `test_the_state_file_is_not_gitignored`; `test_the_gitignore_no_longer_lists_the_state_file` |
 | B174 | An absent state file is not an error; the phase and artifact report is produced in full. | `test_an_absent_state_file_is_not_an_error`; `test_an_absent_state_file_still_reports_the_phase`; `test_an_absent_state_file_still_reports_every_artifact`; `test_an_absent_state_file_reports_no_approvals` |
 | B175 | A corrupt state file is a problem, and the report is still produced in full. | `test_a_corrupt_state_file_is_reported_as_a_problem`; `test_a_corrupt_state_file_still_reports_the_phase`; `test_a_corrupt_state_file_still_reports_every_artifact`; `test_a_state_file_of_valid_json_but_wrong_shape_is_a_problem` |
-| B176 | `atom init` writes `module_path` and an empty approvals list, and no longer writes a phase or status. | `test_init_writes_the_module_path`; `test_init_writes_an_empty_approvals_list`; `test_init_writes_no_phase_or_status` |
+| B176 | `atom init` writes `config.json` with the `module_path` and a `state.json` with an empty approvals list; it no longer writes a phase or status. | `test_init_writes_the_module_path`; `test_init_writes_an_empty_approvals_list`; `test_init_writes_no_phase_or_status`; `test_init_records_an_event` |
 
 B174 and B175 are the phase's reason for existing, expressed as tests. Both
 assert the *full* report survives — not that an error is handled, but that the
