@@ -65,6 +65,7 @@ are taken over calls that did answer, are unaffected.
 
 from __future__ import annotations
 
+import argparse
 import concurrent.futures
 import importlib.util
 import json
@@ -112,7 +113,7 @@ PROMPT = REVIEW_PROMPT
 # quoted. `gpt-5.4` is measured too: it is the other half of the shipped pair, and
 # the Phase 4 harness that produced its published figure has since been shown not to
 # work, so that figure describes a call this CLI no longer makes.
-MODELS = ["gpt-5.4", "claude-haiku-4.5", "claude-sonnet-5", "claude-opus-5"]
+MODELS = ["gpt-5.4", "claude-haiku-4.5", "claude-sonnet-5", "claude-opus-5", "gpt-5.6-luna"]
 
 # Matches the Phase 4 spike's per-cell count, which was chosen to tell 100% from 90%
 # and explicitly not to tell 93% from 95%. Two candidates landing within a couple of
@@ -274,13 +275,13 @@ def _reduce(
     return result
 
 
-def collect() -> list[RunResult]:
-    """Run every model the configured number of times, saving output as it arrives."""
+def collect(models: list[str], trials: int) -> list[RunResult]:
+    """Run each named model the given number of times, saving output as it arrives."""
 
     RAW_DIR.mkdir(exist_ok=True)
     prompt = PROMPT.format(diff=FIXTURE.read_text(encoding="utf-8"))
 
-    jobs = [(model, trial) for model in MODELS for trial in range(1, TRIALS_PER_MODEL + 1)]
+    jobs = [(model, trial) for model in models for trial in range(1, trials + 1)]
     print(f"making {len(jobs)} calls, {PARALLEL_CALLS} at a time")
     print(f"planted defects: {sorted(PLANTED_LINES)} in {FIXTURE_FILE}\n", flush=True)
 
@@ -291,6 +292,18 @@ def collect() -> list[RunResult]:
             results.append(future.result())
 
     return results
+
+
+def _models_present(by_model: dict[str, list[RunResult]]) -> list[str]:
+    """Report the configured models in their declared order, then any others.
+
+    The sidecar accumulates across runs, so a report may cover models that this
+    invocation did not call. Ordering by `MODELS` first keeps the published table
+    stable while still showing a newcomer rather than silently dropping it.
+    """
+
+    ordered = [model for model in MODELS if model in by_model]
+    return ordered + sorted(model for model in by_model if model not in ordered)
 
 
 def _median(ordered: list[float]) -> float:
@@ -321,7 +334,7 @@ def report(results: list[RunResult]) -> None:
     print(header)
     print("-" * len(header))
 
-    for model in MODELS:
+    for model in _models_present(by_model):
         runs = by_model.get(model, [])
         readable = [run for run in runs if run.readable]
 
@@ -351,7 +364,7 @@ def report(results: list[RunResult]) -> None:
     print("=" * 78)
     print(f"{'model':<20} " + "".join(f"line {line:<7}" for line in sorted(PLANTED_LINES)))
     print("-" * 78)
-    for model in MODELS:
+    for model in _models_present(by_model):
         readable = [run for run in by_model.get(model, []) if run.readable]
         if not readable:
             print(f"{model:<20} (no readable runs)")
@@ -365,7 +378,7 @@ def report(results: list[RunResult]) -> None:
     print("\n" + "=" * 78)
     print("FALSE POSITIVES -- lines reported that were never planted")
     print("=" * 78)
-    for model in MODELS:
+    for model in _models_present(by_model):
         readable = [run for run in by_model.get(model, []) if run.readable]
         if not readable:
             continue
@@ -394,13 +407,61 @@ def report(results: list[RunResult]) -> None:
             print(f"  {run.model:<20} trial {run.trial:>2}  {run.note}")
 
 
+def _load_previous(summary_path: Path) -> list[RunResult]:
+    """Read results banked by earlier invocations.
+
+    Adding a fifth model should not mean re-paying for the first forty calls, and
+    re-running them would change the comparison as well as its cost -- the models
+    themselves move between releases. Reloading is only sound because every run in
+    the file was produced by the same fixture, the same prompt and the same
+    production call shape; the moment any of those changes, this file has to be
+    deleted rather than appended to.
+    """
+
+    if not summary_path.exists():
+        return []
+
+    banked = []
+    for row in json.loads(summary_path.read_text(encoding="utf-8")):
+        result = RunResult(
+            model=row["model"],
+            trial=row["trial"],
+            seconds=row["seconds"],
+            exit_code=row["exit_code"],
+            timed_out=row["timed_out"],
+            readable=row["readable"],
+            lines_reported=row["lines_reported"],
+            note=row["note"],
+        )
+        banked.append(result)
+    return banked
+
+
 def main() -> int:
-    results = collect()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--models",
+        nargs="+",
+        default=MODELS,
+        help="Models to call now. Models already in results.json are reported without "
+        "being re-called, so a new candidate can be measured on its own.",
+    )
+    parser.add_argument("--trials", type=int, default=TRIALS_PER_MODEL)
+    arguments = parser.parse_args()
+
+    summary_path = HERE / "results.json"
+    fresh = collect(arguments.models, arguments.trials)
+
+    # Fresh results win: a model called again is being re-measured, not topped up.
+    recalled = {(run.model, run.trial) for run in fresh}
+    results = fresh + [
+        run for run in _load_previous(summary_path) if (run.model, run.trial) not in recalled
+    ]
+
     report(results)
 
     # A JSON sidecar so the write-up can quote figures from a file rather than from
     # scrollback, which is how a Phase 3 report once reversed the sign of its own result.
-    summary_path = HERE / "results.json"
     summary_path.write_text(
         json.dumps(
             [

@@ -682,6 +682,24 @@ loud and largely wrong, and every false line it adds is a line a developer must
 read and dismiss. Opus additionally failed to produce a readable report 3 times
 in 10, which is a correctness problem before it is a quality one.
 
+**Correction, from the later `gpt-5.6-luna` evaluation (A22).** The "planted
+found" column above is an *exact-line* match, and measuring a fifth model showed
+that it does not mean what its name suggests. Re-scored at production's own
+grouping tolerance of +/-3 lines, the same runs read:
+
+| Model | exact line | +/-3 lines |
+|---|---|---|
+| `gpt-5.4` | 98% | 100% |
+| `claude-haiku-4.5` | 30% | 80% |
+| `claude-sonnet-5` | 48% | 100% |
+| `claude-opus-5` | 54% | 100% |
+
+Every model finds essentially all four defects. What separates them is not
+detection but **line attribution** -- whether they can say where the defect is.
+The decision is unchanged and its reason is sharper: `gpt-5.4` is the only model
+that reliably names the exact line, and a finding attributed to the wrong line
+costs a developer the same search as a finding that is simply wrong.
+
 **What the numbers actually say.** `gpt-5.4` does essentially all of the work.
 That confirms Finding 21 -- the two models are not two opinions -- at four times
 the original sample. The question worth asking is therefore not *which Claude*,
@@ -693,3 +711,48 @@ records only what was measured, which is that the proposed swap is not justified
 their published Phase 4 behaviour in the new harness -- `gpt-5.4` found line 24
 in 10/10 (published 20/20), haiku found line 44 in 6/10 (published 13/20). A
 comparison whose controls do not reproduce is measuring the harness.
+
+
+## A22 — `gpt-5.6-luna` is not adopted, and measuring it corrected A21's reasoning
+
+**Question.** Is `gpt-5.6-luna` a better second review model than
+`claude-haiku-4.5`?
+
+**Decision.** No. The pair is unchanged.
+
+**Measured the same way as A21** -- same fixture, same planted defects, same
+production call shape, ten trials. The other four models were reloaded from
+`results.json` rather than re-called: every run in that file came from the same
+fixture, prompt and call shape, so reloading is sound, and re-running would have
+changed the comparison as well as its cost.
+
+| Model | Readable | Exact line | +/-3 lines | Precision | Distinct FP lines | Median |
+|---|---|---|---|---|---|---|
+| `gpt-5.4` | 10/10 | **98%** | **100%** | **95%** | **1** | 48s |
+| `claude-haiku-4.5` | 10/10 | 30% | 80% | 32% | 8 | 39s |
+| `claude-sonnet-5` | 10/10 | 48% | 100% | 30% | 18 | 32s |
+| `claude-opus-5` | 7/10 | 54% | 100% | 26% | 15 | 38s |
+| `gpt-5.6-luna` | 10/10 | 15% | 70% | 12% | 18 | 93s |
+
+**Why not, at production's own tolerance.** At +/-3 -- the window `atom review`
+actually groups findings with -- luna is the weakest of the five. It is also
+roughly twice as slow as anything else measured, and it produces the largest
+spread of lines that hold no planted defect.
+
+**What the 15% does not mean.** Read as a detection rate it would be a
+libel. Luna identifies all four planted defects in nearly every run, and its
+messages are accurate and specific: the unsynchronised `Lookup`, the unvalidated
+`Reserve`, the discarded `os.Create` error, the unlocked iteration in `Export`.
+It also volunteers two real defects the fixture's author did not plant -- the
+nil-map assignment on a zero-value `Store`, and the file that is never closed.
+
+What it cannot do is say **where**. Across ten runs it reported the *same*
+`Lookup` defect at lines 18, 19, 22, 23 and 24, anchoring it variously to the
+struct field, the doc comment, the function signature and, occasionally, the
+offending statement. Exact-line scoring charges that twice: once as a miss on
+the planted line, once as a false positive on the line it named.
+
+**The caveat on latency.** Quality here is fixture-determined and comparable
+across runs. Wall-clock is not: luna's ten calls were made on a different day
+from the other forty. The gap is wide enough (93s against 32-48s) to survive
+ordinary variation, but it is a weaker number than the rest of the table.

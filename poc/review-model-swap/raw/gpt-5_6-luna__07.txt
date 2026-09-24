@@ -1,0 +1,33 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 22,
+    "severity": "high",
+    "message": "Lookup reads the map without acquiring the store mutex, so concurrent Reserve or Export calls can cause a data race or fatal concurrent map read/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 40,
+    "severity": "high",
+    "message": "Export iterates over the map without acquiring the store mutex, so concurrent Reserve calls can cause a data race or fatal concurrent map iteration and map write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 41,
+    "severity": "high",
+    "message": "The os.Create error is discarded, so an invalid or inaccessible path leads to a nil file handle and a possible panic while writing instead of returning the failure."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 42,
+    "severity": "medium",
+    "message": "Export never closes the created file or checks write errors, so buffered or filesystem write failures can be lost and resources can leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 32,
+    "severity": "medium",
+    "message": "Reserve unconditionally subtracts the requested count and returns success, allowing negative inventory and silently treating unknown SKUs as zero-quantity items."
+  }
+]
+

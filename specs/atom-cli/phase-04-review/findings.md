@@ -747,3 +747,80 @@ underneath.
 > wrong" are different claims, and only one of them was true.* Running the
 > controls is what separated them; without controls the alarming reading is the
 > one that survives.
+
+
+## Finding 30 — the models differ at attribution, not at detection, and the confidence signal pays for it
+
+Measuring `gpt-5.6-luna` produced a 15% "planted found" rate, which read as a
+model that cannot review Go. Reading its replies instead of its score showed the
+opposite: it identifies all four planted defects in nearly every run, describes
+each one accurately, and volunteers two more that are real but unplanted -- the
+nil-map assignment on a zero-value `Store`, and the file that is never closed.
+
+Across ten runs it reported the *same* `Lookup` race at lines **18, 19, 22, 23
+and 24**, anchoring it to the struct field, the doc comment, the function
+signature, or the offending statement, depending on the run.
+
+Re-scoring every model as the line tolerance widens separates the two abilities:
+
+| Model | exact line | +/-3 | +/-6 |
+|---|---|---|---|
+| `gpt-5.4` | 98% | 100% | 100% |
+| `claude-haiku-4.5` | 30% | 80% | 80% |
+| `claude-sonnet-5` | 48% | 100% | 100% |
+| `claude-opus-5` | 54% | 100% | 100% |
+| `gpt-5.6-luna` | 15% | 70% | 100% |
+
+(+/-6 is included to show where the curve flattens and should not be read as a
+score: on a 48-line file with planted defects at 24, 36, 44 and 45, a window
+that wide makes a hit nearly free.)
+
+**Detection is not the differentiator. Attribution is.** Every model finds the
+defects. Only `gpt-5.4` reliably says where they are.
+
+### The cost is paid in the corroboration signal, and it is measurable
+
+Atom's confidence signal groups findings within `--window 3` and reports how
+many runs agreed. Three runs of each model, through production's own
+`_group_by_proximity`:
+
+| Model | Findings | Groups | Corroboration |
+|---|---|---|---|
+| `gpt-5.4` | 12 | 3 | **3/3, 3/3, 3/3** -- at lines 24, 36, 44-46 |
+| `gpt-5.6-luna` | 13 | 6 | 1/3, 2/3, 2/3, 1/3, 3/3, 1/3 |
+
+Luna found the `Lookup` race in all three runs. It is reported as **two separate
+findings, at 1/3 and 2/3** -- neither showing the unanimity that actually
+existed. Half its groups are single-run findings, which is exactly the signal a
+developer uses to decide what to ignore.
+
+So a model with unstable attribution is punished twice over: once because the
+finding points at the wrong line, and again because Atom cannot tell that its
+own repeated findings are the same finding. **The confidence signal silently
+assumes that a model attributes consistently.**
+
+### Widening the window cannot fix this
+
+The obvious repair -- group at a wider tolerance -- is already ruled out by
+evidence in this phase: the planted defects at 44 and 45 are genuinely distinct
+and one line apart, and `--window 3` **already** merges them (`gpt-5.4`'s
+`[44, 45, 46]` group above is two real defects reported as one). Luna shows both
+failures at once: `[38, 39, 40, 41]` merges three distinct problems while `[18]`
+and `[22]` split one.
+
+There is no window that separates defects one line apart while also uniting the
+same defect reported six lines apart. Precise attribution is a requirement Atom
+places on the model, not a property it can recover in aggregation.
+
+**Learnings.**
+
+- *A metric's name is a claim, and it needs checking too.* "Planted found" was
+  an exact-line match reported as a detection rate. Three times this session a
+  headline number has turned out to measure something other than its label.
+- *Read the replies, not only the score.* The score said luna could not review
+  Go. Sixty seconds of reading said it reviews well and cannot point. Opposite
+  conclusions from the same data, and only one of them survives contact with the
+  raw output.
+- *An aggregation step carries assumptions about its inputs.* Grouping by line
+  proximity is sound only while models agree on lines; nothing in the code says
+  so, and nothing measured it until a model turned up that does not.

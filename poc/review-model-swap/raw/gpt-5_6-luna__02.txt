@@ -1,0 +1,21 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 22,
+    "severity": "high",
+    "message": "Lookup reads the map without acquiring the store's read lock, so concurrent Reserve or Export calls can cause a data race or fatal concurrent map read/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 30,
+    "severity": "high",
+    "message": "Reserve allows missing SKUs, negative counts, and reservations exceeding available stock, silently creating or corrupting ledger quantities."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 39,
+    "severity": "high",
+    "message": "Export ignores the os.Create error and may dereference a nil file, while also ignoring write and close errors and iterating the map without synchronization."
+  }
+]
+

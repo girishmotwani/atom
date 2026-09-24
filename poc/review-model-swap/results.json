@@ -966,5 +966,250 @@
       45
     ],
     "false_positives": []
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 1,
+    "seconds": 100.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      18,
+      32,
+      38,
+      39,
+      40
+    ],
+    "hits": [],
+    "false_positives": [
+      18,
+      32,
+      38,
+      39,
+      40
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 2,
+    "seconds": 90.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      30,
+      39
+    ],
+    "hits": [],
+    "false_positives": [
+      22,
+      30,
+      39
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 3,
+    "seconds": 95.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      34,
+      41,
+      42,
+      43
+    ],
+    "hits": [],
+    "false_positives": [
+      22,
+      34,
+      41,
+      42,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 4,
+    "seconds": 99.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      18,
+      30,
+      38,
+      39,
+      40
+    ],
+    "hits": [],
+    "false_positives": [
+      18,
+      30,
+      38,
+      39,
+      40
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 5,
+    "seconds": 52.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      23,
+      35,
+      43,
+      44,
+      45
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      23,
+      35,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 6,
+    "seconds": 46.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      35,
+      35,
+      42,
+      43,
+      43
+    ],
+    "hits": [
+      24
+    ],
+    "false_positives": [
+      35,
+      35,
+      42,
+      43,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 7,
+    "seconds": 42.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      40,
+      41,
+      42,
+      32
+    ],
+    "hits": [],
+    "false_positives": [
+      22,
+      40,
+      41,
+      42,
+      32
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 8,
+    "seconds": 40.2,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      23,
+      29,
+      38,
+      39,
+      40
+    ],
+    "hits": [],
+    "false_positives": [
+      23,
+      29,
+      38,
+      39,
+      40
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 9,
+    "seconds": 97.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      19,
+      31,
+      38,
+      39,
+      40,
+      42
+    ],
+    "hits": [],
+    "false_positives": [
+      19,
+      31,
+      38,
+      39,
+      40,
+      42
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 10,
+    "seconds": 96.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      37,
+      38,
+      44,
+      46,
+      45
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      38,
+      46
+    ]
   }
 ]
