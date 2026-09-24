@@ -173,3 +173,31 @@ covered at all. Each is recorded here rather than quietly omitted:
 | A19-2 | Payload distinguishes overruled from unreadable | `test_the_payload_distinguishes_an_overruled_reply_from_an_unreadable_one` | Medium |
 | B131a-1 | A run that answered is never also counted as overruled | `test_a_run_that_answered_is_never_also_counted_as_overruled` | High |
 | B131a-2 | A run answering despite a malformed element is not called unreadable | `test_a_run_that_answered_despite_a_malformed_element_is_not_called_unreadable` | High |
+
+## A21 — corroboration is a same-line claim
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| A21-1 | Two models on different lines of one group is not corroboration | `test_two_models_on_different_lines_of_one_group_is_not_corroboration` | High |
+| A21-2 | Two models on the same line is still corroboration | `test_two_models_on_the_same_line_is_still_corroboration` | High |
+| A21-3 | Real agreement survives an unrelated line joining the group | `test_agreement_on_one_line_survives_an_unrelated_line_joining_the_group` | High |
+| A21-4 | One model reporting twice is not corroboration | `test_one_model_reporting_twice_on_a_line_is_not_corroboration` | Medium |
+| A21-5 | `model_count` still reports every model in the group | `test_model_count_still_reports_every_model_in_the_group` | High |
+| A21-6 | A single-line group from two models is unaffected | `test_a_single_line_group_from_two_models_is_unaffected` | Medium |
+
+## A22 — nearby multi-model reports
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| A22-1 | The same defect at adjacent lines is reported as nearby | `test_the_same_defect_at_adjacent_lines_is_reported_as_nearby` | High |
+| A22-2 | Same-line agreement is not also reported as nearby | `test_same_line_agreement_is_not_also_reported_as_nearby` | High |
+| A22-3 | Agreement on one line wins over a nearby report | `test_agreement_on_one_line_wins_over_a_nearby_report` | High |
+| A22-4 | One model across several lines is neither signal | `test_one_model_across_several_lines_is_neither_signal` | Medium |
+| A22-5 | A lone finding is neither signal | `test_a_lone_finding_is_neither_signal` | Medium |
+
+## A23 — per-report schema versions
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| A23-1 | The review payload carries the bumped review version | `test_the_review_schema_version_records_the_corroboration_narrowing` | High |
+| A23-2 | The four unaffected reports keep version 1 | `test_the_other_reports_did_not_change_and_keep_their_version` | High |

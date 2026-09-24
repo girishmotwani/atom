@@ -552,3 +552,151 @@ and every round found something true:
 None of the four were found by running the tests, which were green at every round. Three of
 the four were found by a model and confirmed by measurement; one was found by a test written
 *because* a model's claim needed checking.
+
+---
+
+## Finding 23 — the over-merge manufactures the corroboration it was chosen to avoid
+
+A13 keeps `DEFAULT_PROXIMITY_WINDOW` at 3 and justifies it by arguing the opposite error
+is worse: splitting a real defect in two "manufactures corroboration that was never
+observed."
+
+Rendering the exact measured over-merge case showed the reasoning is half right. The
+over-merge manufactures corroboration too — and in the cross-model channel, which is the
+one B122 says carries all the signal.
+
+| input | `is_corroborated` (before) |
+| --- | --- |
+| `gpt-5.4` "nil map write" @44, `claude-haiku-4.5` "unchecked error" @45 | **True**, model_count 2 |
+
+Two models, two demonstrably different messages, one line apart — counted as agreement.
+`is_corroborated` was `model_count > 1`, and `model_count` counts distinct models in the
+*group*, not on a line. Proximity grouping is deliberately loose (B118), so the group is
+exactly the wrong unit for an agreement claim.
+
+**How it was found.** Not by a model and not by a test. By rendering the case A13 already
+described in prose, to check whether a different claim was true. The output answered the
+question asked and exposed something else in passing.
+
+**The general lesson.** A decision's *justification* can be stale even when its
+*conclusion* is still right. The window of 3 survived; the argument for it did not. When
+re-opening a decision, re-check the reasoning, not just the verdict.
+
+**Scope, named honestly.** Never observed on real data — but only because
+`claude-haiku-4.5` has never agreed with `gpt-5.4` on anything (Finding 21). Latent, not
+absent. Fixed under A21.
+
+---
+
+## Finding 24 — three of four re-opened decisions needed no code
+
+A2, A6, A13 and A17 were re-opened with fresh data from 18 further model calls. The
+outcome:
+
+| Decision | Outcome | Code change |
+| --- | --- | --- |
+| A2 | Kept — 58 calls, zero firings, kept anyway on failure-mode grounds | none |
+| A6 | Unchanged — no new data | none |
+| A13 | Flagged question **already satisfied** by shipped code | none |
+| A17 | Closed as settled — 18 hang-free calls | none |
+
+A13 is the instructive one. The flagged question asked for behaviour that `_line_span`
+and the grouping caveat already provided; building it would have duplicated working code.
+**Checking the current behaviour before implementing an agreed change cost one render and
+saved a wasted cycle.**
+
+The value of the exercise was not in the four verdicts. It was that looking closely enough
+to confirm "no change needed" is what surfaced Finding 23.
+
+---
+
+## Finding 25 — a fix for a false positive shipped a false negative, and the gate caught it
+
+A21 narrowed `is_corroborated` from group-level to same-line to stop the over-merge
+manufacturing agreement (Finding 23). Six tests passed, four shapes were verified by hand,
+and the artifacts were already written up.
+
+The review gate then reported, in **one readable run out of six**:
+
+> Requiring two models to match the exact same line drops corroboration for the
+> nearby-line reports that `merge_findings` intentionally treats as one defect, so real
+> cross-model agreement will now be understated whenever models anchor the same issue on
+> adjacent lines.
+
+Measured directly: correct. The narrowed rule hid genuine agreement for **the shape the
+original analysis observed most often**, which is the shape proximity merging was built for.
+
+**What the six tests missed.** Every over-correction guard asked "does the strong case
+still fire?" using *same-line* inputs. Not one asked "what happens to two models at
+adjacent lines describing the same defect" — the case the fix actually changed. The guards
+were written against the mechanism that was altered, not against the behaviour that
+depended on it.
+
+**The generalisable lesson.** When narrowing a rule, the over-correction guard must be
+built from the inputs that *used* to satisfy the rule and no longer do. Guards drawn from
+inputs that still satisfy the rule cannot fail, and six of them passing says nothing.
+
+**Second-order lesson.** Two decisions in a row (A5, A21) were fixes for "a number that was
+not true" that themselves reported a number that was not true. Narrowing a signal is not
+obviously safer than widening it — both directions are errors, and the choice needs the
+same evidence either way.
+
+**Also consistent with Finding 21:** `claude-haiku-4.5` again returned nothing across 3/3
+runs; the finding came from a single `gpt-5.4` run. That is now the third change in a row
+where the entire review signal came from one model.
+
+---
+
+## Finding 26 — the contract broke in the same commit that documented it as unbroken
+
+The design-spec entry for A22 ended: *"The addition is additive, so `SCHEMA_VERSION` is
+unchanged."*
+
+That sentence was written while the same working tree also contained A21, which narrowed
+`is_corroborated` from "several models in this group" to "several models on this line". The
+new field beside it was indeed additive. The existing field was not — the same input now
+produces a different answer under the same version number.
+
+**Found by the gate, in one readable run of six:**
+
+> This changes the meaning of the existing `is_corroborated` JSON field without bumping
+> `schema_version`, so consumers treating version 1 as a stable machine contract cannot
+> detect the incompatible semantics change.
+
+**Why the reasoning failed.** "Additive" was assessed against the change being written at
+that moment (A22's new field) rather than against the whole diff. A21 had already been
+mentally filed as finished. **A contract question has to be asked of the release, not of the
+edit.**
+
+**What it exposed underneath.** Fixing it revealed that one `SCHEMA_VERSION` served five
+independent reports, so no value of it could be true — the identical defect shape being
+fixed two decisions earlier in `is_corroborated`. A single symbol answering several
+questions produces a number that is not true, whatever the domain.
+
+**Third finding in a row from a lone `gpt-5.4` run**, with `claude-haiku-4.5` again
+contributing nothing. See Finding 21.
+
+---
+
+## Finding 27 — superseding a false sentence does not make the document true
+
+The B122b design-spec note said `SCHEMA_VERSION` was unchanged. When A23 fixed that, the
+correction was written as a **"Supersedes"** paragraph further down the file, and the
+original sentence was left in place.
+
+The gate caught it on the next pass:
+
+> This spec now states that the schema version is unchanged, but the same diff bumps the
+> review JSON contract to version 2, so the documented machine contract is incorrect.
+
+A reader who stops at the first statement gets the wrong answer, and nothing on that line
+warns them a correction exists. **A document is not a changelog.** Where a statement is
+simply wrong, fix it where it is written and record the history in the findings; reserve
+supersession notes for decisions that were reasonable when made.
+
+The sentence was corrected in place, the amendment now says it corrects rather than
+supersedes, and the original wording is preserved in Finding 26.
+
+**Worth noting about the run.** This was the first fully clean review of the session:
+6 of 6 runs answered, not partial, exit 0 — and it still found something. A clean run is
+not an empty one.

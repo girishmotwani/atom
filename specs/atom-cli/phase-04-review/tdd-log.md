@@ -245,3 +245,30 @@ JSON array would be classified as silent. One command over seven reply shapes sh
 tests were written, so those five tests are regression pins rather than red-green. The
 behaviours they assert did not exist beforehand and would have failed, but the order was
 wrong and is noted rather than presented as TDD.
+
+## Cycle 9 — corroboration (A21, A22)
+
+**Round 1, A21.** Six tests written first. Red run gave exactly one failure — the new
+behaviour — with five over-correction guards passing, as guards should. Implemented
+same-line bucketing in `is_corroborated`. Suite 783 -> 789. Four shapes verified by hand.
+
+**Round 2, the gate.** Two real `atom review --working` passes. The first returned no
+findings with 4 of 6 runs readable; rather than accept a weak clean result, a second pass
+was run. It reported that same-line-only corroboration hides genuine agreement when two
+models anchor one defect at adjacent lines. Measured: correct, and the shape is the one the
+original analysis observed most often.
+
+**Round 3, A22.** Five tests written first for the disjoint companion signal. Implemented
+`has_nearby_multi_model_reports`, plus report rendering and the JSON field. Suite 789 -> 794.
+Four shapes verified disjoint by hand.
+
+**Process note, recorded honestly.** A21 reached written-up artifacts before the gate ran.
+The decision, finding, design-spec and test-spec entries for it were all committed to disk
+describing a fix that was incomplete. They were corrected rather than rewritten, so the
+record shows the error and its repair rather than a clean result that never happened.
+
+**Round 4, A23.** Gate found the review JSON contract had broken silently. Two tests
+written first; red run failed at import, as intended, because the constants did not exist.
+Split `SCHEMA_VERSION` into five per-report constants and bumped only review to 2.
+Suite 794 -> 796. The four unmoved reports are pinned at 1 by an over-correction guard, and
+`atom status --json` was checked through the real CLI to confirm it still reports 1.

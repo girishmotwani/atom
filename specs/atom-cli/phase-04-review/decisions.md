@@ -481,3 +481,169 @@ way, from the disjoint totals.
 that produce no stderr detail at all — an empty reply is dropped before extraction and
 generates no failure record. The banner now says every counted run is named above, and a
 section exists to name the ones that returned nothing.
+
+---
+
+## Resolved at the Phase 4 gate discussion
+
+### A2 (resolved) — B117 stays
+
+**Decision.** Keep the file guard. B117 rejects a finding naming a file outside the
+reviewed diff.
+
+**The evidence that settled it.** The guard has now never fired in **58 real calls** —
+both committed reviews (`phase-01-check/review.md`, `phase-06-state/review.md`) record
+only unreadable replies, never an out-of-diff finding. A1's rule would strike it.
+
+**Why it stays anyway.** 58 calls is too small a sample to remove a guard whose failure
+mode is loud, bounded and visible in the report. The developer weighed the cost of
+keeping an unfired guard against the cost of a corrupted finding reaching a reader, and
+kept it.
+
+**Named honestly:** the `overruled` run category added under A5 exists entirely for a
+guard that has never fired on real data. That is a deliberate, recorded bet, not an
+oversight.
+
+**Also named:** B117 does **not** catch the one false-positive class actually measured
+(Finding 21 — a model calling an in-diff symbol undefined because its definition was not
+in the diff). Those findings name files inside the diff. B117 was never going to help
+with the problem we actually have.
+
+---
+
+### A6 (resolved) — unchanged
+
+**Decision.** Diff size stays reported, not capped.
+
+**Why.** No new data in 18 further calls. Inventing a threshold still means picking a
+number nobody has measured. Reporting it still lets a developer reading a thin review of
+a huge diff see a plausible reason. Nothing observed argues for moving.
+
+---
+
+### A13 (resolved) — window stays 3; the flagged question was already answered
+
+**Decision.** `DEFAULT_PROXIMITY_WINDOW` remains 3. The flagged question — whether a
+merged finding spanning several lines should say so prominently — is **closed as already
+satisfied**, not by new code.
+
+**Verified by rendering the exact measured case** (two planted defects at 44 and 45):
+
+    #### g.py:44-45 - high
+    Reported at lines 44, 45; nearby lines are grouped, so this entry may cover
+    more than one problem.
+
+The headline carries the span (`_line_span`, A13) and the body states the grouping caveat.
+Both defects' messages stay visible per B120.
+
+**But the same render exposed a defect in A13's own reasoning — see A21.**
+
+---
+
+### A17 (resolved) — settled
+
+**Decision.** Children keep an explicitly empty stdin. Closed as settled.
+
+**Why.** 18 further subprocess calls across three real reviews, zero hangs, zero timeouts.
+The trade-off named in the original decision — a POC reading stdin sees EOF rather than a
+keyboard — remains the better failure and has cost nothing observed.
+
+---
+
+### A21 — corroboration means the same line, not the same group
+
+**Decision.** `MergedFinding.is_corroborated` is true only when two distinct models
+reported the **same line**. Distinct models scattered across a merged group no longer
+count.
+
+**Why.** A13 justifies the window of 3 by arguing that the opposite error, splitting a
+real defect, "manufactures corroboration that was never observed". Rendering the measured
+case showed the over-merge manufactures it too, in the channel that matters most:
+
+| input | old result |
+| --- | --- |
+| `gpt-5.4` "nil map write" @44, `claude-haiku-4.5` "unchecked error" @45 | `is_corroborated: True`, model_count 2 |
+
+Two models, two demonstrably different problems, one line apart, reported as cross-model
+agreement. B122 calls corroboration the one signal that separated the four real defects
+from the eight noise findings. A signal that fires on disagreement is not a signal.
+
+**Same defect class as A5:** the tool reported a number that was not true.
+
+**Scope, named honestly.** This has never fired on real data — but only because
+`claude-haiku-4.5` has never once agreed with `gpt-5.4` on anything (Finding 21). It is
+latent, not absent, and it sits in the one number Phase 4 exists to produce.
+
+**What deliberately did not change.** `model_count` and the per-model agreement fractions
+still report every model that contributed to the entry. Narrowing corroboration must not
+hide who spoke — guarded by
+`test_model_count_still_reports_every_model_in_the_group`.
+
+---
+
+### A22 — nearby multi-model reports are their own signal
+
+**Decision.** `is_corroborated` stays same-line only (A21). A second, weaker and
+deliberately **disjoint** signal, `has_nearby_multi_model_reports`, reports the case A21
+would otherwise have hidden: several models landed in one group but never on the same line.
+
+**Why A21 alone was wrong.** The review gate caught it, and measurement confirmed it:
+
+    SAME defect, adjacent lines, two models
+      lines: (44, 45)   model_count: 2   is_corroborated: False
+
+That is the shape `test_merge.py`'s own docstring names as what the original analysis
+observed most often — "the same defect reported at adjacent lines". Proximity merging
+(B118) exists precisely for it. A21 shipped alone would have understated genuine
+cross-model agreement on the commonest real case in order to fix a latent one.
+
+**The underlying problem, named.** These two shapes are indistinguishable in the data:
+
+| | lines | models | truth |
+| --- | --- | --- | --- |
+| same defect, adjacent lines | (44, 45) | 2 | genuine agreement |
+| different defects, adjacent lines | (44, 45) | 2 | no agreement |
+
+Line numbers cannot separate them, so **one boolean must be wrong in one direction**. A21
+did not fix the error; it swapped which error was made. Message-similarity matching was
+rejected as fuzzy and unmeasured.
+
+**Resolution.** Stop forcing one boolean to answer a question the data cannot answer.
+Report both measured facts and let the reader judge, with every contributing message still
+visible (B120):
+
+    Several models reported problems in this group, but on different lines,
+    so this is not recorded as agreement.
+
+**Disjointness is load-bearing**, for the same reason it was under A20: an entry counted in
+both would render under two contradictory headings. `has_nearby_multi_model_reports`
+returns false whenever `is_corroborated` is true.
+
+**Verified over four shapes**, all disjoint: same defect adjacent (nearby), different
+defects adjacent (nearby), same line (corroborated), one model two lines (neither).
+
+---
+
+### A23 — each report carries its own schema version
+
+**Decision.** The single shared `SCHEMA_VERSION` is replaced by one constant per report
+kind: `CHECK_SCHEMA_VERSION`, `SPIKE_SCHEMA_VERSION`, `SPIKE_LIST_SCHEMA_VERSION`,
+`STATUS_SCHEMA_VERSION` (all 1) and `REVIEW_SCHEMA_VERSION` (**2**).
+
+**Why.** The review gate found that A21 changed what `is_corroborated` answers for the same
+input — a breaking change to the review JSON contract — while `schema_version` stayed at 1.
+The design-spec entry written minutes earlier said "the addition is additive, so
+`SCHEMA_VERSION` is unchanged", which was true of the *new* field and false of the
+*narrowed* one. Both were in the same commit.
+
+**Why not simply bump the shared constant to 2.** One number served five independent
+contracts, so it could not be true for all of them: bumping it signals a change to four
+reports that did not move, and not bumping it hides a real change from review consumers.
+**This is the same shape as the defect it was reporting** — a single value forced to answer
+several questions — and it gets the same treatment.
+
+**The rule, now stated in the code.** Adding a field is not a bump. Changing what an
+existing field answers for the same input is.
+
+**Guarded against over-correction** by `test_the_other_reports_did_not_change_and_keep_their_version`,
+which pins the four unmoved reports at 1.

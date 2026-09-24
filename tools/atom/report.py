@@ -11,9 +11,23 @@ from atom.invoke import RunOutcome
 from atom.review import ReviewOutcome
 from atom.spike import SpikeKind, SpikeResult, Stage, Verdict
 
-# Bump when the JSON shape changes incompatibly, so consumers can branch on it
-# instead of guessing from the presence of fields.
-SCHEMA_VERSION = 1
+# Each report is its own machine contract, so each carries its own version.
+# A single shared number cannot be true for all of them: narrowing one report's
+# semantics would either under-signal (leaving its consumers unable to detect
+# the change) or over-signal a change to four reports that did not move.
+#
+# Bump one of these when that report's JSON shape or the *meaning* of an
+# existing field changes incompatibly. Adding a field is not a bump; changing
+# what an existing field answers for the same input is.
+CHECK_SCHEMA_VERSION = 1
+SPIKE_SCHEMA_VERSION = 1
+SPIKE_LIST_SCHEMA_VERSION = 1
+STATUS_SCHEMA_VERSION = 1
+
+# 2: A21 narrowed `is_corroborated` from "several models in this group" to
+# "several models on this line", so the same input now yields a different
+# answer.
+REVIEW_SCHEMA_VERSION = 2
 
 _RESET = "\x1b[0m"
 _GREEN = "\x1b[32m"
@@ -88,7 +102,7 @@ def render_json(report: CheckReport) -> str:
     """Render a report as stable, versioned JSON for programmatic consumers."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": CHECK_SCHEMA_VERSION,
         "directory": str(report.directory),
         "passed": report.passed,
         "exit_code": report.exit_code,
@@ -238,7 +252,7 @@ def render_spike_json(result: SpikeResult) -> str:
     """Render a spike run as stable, versioned JSON."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SPIKE_SCHEMA_VERSION,
         "slug": result.slug,
         "kind": result.kind.value,
         "ran": result.ran,
@@ -288,7 +302,7 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
     """Render the spike index as stable, versioned JSON."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SPIKE_LIST_SCHEMA_VERSION,
         "spikes": [
             {
                 "slug": summary.slug,
@@ -458,7 +472,7 @@ def render_status_json(report: "StatusReport") -> str:
     guaranteed subset of the object (see ``StatusReport.to_dict``).
     """
 
-    payload = {"schema_version": SCHEMA_VERSION, **report.to_dict()}
+    payload = {"schema_version": STATUS_SCHEMA_VERSION, **report.to_dict()}
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
@@ -529,7 +543,7 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
     invocation = outcome.invocation
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": REVIEW_SCHEMA_VERSION,
         "is_partial": outcome.is_partial,
         "has_no_usable_response": outcome.has_no_usable_response,
         "diff": {
@@ -746,6 +760,16 @@ def _single_finding_lines(finding) -> list[str]:
         )
         lines.append("")
 
+    if finding.has_nearby_multi_model_reports:
+        # A22. Several models landed in this group but never on the same line.
+        # That is not agreement and must not be shown as agreement, but it is
+        # also not nothing, so it is stated plainly instead of dropped.
+        lines.append(
+            "Several models reported problems in this group, but on different "
+            "lines, so this is not recorded as agreement."
+        )
+        lines.append("")
+
     agreement = ", ".join(
         f"`{entry.model}` {entry.fraction}" for entry in finding.agreement
     )
@@ -781,6 +805,7 @@ def _finding_payload(finding) -> dict:
         "highest_severity": finding.highest_severity,
         "severities": list(finding.severities),
         "is_corroborated": finding.is_corroborated,
+        "has_nearby_multi_model_reports": finding.has_nearby_multi_model_reports,
         "has_severity_disagreement": finding.has_severity_disagreement,
         "agreement": [
             {
