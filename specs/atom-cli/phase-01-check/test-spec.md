@@ -37,6 +37,11 @@ python -m pytest tests -v --cov=atom --cov-report=term-missing
 |---|---|---|---|
 | B1 | stdout/stderr captured separately with real exit code | `test_subprocess_runner_captures_stdout_stderr_and_exit_code_separately` | `test_runner.py` |
 | B2 | Timeout returns `TIMED_OUT`, `exit_code=None`, no raise | `test_subprocess_runner_returns_timed_out_without_raising` | `test_runner.py` |
+| B2a | Timeout returns within a bounded time even when the child leaves a process behind | `test_run_returns_promptly_when_the_child_leaves_a_process_behind` | `test_runner.py` |
+| B2b | Output written before the kill survives the kill | `test_output_written_before_the_kill_is_still_returned` | `test_runner.py` |
+| B2c | The reported duration matches the time actually spent | `test_the_reported_duration_matches_the_time_actually_spent` | `test_runner.py` |
+| B2d | An abandoned drain says so rather than reporting silence | `test_an_abandoned_drain_says_so_instead_of_reporting_silence` | `test_runner.py` |
+| B2e | An interrupt takes the process tree down with it | `test_an_interrupt_takes_the_process_tree_down_with_it` | `test_runner.py` |
 | B3 | Missing executable returns `TOOL_MISSING`, no raise | `test_subprocess_runner_returns_tool_missing_without_raising` | `test_runner.py` |
 | B4 | Never raises `CalledProcessError` | Covered by B2 and B3 — both assert no exception escapes | `test_runner.py` |
 | B5 | `succeeded` true only for `COMPLETED` + exit 0 | `test_command_result_succeeded_only_for_completed_zero` | `test_runner.py` |

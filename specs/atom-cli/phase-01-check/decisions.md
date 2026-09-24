@@ -138,3 +138,39 @@ are two rules that will eventually disagree, which is precisely the defect being
 fixed. The inconsistency was possible only because the two gates judged the same
 command by different means; sharing the evaluator removes the possibility, not
 just the instance.
+
+
+## P1-R4. A timed-out command has its whole process tree killed
+
+**Question.** `run` promised to return on timeout. It did not promise to return
+*soon*. A `copilot` call that hung was measured taking **65 minutes against a
+300-second deadline**, because `subprocess.run` kills the direct child and then
+drains its pipes with no deadline of its own. A pipe reaches EOF when the last
+handle to its write end closes, and the grandchildren the agent had spawned
+still held one. Killing the parent closed only the parent's.
+
+**Decision.** On timeout, kill the entire process tree, then drain the pipes
+with a fixed two-second grace and return whatever arrived.
+
+**Measured alternatives** (`poc/review-timeout/spike.py`, 3s deadline, a child
+that leaves a 45s survivor behind):
+
+| Strategy | Took | Bounded? | Output recovered |
+|---|---|---|---|
+| `subprocess.run` as-is | 45.6s | no | 7 chars |
+| Kill the tree, then drain | **3.7s** | **yes** | **7 chars** |
+| Kill the child, abandon the pipes | 5.1s | yes | **0 chars** |
+
+**Why not abandon the pipes.** It bounds the wait just as well and needs no
+platform-specific code, and it was still rejected: it throws away everything the
+command had already written. For a review that stalled halfway, that partial
+reply is the whole diagnosis -- it is what separates "the model was slow" from
+"the model got stuck on this file". Bounding the wait by discarding the evidence
+solves the symptom the defect presented with rather than the problem it caused.
+
+**The accepted cost.** Tree kill on POSIX needs the child in its own process
+group (`start_new_session=True`), which also removes it from the terminal's
+foreground group -- so **Ctrl-C no longer reaches `go test`**. This was put to
+the developer explicitly and accepted: an interrupt that must be issued twice is
+a smaller harm than a deadline that does not hold. Windows needs no such
+trade-off; `taskkill /T` walks the tree without regrouping anything.

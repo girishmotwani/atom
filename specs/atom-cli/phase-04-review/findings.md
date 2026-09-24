@@ -700,3 +700,50 @@ supersedes, and the original wording is preserved in Finding 26.
 **Worth noting about the run.** This was the first fully clean review of the session:
 6 of 6 runs answered, not partial, exit 0 — and it still found something. A clean run is
 not an empty one.
+
+
+## Finding 28 — the model that scored highest had read the answer key
+
+While building the swap comparison, `claude-sonnet-5` scored a perfect 4/4 on
+the fixture. It did so by running a repository-wide search for the string
+`"planted defect"` and reading `specs/atom-cli/phase-04-review/design-spec.md`,
+`decisions.md` and `findings.md` — all of which name the four planted defects by
+line number, and all of which are committed.
+
+The score was real. The measurement was worthless.
+
+This is not a quirk of one model. Any agent given a working directory inside
+this repository can reach the ground truth of every fixture-based experiment the
+repository contains, and the stronger the model, the more likely it is to go
+looking. **Every fixture-based measurement must run from an empty temporary
+directory.** The harness now does.
+
+> *When a subject can reach the answer key, a high score is evidence about the
+> filesystem, not about the subject.*
+
+## Finding 29 — the Phase 4 measurement harness stopped working; its numbers did not
+
+The Phase 4 POC passes the prompt in argv, via `copilot -p`. On CLI 1.0.89-1
+that call still exits zero, and the model answers as though no diff arrived and
+then starts searching the filesystem for one. A 2×2 probe (baseline prompt vs
+scoped prompt × repo cwd vs neutral cwd) failed in all four cells, which is what
+ruled out the prompt wording; the prompt was verified intact in argv at 1,896
+chars, which ruled out truncation. Delivering the identical prompt on **stdin**
+returned clean JSON in all four cells.
+
+Production was never affected: `invoke.review_command` pipes the prompt on stdin
+and passes no `-p` at all, for the unrelated reason that argv corrupts large
+diffs near 8,000 characters on Windows. A decision taken for one reason turned
+out to be load-bearing for another.
+
+**The harness is broken; the published numbers are not.** Both Phase 4 controls
+reproduced over stdin, which is precisely the evidence needed to say so. The
+first version of this finding claimed the harness "silently invalidates" its
+published figures — that was written before the controls were run, and it was
+false. It has been corrected where it was written rather than corrected
+underneath.
+
+> *"The tool that produced this number no longer runs" and "this number is
+> wrong" are different claims, and only one of them was true.* Running the
+> controls is what separated them; without controls the alarming reading is the
+> one that survives.

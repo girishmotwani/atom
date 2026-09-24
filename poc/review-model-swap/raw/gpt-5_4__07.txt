@@ -1,0 +1,27 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "medium",
+    "message": "Lookup reads s.items without taking the RWMutex, so it can crash with a concurrent map read/write panic when Reserve runs at the same time."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "high",
+    "message": "Reserve never checks that the SKU exists or has enough stock, so unknown SKUs and over-reservations silently create negative inventory."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "Export ignores file creation and write/close errors and still returns nil, so failed or partially flushed exports are reported as successful."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "medium",
+    "message": "Export iterates over s.items without a read lock, so it can panic with concurrent map iteration/write if Reserve runs concurrently."
+  }
+]
+

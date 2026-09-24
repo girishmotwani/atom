@@ -647,3 +647,49 @@ existing field answers for the same input is.
 
 **Guarded against over-correction** by `test_the_other_reports_did_not_change_and_keep_their_version`,
 which pins the four unmoved reports at 1.
+
+
+## A21 — the second review model stays `claude-haiku-4.5`, on the evidence
+
+**Question.** `claude-haiku-4.5` contributes little to the review pair. Should it
+be swapped for a stronger Claude -- `claude-sonnet-5` or `claude-opus-5`?
+
+**Decision.** No. Keep the pair as `("gpt-5.4", "claude-haiku-4.5")`.
+
+**How this was settled.** By measurement, not by reputation:
+`poc/review-model-swap/spike.py`, 40 calls, four models by ten trials, against
+the Phase 4 fixture with four planted defects. Every call goes through
+production's own `review_command`, production's `REVIEW_PROMPT` and production's
+`extract_from_run`, so "readable" means exactly what it means to `atom review`.
+
+| Model | Readable | Planted found | Precision | Distinct FP lines | Median |
+|---|---|---|---|---|---|
+| `gpt-5.4` | 10/10 | **98%** | **95%** | **1** | 48s |
+| `claude-haiku-4.5` | 10/10 | 30% | 32% | 8 | 39s |
+| `claude-sonnet-5` | 10/10 | 48% | 30% | 18 | 32s |
+| `claude-opus-5` | **7/10** | 54% | 26% | 15 | 38s |
+
+Medians are taken over runs that produced a readable report. Three opus calls
+did not, and each recorded roughly 3,890 seconds -- not because opus is slow,
+but because the harness could not bound a timeout, which is the defect described
+in Phase 1 finding "The deadline that was not a deadline". Folding those three
+into a latency figure would have described the harness rather than the model.
+
+**Why the stronger models lose.** They do find more planted defects -- and they
+are *less precise* while doing it, at roughly double the false-positive volume.
+The swap trades a second model that is quiet and largely useless for one that is
+loud and largely wrong, and every false line it adds is a line a developer must
+read and dismiss. Opus additionally failed to produce a readable report 3 times
+in 10, which is a correctness problem before it is a quality one.
+
+**What the numbers actually say.** `gpt-5.4` does essentially all of the work.
+That confirms Finding 21 -- the two models are not two opinions -- at four times
+the original sample. The question worth asking is therefore not *which Claude*,
+but whether the second slot should hold a non-Claude model, or be spent on a
+second `gpt-5.4` pass instead. That is left open deliberately; this decision
+records only what was measured, which is that the proposed swap is not justified.
+
+**Trust in these figures rests on the controls.** Both incumbents reproduced
+their published Phase 4 behaviour in the new harness -- `gpt-5.4` found line 24
+in 10/10 (published 20/20), haiku found line 44 in 6/10 (published 13/20). A
+comparison whose controls do not reproduce is measuring the harness.

@@ -67,7 +67,7 @@ makes this phase testable without spawning processes.
 class CommandOutcome(enum.Enum):
     """Why a command ended. Distinguishes 'ran and failed' from 'never ran'."""
     COMPLETED = "completed"        # process ran to completion; consult exit_code
-    TIMED_OUT = "timed_out"        # exceeded the deadline and was killed
+    TIMED_OUT = "timed_out"        # exceeded the deadline; the process tree was killed
     TOOL_MISSING = "tool_missing"  # executable not found on PATH
 
 
@@ -206,6 +206,22 @@ Numbered; each becomes at least one test case.
    **separately** and the real exit code.
 2. `run` on a command exceeding `timeout_seconds` returns `outcome=TIMED_OUT` with
    `exit_code=None`, and does not raise.
+2a. `run` returns **within a bounded time** of `timeout_seconds` -- specifically
+   `timeout_seconds` plus a small fixed drain grace -- regardless of what the timed-out
+   command spawned. The deadline is a promise about when `run` returns, not merely about
+   when the direct child is signalled.
+2b. On timeout `run` terminates the whole **process tree**, not just the direct child,
+   and reports in `CommandResult.stderr` whether that termination succeeded. Output
+   produced before the deadline is preserved **whenever the termination works**: a
+   partial reply is the evidence that distinguishes a command that was slow from one
+   that was stuck. When termination fails, `run` still returns within the bound,
+   salvages whatever the platform still makes reachable, and says in `stderr` what
+   became of the rest -- so an empty reply is never mistaken for a command that
+   printed nothing.
+2c. `run` kills the process tree on `KeyboardInterrupt` and re-raises. Interrupting
+   Atom must not leave the command it started running unattended -- on POSIX the
+   session that makes rule 2b possible is the same session that puts the child out
+   of the terminal's reach.
 3. `run` with an executable not on PATH returns `outcome=TOOL_MISSING`, and does not raise.
 4. `run` never raises `CalledProcessError` — a failing command is data, not an exception.
 5. `CommandResult.succeeded` is true only when `outcome is COMPLETED and exit_code == 0`.

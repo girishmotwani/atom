@@ -1,0 +1,23 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored; if file creation fails, the function will panic or silently fail."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "File handle is never closed, causing a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 34,
+    "severity": "high",
+    "message": "Reserve accesses s.items[sku] without checking if the SKU exists, and allows negative stock quantities."
+  }
+]
+```
+

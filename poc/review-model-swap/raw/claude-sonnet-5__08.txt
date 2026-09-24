@@ -1,0 +1,9 @@
+[
+  {"file": "inventory/stock.go", "line": 25, "severity": "high", "message": "Lookup reads s.items without holding s.mu, causing a data race with Reserve/Export which mutate the map concurrently."},
+  {"file": "inventory/stock.go", "line": 37, "severity": "medium", "message": "Reserve does not check if the SKU exists before reserving, silently creating a zero-value item and reducing its quantity."},
+  {"file": "inventory/stock.go", "line": 38, "severity": "medium", "message": "Reserve allows Quantity to go negative since it never validates count against available stock."},
+  {"file": "inventory/stock.go", "line": 45, "severity": "high", "message": "Export ignores the error from os.Create, so a nil file pointer will be dereferenced by fmt.Fprintf if creation fails."},
+  {"file": "inventory/stock.go", "line": 45, "severity": "medium", "message": "Export never closes the file handle, leaking file descriptors."},
+  {"file": "inventory/stock.go", "line": 46, "severity": "high", "message": "Export iterates s.items without acquiring s.mu, risking a concurrent map read/write panic with Reserve."}
+]
+

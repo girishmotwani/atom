@@ -129,3 +129,56 @@ rough edge on it.
 - *Bootstrap debt keeps earning interest.* Phase 1 built the gates every later
   phase relied on, and was the one phase never reviewed. The tooling a project
   builds first is the tooling its own process cannot yet check.
+
+
+## The deadline that was not a deadline
+
+Found while measuring something else entirely. A model-comparison run showed
+three `claude-opus-5` calls recording **3,890 seconds against a 300-second
+timeout**, and a 40-call experiment that should have taken twenty minutes took
+seventy-one.
+
+**The mechanism.** `subprocess.run(timeout=N)` is `communicate(timeout=N)`, then
+on `TimeoutExpired` it calls `process.kill()` followed by `communicate()` again
+-- this time **with no timeout**. That second call waits for EOF on the pipes,
+and a pipe reaches EOF only when the *last* handle to its write end closes. Any
+process the command spawned inherited that handle. Killing the direct child
+closes exactly one of them. So the real bound was not the deadline; it was the
+lifetime of the longest-lived grandchild.
+
+**Blast radius.** The defect was in `SubprocessRunner.run`, which is the single
+path through which all eleven `CommandRunner` consumers reach a subprocess. It
+was never a review problem. `go test` on a wedged test binary, `go build` on a
+stuck toolchain and `gofmt` on a pathological file were all equally exposed; the
+review path merely happened to be the one pointed at a process that routinely
+spawns children and routinely hangs.
+
+**Why 796 passing tests did not find it.** The existing guard, B2, asserted the
+right property -- returns `TIMED_OUT`, does not raise -- against the one input
+that could not expose the bug: a child with no children of its own. Such a child
+dies when killed, its pipes close immediately, and the unbounded second wait
+returns at once. The test passed for the entire life of the defect and would
+have kept passing forever.
+
+> *A test that cannot fail is not a guard.* The property under test was correct
+> and the assertion was correct; the **input** was the part that made the test
+> vacuous. When adding a guard for a fix, the question is not "does this assert
+> the right thing" but "would this input have failed before the change".
+
+**Why a green suite could not have found it.** Nothing here is visible in a
+unit test that does not deliberately spawn a survivor, and nothing is visible in
+code review either -- `subprocess.run(..., timeout=300)` reads as correct, and is
+the form every reference recommends. It took a *measurement* of real wall-clock
+time on a real workload to make the gap observable. The POC that found it ran
+for 71 minutes; the reproduction distilled from it runs in 45 seconds.
+
+**Learnings.**
+
+- *A deadline is a promise about when you return, not about who you signal.*
+  The old code kept the second promise perfectly and never made the first.
+- *An anomaly in a measurement is a finding about the measurer.* The 3,890-second
+  rows looked like a slow model. Treating them as data about opus rather than
+  about the harness would have produced a published latency figure that was
+  simply false.
+- *The most exposed consumer is not the only consumer.* The defect was found
+  through `atom review` and fixed in `runner.py`, where every gate benefits.

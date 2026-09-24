@@ -1,0 +1,11 @@
+[
+  {"file": "inventory/stock.go", "line": 27, "severity": "high", "message": "Lookup reads s.items without acquiring s.mu.RLock, causing a data race with Reserve's concurrent map writes."},
+  {"file": "inventory/stock.go", "line": 39, "severity": "high", "message": "Reserve ignores a missing SKU (zero-value item) and allows Quantity to go negative without validating count or available stock."},
+  {"file": "inventory/stock.go", "line": 46, "severity": "critical", "message": "Export discards the os.Create error and then writes to a possibly nil file handle, which will panic or silently lose data."},
+  {"file": "inventory/stock.go", "line": 46, "severity": "high", "message": "Export never closes the created file, leaking the descriptor and risking unflushed data."},
+  {"file": "inventory/stock.go", "line": 47, "severity": "medium", "message": "Export iterates s.items without holding s.mu.RLock, racing with concurrent Reserve calls."},
+  {"file": "inventory/stock.go", "line": 48, "severity": "medium", "message": "The fmt.Fprintf error is ignored, so write failures (e.g. disk full) are silently swallowed."},
+  {"file": "inventory/stock.go", "line": 50, "severity": "medium", "message": "Export always returns nil, so callers cannot detect any failure during export."},
+  {"file": "inventory/stock.go", "line": 22, "severity": "medium", "message": "Store has no constructor initializing the items map, so a zero-value Store panics on the map write in Reserve."}
+]
+

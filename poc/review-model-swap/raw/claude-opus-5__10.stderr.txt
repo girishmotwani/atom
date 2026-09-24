@@ -1,0 +1,11 @@
+Error: Failed to load models
+
+Error: error sending request for url (https://api.enterprise.githubcopilot.com/models): client error (Connect): dns error: error resolving DNS: No such host is known. (os error 11001) [ENOTFOUND]
+
+Copilot could not retrieve the list of available models.
+
+To resolve this, try the following:
+  • If you set COPILOT_GITHUB_TOKEN, GH_TOKEN or GITHUB_TOKEN, verify it is a user token with Copilot access, or unset it to use your Copilot CLI login
+  • Start 'copilot' and run the '/login' command to re-authenticate
+  • Run 'gh auth status' to check your current authentication status
+  • If the problem persists, retry later or contact support with the Request ID above

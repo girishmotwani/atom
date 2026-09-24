@@ -1,0 +1,29 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored; f will be nil if Create fails, causing panic on line 45."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "File handle from os.Create is never closed, leaking system resources."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 23,
+    "severity": "high",
+    "message": "Map access in Lookup is unprotected by mutex while Reserve modifies it with a lock, causing race condition."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "medium",
+    "message": "Reserve does not validate that item exists or that quantity is sufficient, allowing negative stock."
+  }
+]
+```
+

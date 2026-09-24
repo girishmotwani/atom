@@ -1,0 +1,10 @@
+[
+  {"file": "inventory/stock.go", "line": 24, "severity": "high", "message": "Lookup reads s.items without acquiring s.mu, causing a data race with concurrent Reserve calls."},
+  {"file": "inventory/stock.go", "line": 33, "severity": "medium", "message": "Reserve does not check whether the SKU exists before decrementing, silently creating a zero-quantity entry for unknown SKUs."},
+  {"file": "inventory/stock.go", "line": 34, "severity": "medium", "message": "Reserve does not validate that count does not exceed available quantity, allowing negative stock."},
+  {"file": "inventory/stock.go", "line": 42, "severity": "high", "message": "os.Create error is ignored, so a nil file pointer will be dereferenced by fmt.Fprintf if creation fails."},
+  {"file": "inventory/stock.go", "line": 43, "severity": "medium", "message": "Export iterates s.items without holding s.mu, causing a data race with concurrent Reserve calls."},
+  {"file": "inventory/stock.go", "line": 44, "severity": "medium", "message": "fmt.Fprintf's returned error is ignored, so write failures to the file go undetected."},
+  {"file": "inventory/stock.go", "line": 45, "severity": "medium", "message": "The file handle f is never closed, leaking a file descriptor and risking unflushed data."}
+]
+
