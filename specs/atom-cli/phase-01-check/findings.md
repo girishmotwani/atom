@@ -60,3 +60,72 @@ was raised at the Phase 1 gate and the chosen interpretation was confirmed.
 - [x] Reusable learnings captured, with promotion candidates named
 - [x] No fixed issue is listed as deferred (finding 1 states plainly that it was fixed)
 - [x] No finding contradicts the POC verdict or design spec
+
+## The Phase 1 review gate, run late
+
+Phase 1 shipped before `atom review` existed, so its diff was never reviewed --
+a bootstrap debt carried openly since. It was paid once the Copilot CLI was
+working again: `atom review --branch 2083fe5` over the 23 files and 2,514 lines
+of `4d8dee1..7aae972`, from a detached worktree at Phase 1's tip so the reviewed
+range was exactly Phase 1.
+
+Result: 6/6 runs, one unparseable reply, five findings -- **all from `gpt-5.4`,
+all raised in 1 of 3 runs**, with `claude-haiku-4.5` finding nothing in 3/3. The
+same distribution as Phase 6, and the same conclusion: agreement is not
+confidence. Every finding was checked against source.
+
+| # | Finding | Verdict |
+|---|---|---|
+| 1 | `gofmt -l .` recurses into nested modules | **Real** |
+| 2 | stderr chatter defeats the `[no test files]` scan | **Real** |
+| 3 | `text=True` decodes with the host locale | **Real -- already fixed in Phase 4** (`341b28a`) |
+| 4 | CI POC job pinned to Ubuntu | Real, low, a judgement call |
+| 5 | `check_links.py` strips `#anchor` before checking | **Real**, low |
+
+Finding 3 deserves its own note: the model named the exact line and the exact
+mechanism, and the defect had already been found and fixed independently in
+Phase 4 by running the program. *Two different instruments found the same
+defect, one of them three phases late.* The review gate is not a substitute for
+running the thing, and running the thing is not a substitute for the review
+gate.
+
+### Two defects the review did not find
+
+Both came out of refusing to explain away a measurement artifact. While checking
+finding 1, `gofmt -l .` also flagged a file I believed was clean. The tempting
+reading was "my fixture is sloppy". Building the minimal case instead:
+
+- **CRLF alone fails the fmt gate.** A byte-for-byte correctly formatted file is
+  reported unformatted purely for its line endings. `core.autocrlf=true` is
+  Git's default on Windows *and is set in this repository*, so every Windows
+  developer would see `FAIL fmt` on every file, with a message -- "1 file(s)
+  need gofmt: main.go" -- that never mentions line endings. Proven end to end
+  through the real `atom check`: exit 1 on a one-file project containing no
+  formatting error at all. This is the most severe finding of the set and
+  neither model raised it.
+- **`race` reported PASSED on zero tests while `test` reported SKIPPED.** Seen
+  in the same run, printed on adjacent lines: twenty seconds spent proving
+  nothing, reported green.
+
+### What the four fixed defects have in common
+
+Every one is the same failure wearing different clothes: **the gate reported a
+verdict that was not true.** Three said green where nothing had been checked;
+one said red where nothing was wrong. A quality gate's only product is a true
+verdict, so each of these was a total failure of the gate's purpose, not a
+rough edge on it.
+
+**Learnings.**
+
+- *A measurement artifact is a finding you have not read yet.* The CRLF defect
+  arrived disguised as a sloppy fixture, and "my test setup is wrong" is the
+  most comfortable available explanation for an inconvenient result.
+- *A gate whose verdict depends on the environment is not measuring the code.*
+  Platform-dependent green is worse than consistent red, because it is the
+  disagreement between developer and CI that nobody can reproduce.
+- *Consistency between gates is itself a testable property.* `test` and `race`
+  run the same suite over the same packages; that they could disagree was
+  discoverable without knowing which one was wrong.
+- *Bootstrap debt keeps earning interest.* Phase 1 built the gates every later
+  phase relied on, and was the one phase never reviewed. The tooling a project
+  builds first is the tooling its own process cannot yet check.

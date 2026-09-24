@@ -51,6 +51,12 @@ python -m pytest tests -v --cov=atom --cov-report=term-missing
 | B8 | `VetGate` behaves as B6–B7 | `test_go_command_gate_passes_when_command_exits_zero[vet]`, `test_vet_gate_fails_when_vet_exits_nonzero` | `test_gates.py` |
 | B9 | `FormatGate` fails on printed filenames **despite exit 0** | `test_format_gate_fails_on_printed_filenames_despite_zero_exit_code` | `test_gates.py` |
 | B9 | gofmt's own non-zero exit is a distinct failure | `test_format_gate_fails_when_gofmt_itself_errors` | `test_gates.py` |
+| B9 | Files in a nested module are not this module's formatting problem | `test_format_gate_ignores_files_belonging_to_a_nested_module` | `test_gates.py` |
+| B9 | Ordinary subdirectories are still covered (guard) | `test_format_gate_still_reports_unformatted_files_in_the_root_module` | `test_gates.py` |
+| B9 | CRLF-only differences do not fail the gate | `test_format_gate_does_not_fail_for_line_ending_only_differences` | `test_gates.py` |
+| B9 | The passing summary names line endings as the cause | `test_format_gate_names_line_endings_as_the_cause` | `test_gates.py` |
+| B9 | CRLF is not an amnesty for real misformatting (guard) | `test_format_gate_still_fails_when_a_crlf_file_is_also_badly_formatted` | `test_gates.py` |
+| B9 | One real failure is not softened by a CRLF-only file (guard) | `test_format_gate_reports_a_genuine_problem_even_beside_a_line_ending_one` | `test_gates.py` |
 | B10 | `FormatGate` passes on empty output | `test_format_gate_passes_when_gofmt_prints_nothing` | `test_gates.py` |
 | B10 | Blank lines are not read as filenames | `test_format_gate_ignores_blank_lines_in_gofmt_output` | `test_gates.py` |
 | B11 | Summary names the unformatted files | `test_format_gate_names_unformatted_files_in_summary` | `test_gates.py` |
@@ -59,6 +65,9 @@ python -m pytest tests -v --cov=atom --cov-report=term-missing
 | B14 | `SKIPPED` when no package has tests | `test_test_gate_skips_when_go_reports_no_test_files` | `test_gates.py` |
 | B14 | A real failure is never softened into `SKIPPED` | `test_test_gate_failure_wins_over_no_test_files_marker` | `test_gates.py` |
 | B15 | `RaceGate` runs `go test -race ./...` | `test_race_gate_runs_go_test_with_race_flag` | `test_gates.py` |
+| B14 | Stderr chatter does not turn "no tests" into a pass | `test_test_gate_skips_when_download_chatter_accompanies_no_test_files` | `test_gates.py` |
+| B15 | `RaceGate` skips a tree with no tests, agreeing with `TestGate` | `test_race_gate_skips_when_no_packages_have_tests` | `test_gates.py` |
+| B15 | `RaceGate` still passes when tests really ran (guard) | `test_race_gate_still_passes_when_tests_actually_ran` | `test_gates.py` |
 | B15 | `SKIPPED` when disabled, and runs nothing | `test_race_gate_is_skipped_when_disabled` | `test_gates.py` |
 | B16 | `TOOL_MISSING` yields `FAILED` naming the tool | `test_gate_fails_and_names_tool_when_executable_missing` | `test_gates.py` |
 | B17 | Details are verbatim, never paraphrased | `test_test_gate_fails_and_preserves_raw_output` (asserts exact substring) | `test_gates.py` |

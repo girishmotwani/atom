@@ -65,3 +65,48 @@ Cycles 3 and 4 each grouped several related behaviours into one red-green cycle 
 one behaviour per cycle. Every behaviour had a failing test before its implementation
 existed, but the cycles are coarser than strict per-behaviour TDD. Stated plainly here and
 in `decisions.md` rather than presented as something it was not.
+
+## Late cycle -- the four defects the Phase 1 review gate exposed
+
+Run on branch `gate-honesty`, long after Phase 1 shipped. All four defects are
+in `gates.py` and all four are the same failure: a gate reporting a verdict that
+was not true.
+
+**Before writing anything, two mechanics were measured rather than assumed** --
+the habit that has repaid itself every cycle:
+
+- `gofmt` reading stdin echoes the formatted source, so normalised content
+  returning unaltered is a sound line-ending-only detector.
+- `go list -f '{{.Dir}}' ./...` returns only the root module's directory,
+  confirming that module scoping genuinely excludes nested spikes.
+
+The second measurement then went unused: walking ancestors for `go.mod` does the
+same job with no subprocess (P1-R2). Measuring an option is not a commitment to
+using it.
+
+**Red.** Nine tests: five failing, four guards passing. The four that passed did
+so *vacuously* -- at that point the gate failed everything, so "still fails when
+genuinely misformatted" could not have failed. They were written anyway and
+re-checked after the fix, which is the only moment they mean anything. A guard
+that has never been at risk of failing is a guard only by intention.
+
+**Green.** `_evaluate_go_test_gate` extracted and shared by `TestGate` and
+`RaceGate`; the no-tests scan moved from `combined_output` to `stdout`;
+`FormatGate` filters nested-module files and line-ending-only differences before
+reaching a verdict. Full suite **747 -> 756**.
+
+**Verified by running it**, four ways, because a green suite has never been
+sufficient in this repository:
+
+| Real-world check | Result |
+|---|---|
+| CRLF project, no tests, nested rough spike | `PASS fmt` naming line endings; `SKIP test`; `SKIP race`; exit 0 |
+| Badly formatted *and* CRLF file in the root module | `FAIL fmt` naming the file; exit 1 -- CRLF is not an amnesty |
+| Cold module cache through full `atom check` | No chatter: the build gate warms the cache first |
+| Cold cache, test gate alone via the real `SubprocessRunner` | `SKIPPED`, with the gate's own captured output holding `[no test files]` on stdout *and* `go: downloading` on stderr -- the exact input that previously produced `PASSED` |
+
+The third row is worth keeping. The obvious end-to-end repro **did not
+reproduce**, because `build` runs first and downloads the dependencies before
+`test` ever runs. Reporting that as a successful verification would have been
+false; the fourth row is what actually exercised the fixed path. *A repro that
+passes for the wrong reason is indistinguishable from a fix, until it isn't.*

@@ -78,3 +78,63 @@ were coarser than a purist reading of `tdd-discipline.md` would prescribe.
 - [x] Skipped steps are separated from the general Decisions table
 - [x] No decision rewrites a refuted or inconclusive POC as confirmed
 - [x] Process deviations in TDD granularity are stated rather than glossed
+
+## P1-R1. Line-ending-only differences pass the fmt gate, with the cause named
+
+**Question.** `gofmt` reports a correctly formatted CRLF file as needing
+formatting. Should `atom check` fail, or ignore it?
+
+**Options.** (a) Fail, but say line endings are the cause. (b) Ignore
+line-ending-only differences and report them in the passing summary. (c) Ignore
+them silently.
+
+**Decision: (b).**
+
+**Why not (a).** It keeps the verdict platform-dependent: the identical commit
+fails on Windows and passes on Linux, because `core.autocrlf=true` is Git's
+default on Windows. A gate that disagrees with CI for reasons the developer
+cannot see in the code is worse than no gate. Line endings in the working tree
+are a checkout policy, not a Go formatting decision, and the committed bytes --
+what CI formats -- are LF either way.
+
+**Why not (c).** Silence would hide a genuine gofmt complaint and leave nobody
+to fix the underlying `.gitattributes` gap.
+
+**Why the check is exact rather than a heuristic.** The question is never "does
+this file contain CRLF" but "is that the *only* thing gofmt would change". The
+file is normalised and handed back to gofmt on stdin; only an unaltered return
+counts. A file that is both CRLF and genuinely misformatted still fails, pinned
+by two guard tests. Anything that cannot be read or decoded is treated as a real
+formatting problem -- a gate must not excuse what it failed to examine.
+
+
+## P1-R2. The fmt gate is scoped to the module, like every other gate
+
+**Question.** `gofmt -l .` walks the directory tree and so crosses module
+boundaries that `go build`, `go vet` and `go test ./...` respect.
+
+**Decision.** Exclude files that belong to a nested module -- any file with an
+ancestor directory holding its own `go.mod`.
+
+**Why.** Atom's own method puts throwaway spikes under `poc/`, each its own
+module, and a spike is *meant* to be rough. Uncorrected, `fmt` was the single
+gate in the set whose scope was the filesystem rather than the module under
+test, so one deliberately rough spike failed the whole repository.
+
+**Why not `go list`.** It would scope correctly, but adds a subprocess, a new
+failure mode, and an argv-length ceiling the runner already documents. Walking
+ancestors for `go.mod` needs no subprocess and states the intent directly.
+
+
+## P1-R3. The race gate shares the test gate's evaluator
+
+**Question.** `RaceGate` judged on exit code alone, so it reported `PASSED` for
+a tree with no tests while `TestGate` reported `SKIPPED`.
+
+**Decision.** Both call one shared evaluator.
+
+**Why not duplicate the no-tests check into `RaceGate`.** Two copies of a rule
+are two rules that will eventually disagree, which is precisely the defect being
+fixed. The inconsistency was possible only because the two gates judged the same
+command by different means; sharing the evaluator removes the possibility, not
+just the instance.
