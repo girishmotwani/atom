@@ -409,3 +409,75 @@ of health, and the process boundary is one layer too early to tell the differenc
 **Why not simply require findings.** A model that answers `[]` has reviewed the diff and
 found nothing. Treating an empty finding list as failure would make a clean review
 unreportable — the exact inversion B130 warns about.
+
+---
+
+## A5 (revised) — a run that did not *answer* makes the review partial
+
+**Supersedes the original A5**, which made a run that did not *complete* make the review
+partial. The original invited revision "by the first week of real timeout data". That data
+now exists, and it overturned the classification rather than the strictness.
+
+**Measured across three real reviews (Phase 6, Phase 1, and this change), 18 model calls:**
+
+| Event | Times observed |
+| --- | --- |
+| Run failed to complete (timeout, crash) | **0** |
+| Run completed, reply could not be read | **4** (all `gpt-5.4`) |
+
+The feared cost of A5 — a flaky timeout reddening CI — never happened once. The failure
+that *did* happen was invisible to A5, because the process exited zero.
+
+**The defect this exposed.** `runs_per_model` returned the completed-run count, so an
+unreadable reply stayed in the denominator of every agreement fraction. A finding reported
+by both readable `gpt-5.4` replies out of three runs printed **"2 of 3"** — inventing a
+dissenting run from a reply nobody could parse. The confidence signal is the entire premise
+of Phase 4, and it was reporting a number that was not true.
+
+**Decision.** Three disjoint categories, decided by what a run *contributed*:
+
+| Category | Denominator | Partial? |
+| --- | --- | --- |
+| **Answered** — contributed at least one in-scope finding, or a valid empty list | counted | no |
+| **Overruled** — reply read, but every finding refused by the B117 file guard | left | no |
+| **Silent** — no readable reply at all: empty, unparseable, or never completed | left | **yes** |
+
+**Why overruled is not partial.** Partial means "no answer arrived", not "the answer was
+refused". A working guard must not redden CI. It still leaves the denominator, because it
+offered no opinion about *this* diff — shrinking a fraction and failing a build are
+different penalties for different faults.
+
+**Why the categories must be disjoint.** A reply holding one in-scope finding and one
+out-of-scope one produced both a finding and a file-guard failure, landing in two sets at
+once. That made the partial total subtract it twice and filed an answered run under a
+heading about replies that produced nothing. Found by the review gate, on this change.
+
+**Decided by the developer at the Phase 4 gate**, on the measurements above.
+
+## A19 — `reply_was_readable` is set only when the file guard alone objected
+
+**Decision.** An extraction failure is marked readable only if *every* rejected element was
+refused by B117. One malformed element anywhere drops the reply back to silence.
+
+**Why.** The first implementation set the flag for any rejected element, so a reply whose
+findings were all schema-invalid — missing fields, impossible line numbers — counted as
+"answered but overruled" and kept the review green. A reply Atom could not understand is
+silence no matter how much well-formed JSON surrounded it.
+
+**Found by the review gate** reviewing this very change, and confirmed by measurement
+before being accepted.
+
+## A20 — the report sections are keyed to the run, not to the failure
+
+**Decision.** "Responses that could not be read" and "Replies that named files outside this
+diff" list runs, chosen by which category the run fell into — never by inspecting an
+individual failure record.
+
+**Why.** A run can answer and still produce a failure record. Keying the headings to the
+failure reported an answered run as a missing one. The banner's count is derived the same
+way, from the disjoint totals.
+
+**Also fixed here.** The partial banner promised "Details were written to stderr" for runs
+that produce no stderr detail at all — an empty reply is dropped before extraction and
+generates no failure record. The banner now says every counted run is named above, and a
+section exists to name the ones that returned nothing.

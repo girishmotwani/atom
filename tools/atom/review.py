@@ -22,7 +22,7 @@ from typing import Sequence
 
 from atom.diff import CapturedDiff, DiffRequest, capture_diff
 from atom.extract import ExtractionReport, extract_all
-from atom.invoke import InvocationReport, invoke_models
+from atom.invoke import InvocationReport, RunOutcome, invoke_models
 from atom.merge import DEFAULT_PROXIMITY_WINDOW, MergedFinding, merge_findings
 from atom.runner import CommandRunner
 
@@ -66,12 +66,58 @@ class ReviewOutcome:
     def is_partial(self) -> bool:
         """Return true when any requested run did not answer (B131, A5).
 
-        Deliberately strict: one failed run out of six is enough. Run count is
-        the denominator of every agreement fraction, so a missing run degrades
-        the headline output of the review rather than merely shrinking it.
+        Deliberately strict: one silent run out of six is enough. Run count is
+        the denominator of every agreement fraction, so a run that does not
+        answer degrades the headline output of the review rather than merely
+        shrinking it.
+
+        "Did not answer" covers two different events that A5 originally treated
+        as one. A run can go missing -- timeout, crash, model unavailable -- or
+        it can complete and return a reply nobody could read. Two real reviews
+        produced zero of the first and two of the second, and the second was
+        being counted as a full answer. Both leave the same hole in the
+        denominator, so both make the review partial.
         """
 
-        return self.invocation.is_partial
+        return self.invocation.is_partial or bool(self._runs_that_went_silent)
+
+    @property
+    def silent_runs(self) -> tuple[tuple[str, int], ...]:
+        """Return the runs that completed without contributing an opinion.
+
+        Public because the report has to name them. A run counted in the "did
+        not answer" total but absent from every list of problems leaves the
+        partial banner promising an explanation that was never written -- the
+        report would be accurate in its arithmetic and misleading in its prose.
+        """
+
+        return tuple(sorted(self._runs_that_went_silent))
+
+    @property
+    def _runs_that_went_silent(self) -> set[tuple[str, int]]:
+        """Identify runs that finished the process but contributed no opinion.
+
+        Based on every run that *completed*, not on `usable_runs`. The two
+        differ by exactly the case the review gate caught here: a run that
+        exits zero with empty or whitespace-only text is counted as completed
+        by `InvocationReport`, yet dropped before extraction ever sees it. Such
+        a run was therefore in neither the answered set nor the silent one, and
+        a review consisting entirely of blank replies reported a denominator of
+        zero while insisting it was complete.
+        """
+
+        completed = {
+            (run.model, run.run_index)
+            for run in self.invocation.runs
+            if run.outcome is RunOutcome.COMPLETED
+        }
+        # A reply that parsed and was then overruled by the B117 file guard is
+        # not silence. The model answered; Atom declined the answer. Counting
+        # that as a missing run would redden CI for a working tool doing its
+        # job. It still leaves the denominator, because it offered no opinion
+        # about *this* diff -- shrinking a fraction and failing a build are
+        # different penalties for different faults.
+        return completed - self._runs_that_answered - self._runs_overruled
 
     @property
     def has_no_usable_response(self) -> bool:
@@ -89,9 +135,44 @@ class ReviewOutcome:
         usability at the process boundary let exactly that case report "No
         findings were reported" and exit 0 -- the same dangerous confusion,
         arriving through a door one layer further in.
+
+        An overruled reply counts as usable here. B130 asks whether Atom got a
+        reply it could read, and a reply refused by the file guard was read --
+        the tool and the model both worked, and saying "no model produced
+        anything usable" would misdescribe a review that functioned.
         """
 
-        return not self._runs_that_answered
+        return not (self._runs_that_answered | self._runs_overruled)
+
+    @property
+    def overruled_runs(self) -> tuple[tuple[str, int], ...]:
+        """Return runs whose only contribution was refused by the file guard."""
+
+        return tuple(sorted(self._runs_overruled))
+
+    @property
+    def _runs_overruled(self) -> set[tuple[str, int]]:
+        """Identify runs whose reply was read and then declined by B117.
+
+        Separate from silence on purpose. These runs produced output Atom
+        understood; the file guard refused its contents. They leave the
+        denominator because they said nothing about *this* diff, but they are
+        evidence the tool and the model both worked.
+
+        Runs that also contributed a good finding are excluded, so that
+        answered, overruled and silent stay disjoint. A reply holding one
+        in-scope finding and one out-of-scope one answered the question; only
+        its surplus was refused. Counting it in both sets made the partial
+        total subtract it twice and let the report file an answered run under
+        a heading about replies that produced nothing.
+        """
+
+        readable_failures = {
+            (failure.model, failure.run_index)
+            for failure in self.extraction.failures
+            if failure.reply_was_readable
+        }
+        return readable_failures - self._runs_that_answered
 
     @property
     def _runs_that_answered(self) -> set[tuple[str, int]]:
@@ -113,9 +194,21 @@ class ReviewOutcome:
 
     @property
     def runs_per_model(self) -> dict[str, int]:
-        """Return the completed-run count per model, as agreement denominators."""
+        """Return the answered-run count per model, as agreement denominators.
 
-        return {model: self.invocation.completed_for(model) for model in self.invocation.models}
+        Not the completed-run count. A run whose reply could not be read gave
+        no opinion, and counting it inflates every denominator drawn against
+        that model: a finding reported by both readable replies of three runs
+        printed "2 of 3", inventing a dissent from a run that said nothing.
+        Every model stays in the mapping even at zero, because `merge_findings`
+        treats an absent model as a caller error rather than a silent one.
+        """
+
+        answered = self._runs_that_answered
+        return {
+            model: sum(1 for run_model, _ in answered if run_model == model)
+            for model in self.invocation.models
+        }
 
 
 def run_review(

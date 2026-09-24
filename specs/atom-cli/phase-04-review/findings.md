@@ -475,3 +475,80 @@ against `REF`, so the only reviewable ranges are ones ending at HEAD.
 Not a defect in anything built, but a capability the gate itself needs, which
 is the kind of gap a gate is supposed to find. Recorded for the Phase 5 plan
 rather than fixed here.
+
+## Finding 19 — the confidence signal was counting runs that said nothing
+
+Phase 4 exists to turn repetition into a confidence signal: a finding "reported in 2 of 3
+runs" means more than one reported once. The denominator of that fraction came from
+`InvocationReport.completed_for`, which counts runs whose *process* exited — not runs whose
+*reply* could be read.
+
+Across three real reviews, 18 model calls, `gpt-5.4` returned an unparseable reply four
+times and never once failed to complete. Every one of those four stayed in the denominator.
+A finding both readable replies agreed on printed "2 of 3": a dissent manufactured from a
+run that never spoke.
+
+**How it was found.** Not by a model. By pulling the run tables out of two committed review
+artifacts before opening a discussion about whether A5's strictness had proved annoying in
+practice. The question was "has the feared cost materialised"; the answer was "no, and a
+different one did".
+
+**What it cost to fix.** Twenty-seven tests and four rounds with the review gate, because
+the first fix was wrong in three separate ways that only a real run exposed.
+
+## Finding 20 — a measurement that skips the real path is not a measurement
+
+The review gate reported that basing silence on `invocation.usable_runs` would miss
+completed runs whose reply was empty. The claim was checked by handing an empty reply
+straight to `extract_all`, which duly recorded a failure. The finding was marked refuted.
+
+It was not refuted. `extract_all` is never called with raw runs in production — it is
+called with `invocation.usable_runs`, which filters empty replies out *first*. The
+measurement had bypassed the exact filter the finding was about, and confirmed a path that
+does not exist.
+
+The test, written against the real path, failed immediately and proved the model right.
+
+**The lesson is narrower than "measure":** a measurement is only evidence about the code it
+actually traverses. Reproducing a claim through a shortcut answers a question nobody asked.
+This is the second time in this project an unreproduced defect was real (see the Phase 1
+cold-cache non-reproduction); both times the shortcut was the problem, not the claim.
+
+## Finding 21 — the two models are not two opinions
+
+Across three real reviews of this change:
+
+| Model | Findings | Real defects | False positives |
+| --- | --- | --- | --- |
+| `gpt-5.4` | 15 | **5** | 10 |
+| `claude-haiku-4.5` | 9 | 0 | **9** |
+
+Every one of haiku's nine was the same error: reporting a symbol as undefined because its
+definition was not in the diff. It is a structural consequence of showing a reviewer only
+the changed lines, so it will recur on essentially every diff that references unchanged
+code — which is nearly all of them.
+
+`gpt-5.4`'s ten false positives were not noise of that kind: several were precise, specific,
+and wrong only because the behaviour they described had already been handled. Two were
+confidently wrong about a case that measurement settled in one command.
+
+**This does not argue for dropping a model.** It argues that agreement between these two
+models is not the confidence signal Phase 4 assumes it is, and that the *denominator* fixed
+in Finding 19 matters more than the numerator. It is recorded here because the sample is
+still small and the conclusion is not yet earned.
+
+## Finding 22 — the gate found four real defects in the fix for the gate
+
+The change that corrected the denominator was itself reviewed by `atom review`, four times,
+and every round found something true:
+
+| Round | Defect |
+| --- | --- |
+| 1 | silence based on `usable_runs` missed empty replies entirely |
+| 2 | a reply refused by the file guard was reported as unreadable, and reddened CI |
+| 3 | `reply_was_readable` was set for schema-invalid replies, not just out-of-scope ones |
+| 4 | answered and overruled overlapped, so the partial total subtracted a run twice |
+
+None of the four were found by running the tests, which were green at every round. Three of
+the four were found by a model and confirmed by measurement; one was found by a test written
+*because* a model's claim needed checking.

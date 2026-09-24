@@ -360,3 +360,30 @@ Two of these went beyond picking an offered option:
 
 Roughly 400 lines of production Python, larger than the plan's 350 because P4-2's
 repetition and B121's agreement tracking add a layer the plan did not anticipate.
+
+---
+
+## Amended after the Phase 4 gate review (A5 revised, A19, A20)
+
+These amendments replace the run-classification described above. See `decisions.md`
+A5 (revised) for the measurements that drove them.
+
+**B130 (amended).** "No usable response" means no run produced a reply Atom could *read*.
+A reply refused by the B117 file guard was read, so a review consisting only of overruled
+replies is reported as a review that happened and found nothing in scope — not as an
+infrastructure failure.
+
+**B131 (amended).** A review is partial when any run produced no readable reply. This
+covers a run that never completed *and* a run that completed with an empty or unparseable
+reply. It deliberately does not cover a reply the file guard overruled.
+
+**B131a (new).** Every run belongs to exactly one of three categories — answered,
+overruled, silent. They are disjoint by construction: a run that contributed any in-scope
+finding is answered, whatever else its reply contained.
+
+**B131b (new).** The agreement denominator for a model is its count of *answered* runs.
+Overruled and silent runs leave the denominator.
+
+**B131c (new).** Every run counted in the partial banner is named in a section above it.
+The banner does not refer the reader to stderr, because a silent run produces no stderr
+detail.
