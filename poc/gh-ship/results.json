@@ -94,14 +94,14 @@
         "timed_out": false,
         "exit_code": 0,
         "stdout": "branch 'spike/gh-ship-1789747170' set up to track 'origin/spike/gh-ship-1789747170'.",
-        "stderr": "remote: \nremote: Create a pull request for 'spike/gh-ship-1789747170' on GitHub by visiting:        \nremote:      https://github.com/gimotwan_microsoft/atom/pull/new/spike/gh-ship-1789747170        \nremote: \nTo https://github.com/gimotwan_microsoft/atom.git\n * [new branch]      spike/gh-ship-1789747170 -> spike/gh-ship-1789747170",
+        "stderr": "remote: \nremote: Create a pull request for 'spike/gh-ship-1789747170' on GitHub by visiting:        \nremote:      https://github.com/OWNER/atom/pull/new/spike/gh-ship-1789747170        \nremote: \nTo https://github.com/OWNER/atom.git\n * [new branch]      spike/gh-ship-1789747170 -> spike/gh-ship-1789747170",
         "duration_seconds": 5.04
       },
       "first_create": {
         "argv_bytes": 172,
         "timed_out": false,
         "exit_code": 0,
-        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stdout": "https://github.com/OWNER/atom/pull/1",
         "stderr": "",
         "duration_seconds": 4.26
       },
@@ -110,7 +110,7 @@
         "timed_out": false,
         "exit_code": 1,
         "stdout": "",
-        "stderr": "a pull request for branch \"spike/gh-ship-1789747170\" into branch \"main\" already exists:\nhttps://github.com/gimotwan_microsoft/atom/pull/1",
+        "stderr": "a pull request for branch \"spike/gh-ship-1789747170\" into branch \"main\" already exists:\nhttps://github.com/OWNER/atom/pull/1",
         "duration_seconds": 4.32
       }
     },
@@ -120,7 +120,7 @@
         "argv_bytes": 152,
         "timed_out": false,
         "exit_code": 0,
-        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stdout": "https://github.com/OWNER/atom/pull/1",
         "stderr": "",
         "duration_seconds": 4.2
       },
@@ -129,7 +129,7 @@
         "argv_bytes": 152,
         "timed_out": false,
         "exit_code": 0,
-        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stdout": "https://github.com/OWNER/atom/pull/1",
         "stderr": "",
         "duration_seconds": 3.74
       },
@@ -138,7 +138,7 @@
         "argv_bytes": 152,
         "timed_out": false,
         "exit_code": 0,
-        "stdout": "https://github.com/gimotwan_microsoft/atom/pull/1",
+        "stdout": "https://github.com/OWNER/atom/pull/1",
         "stderr": "",
         "duration_seconds": 4.71
       }

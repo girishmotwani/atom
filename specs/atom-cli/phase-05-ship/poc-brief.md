@@ -28,7 +28,7 @@ answer is "no idea".
 | `gh` location | `AppData\Local\copilot-desktop-gh-2.96.0\gh.exe` | It is the Copilot app's **bundled** copy, not a standalone install. A developer without that app may have no `gh` on PATH at all. |
 | Auth mechanism | `GH_TOKEN` environment variable | Not a `gh auth login` keyring entry. Auth can therefore vanish with an environment change rather than a logout. |
 | Token scopes | `gist, project, read:org, repo, user, workflow` | Sufficient to open PRs. |
-| Target repo | `gimotwan_microsoft/atom`, base `main` | The spike opens throwaway PRs here and cleans them up. |
+| Target repo | the project's own repository, base `main` | The spike opens throwaway PRs here and cleans them up. |
 
 ## Questions and predictions
 
