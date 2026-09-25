@@ -272,3 +272,33 @@ written first; red run failed at import, as intended, because the constants did 
 Split `SCHEMA_VERSION` into five per-report constants and bumped only review to 2.
 Suite 794 -> 796. The four unmoved reports are pinned at 1 by an over-correction guard, and
 `atom status --json` was checked through the real CLI to confirm it still reports 1.
+
+## Cycle 10 — the default model pair (A26)
+
+**Red.** Two tests written first against a default that was still
+`("gpt-5.4", "claude-haiku-4.5")`. Both failed, and the second failed for the
+more interesting reason: `--help` had already been updated to name gemini while
+the tuple still named haiku, so the pair and its documentation disagreed. That
+is precisely the drift the test exists to catch, demonstrated before it was
+written up.
+
+**Green.** Default changed to `("gpt-5.4", "gemini-3.8-flash")`; both pass.
+
+**Then three unrelated tests broke**, which was the useful part. They had encoded
+the default pair implicitly -- `ScriptedRunner(failing_models=("claude-haiku-4.5",))`
+only fails a run if haiku is one of the models actually consulted. Those tests were
+not testing the model name; they were testing partial-failure handling, and the
+literal was an accident of when they were written. Rewritten against
+`DEFAULT_REVIEW_MODELS[1]` so they follow the default instead of pinning it. The
+literals that remain elsewhere in the suite are genuine fixture labels -- arbitrary
+names in merge and extract tests -- and were deliberately left alone.
+
+**Suite: 801 -> 803.**
+
+**Not a TDD cycle, recorded here for the trail:** the harness fixes under findings
+31 and 32 were verified by direct observation rather than by unit tests, because
+both concern a POC harness rather than shipped code. The reduce fix was checked by
+re-scoring the banked reply that had been discarded (now 4/4 at the exact lines);
+the timeout fix by a live call with a 5-second limit, which returned in 5.6s where
+this shape previously produced 22,434s. The production guarantee behind the second
+one is already covered by B2a-B2e in phase-01.

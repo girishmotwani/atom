@@ -26,11 +26,25 @@ from atom.invoke import InvocationReport, RunOutcome, invoke_models
 from atom.merge import DEFAULT_PROXIMITY_WINDOW, MergedFinding, merge_findings
 from atom.runner import CommandRunner
 
-# The two models the Phase 4 spike actually measured. Named here rather than in
-# the CLI because the pairing is an evidence-backed default, not a UI choice:
-# they disagreed on all four planted defects, which is the entire reason the
-# review consults more than one. Anything else is a guess until it is measured.
-DEFAULT_REVIEW_MODELS = ("gpt-5.4", "claude-haiku-4.5")
+# The two models Atom measured head to head, not a UI choice. The pairing is
+# evidence-backed: across 70 calls against a fixture with four planted defects,
+# these two were the only models that named the exact defect line reliably --
+# gpt-5.4 at 98% and gemini-3.8-flash at 100%, against 15-56% for every other
+# candidate tried. See phase-04-review/decisions.md A26 for the full table and
+# for why claude-haiku-4.5, the previous default, was replaced.
+#
+# Accuracy is not the only reason. A second model earns its slot by *agreeing*
+# in a way the merge step can use, and agreement is scored by line proximity:
+# a model that finds the right defect but names a different line each run
+# splits into separate low-support groups and reports as disagreement. Both
+# models here attribute consistently, so corroboration means what it says.
+#
+# Known cost, recorded rather than fixed: model availability is account-specific,
+# and an account without `gemini-3.8-flash` gets a *partial* review that exits
+# non-zero (P4-3) until it passes `--model` explicitly. Whether the default should
+# probe and substitute a fallback instead of failing is open -- see A26's Pending
+# note, which explains why that is not a one-line change.
+DEFAULT_REVIEW_MODELS = ("gpt-5.4", "gemini-3.8-flash")
 
 # Reproduced verbatim from `poc/review-json/spike.py`. The compliance figures
 # this phase is built on -- 100% for one model, 100%-after-fence-stripping for

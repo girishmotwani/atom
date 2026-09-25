@@ -649,7 +649,14 @@ existing field answers for the same input is.
 which pins the four unmoved reports at 1.
 
 
-## A21 — the second review model stays `claude-haiku-4.5`, on the evidence
+## A24 — the second review model stays `claude-haiku-4.5`, on the evidence
+
+> **Superseded by A26.** The decision below is correct about the models it
+> measured: no *Claude* was worth swapping to. It was then read more broadly
+> than it was measured -- as "the pair stays" -- when the question it actually
+> answered was "does a stronger Claude help". Widening the field to non-Claude
+> families found one that does, and the pair changed. The reasoning here is
+> kept intact because A26 is only legible next to it.
 
 **Question.** `claude-haiku-4.5` contributes little to the review pair. Should it
 be swapped for a stronger Claude -- `claude-sonnet-5` or `claude-opus-5`?
@@ -682,7 +689,7 @@ loud and largely wrong, and every false line it adds is a line a developer must
 read and dismiss. Opus additionally failed to produce a readable report 3 times
 in 10, which is a correctness problem before it is a quality one.
 
-**Correction, from the later `gpt-5.6-luna` evaluation (A22).** The "planted
+**Correction, from the later `gpt-5.6-luna` evaluation (A25).** The "planted
 found" column above is an *exact-line* match, and measuring a fifth model showed
 that it does not mean what its name suggests. Re-scored at production's own
 grouping tolerance of +/-3 lines, the same runs read:
@@ -713,14 +720,14 @@ in 10/10 (published 20/20), haiku found line 44 in 6/10 (published 13/20). A
 comparison whose controls do not reproduce is measuring the harness.
 
 
-## A22 — `gpt-5.6-luna` is not adopted, and measuring it corrected A21's reasoning
+## A25 — `gpt-5.6-luna` is not adopted, and measuring it corrected A24's reasoning
 
 **Question.** Is `gpt-5.6-luna` a better second review model than
 `claude-haiku-4.5`?
 
 **Decision.** No. The pair is unchanged.
 
-**Measured the same way as A21** -- same fixture, same planted defects, same
+**Measured the same way as A24** -- same fixture, same planted defects, same
 production call shape, ten trials. The other four models were reloaded from
 `results.json` rather than re-called: every run in that file came from the same
 fixture, prompt and call shape, so reloading is sound, and re-running would have
@@ -756,3 +763,100 @@ the planted line, once as a false positive on the line it named.
 across runs. Wall-clock is not: luna's ten calls were made on a different day
 from the other forty. The gap is wide enough (93s against 32-48s) to survive
 ordinary variation, but it is a weaker number than the rest of the table.
+
+## A26 — the second review model becomes `gemini-3.8-flash`
+
+**Question.** A24 asked whether a stronger *Claude* helped and found none did.
+That left the real question unasked: is the second slot better spent outside the
+Claude family entirely?
+
+**Decision.** Yes. `DEFAULT_REVIEW_MODELS` becomes
+`("gpt-5.4", "gemini-3.8-flash")`, and `DEFAULT_TIMEOUT_SECONDS` rises from 300
+to 600 to fit the new model's latency.
+
+**How this was settled.** Seventy calls through `poc/review-model-swap/spike.py`
+-- seven models by ten trials, same fixture, same four planted defects, same
+production call shape, every call from an empty temporary directory so no model
+can read the committed answer key (finding 28).
+
+| model | answered | exact line | +-3 lines | precision | FP lines | median |
+|---|---|---|---|---|---|---|
+| `gemini-3.8-flash` | 10/10 | **100%** | 100% | 83% | **0** | 102.5s |
+| `gpt-5.4` | 10/10 | 98% | 100% | **95%** | 1 | **47.6s** |
+| `grok-4.7` | 10/10 | 90% | 100% | 58% | 4 | 79.8s |
+| `claude-opus-5` | 8/10 | 56% | 100% | 29% | 15 | 37.8s |
+| `claude-sonnet-5` | 10/10 | 48% | 100% | 30% | 18 | 32.4s |
+| `claude-haiku-4.5` | 10/10 | 30% | 80% | 32% | 8 | 38.6s |
+| `gpt-5.6-luna` | 10/10 | 15% | 70% | 12% | 18 | 93.3s |
+
+**Why `gemini-3.8-flash`.** It found all forty planted defects at the exact line
+and named no line that was not one, which no other model managed. A25 established
+that the models separate on *attribution*, not detection -- everything finds the
+bugs, few can say where they are -- and attribution is the property the merge
+step actually consumes. Run through production's own `_group_by_proximity`, three
+gemini runs produce three groups at 3/3 support, identical in shape to `gpt-5.4`
+and unlike `gpt-5.6-luna`, whose unanimous finding fragmented into a 1/3 and a 2/3.
+
+**Why its lower precision is not the objection it looks like.** Gemini reports
+about 4.8 findings per run against `gpt-5.4`'s 4.1, and the extras are *real*
+defects that happen to sit on planted lines -- the unclosed file at line 44
+alongside the discarded `os.Create` error already planted there. The precision
+denominator counts findings while the numerator counts planted lines, so finding
+a second true defect at a planted line is scored as a miss. It is the metric
+that is wrong here, not the model; the false-positive-line count, which does not
+have that flaw, is zero.
+
+**What it costs.** Latency. Gemini's median is 102.5s against `gpt-5.4`'s 47.6s,
+and the gate finishes when the slower model finishes, so a review gets roughly
+twice as long. Accepted deliberately: the gate runs a handful of times per change
+and its value is entirely in being right.
+
+**Why `grok-4.7` was not chosen**, despite being second on exact-line accuracy
+and 23s faster: four false-positive lines against gemini's zero, and its 58%
+precision reflects genuinely wrong lines rather than the scoring artefact above.
+It is the better fallback if gemini's latency becomes intolerable.
+
+**That last paragraph overstates the case, and the overstatement is instructive.**
+"False positive" here means *a line that was not planted*, which is not the same
+as *a line that was wrong*. Grok's most frequent one is line 38, reported in all
+ten runs: the nil-map write in `Reserve`, which is a real defect the fixture was
+never designed to test. Line 46, its second, is the ignored `fmt.Fprintf` error --
+also real. So grok is not hallucinating four lines; it is finding unplanted bugs
+and being charged for them, and gemini avoids the charge partly because its extra
+findings happened to land on lines that were already planted.
+
+The choice stands, on the narrower ground that survives this: gemini named every
+planted line in every run and grok missed line 36 four times out of ten. But the
+fixture cannot separate "wrong" from "right about something I did not plant",
+and any future comparison that leans on the false-positive column needs a fixture
+whose unplanted defects are known and enumerated, not assumed absent.
+
+**Why the timeout moved.** 300s left 1.5x headroom over gemini's slowest observed
+call (194.1s). A limit that clips a healthy model does not merely lose a reply --
+it reports the model as having failed to answer, which is the precise confusion
+that hid grok's real score during this measurement (finding 31). 600s is about 3x
+the observed maximum. Raising it is only safe because the phase-01 fix made the
+limit real; before that, a larger number would have bought a larger lie rather
+than a longer wait.
+
+**What would overturn this.** A different fixture. Seventy calls against one Go
+file with four planted defects is enough to separate 100% from 30% and is not
+enough to separate 100% from 95%. `gpt-5.4` and `gemini-3.8-flash` are not
+distinguishable here on accuracy; they are distinguishable from everything else.
+
+**Known cost: the default now assumes access to a model not every account has.**
+Raised by the review gate against this very change. Model availability is
+account-specific, and Atom's behaviour when a default model is unavailable is
+deliberate but unforgiving: the review runs with the surviving model, reports
+itself as partial, and **exits non-zero** (P4-3, so a CI job cannot sit green
+while half its reviewers are silently failing). For a developer without gemini
+access that means a failing gate until they pass `--model gpt-5.4 --model <other>`.
+
+That is a real adoption barrier for an open-source tool and it is recorded as a
+cost, not resolved. The measured fallback order is `grok-4.7` (90% exact, 4
+unplanted lines) then `claude-haiku-4.5` (30%). **Pending:** whether the default
+should probe availability and substitute a fallback rather than failing. It is
+not decided here because "degrade quietly to a weaker reviewer" and "tell the
+developer their review is not the review that was measured" are in direct
+tension, and picking between them on the spot would be exactly the unmeasured
+guess this phase exists to refuse.

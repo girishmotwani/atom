@@ -41,9 +41,18 @@ DEFAULT_RUNS = 3
 # is tidy is precisely the habit this phase exists to refuse (A4).
 DEFAULT_CONCURRENCY = 4
 
-# Observed review calls took 30-85 seconds; a timeout well above that catches a
-# hung call without cutting off a merely slow one (B112).
-DEFAULT_TIMEOUT_SECONDS = 300.0
+# Review calls were measured at 30-85 seconds when B112 was written, and that
+# range no longer holds: gemini-3.8-flash, now a default model, ran 47-194
+# seconds across ten calls. A 300-second limit left only 1.5x headroom over an
+# already-observed value, and a timeout that fires on a healthy model is not a
+# harmless one -- it is reported as "the model did not answer", which is the
+# exact conflation that made a correct model look like a failing one during the
+# A26 measurement (finding 31). 600 seconds keeps roughly 3x headroom.
+#
+# Raising it is only safe because the limit is now genuinely bounded. Before
+# the phase-01 fix this value was advisory: a call could exceed it by hours,
+# so a larger number would have meant a larger lie rather than a longer wait.
+DEFAULT_TIMEOUT_SECONDS = 600.0
 
 # An unavailable model is rejected in about two seconds, so the probe does not
 # need the review timeout.

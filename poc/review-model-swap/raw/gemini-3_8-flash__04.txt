@@ -1,0 +1,27 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Lookup accesses the items map without acquiring a read lock, causing data races with concurrent writes."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "high",
+    "message": "Reserve does not verify that the SKU exists or that sufficient stock is available before decrementing quantity."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "critical",
+    "message": "The error returned by os.Create is ignored, which can lead to a nil pointer dereference, and the file is never closed."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Export iterates over the items map without acquiring a read lock, leading to data races during concurrent modifications."
+  }
+]
+

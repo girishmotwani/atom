@@ -229,6 +229,16 @@ def _stop_and_collect(process: subprocess.Popen) -> tuple[str, str, str]:
     So this path recovers what it can and names what it cannot. Reporting the
     loss matters as much as avoiding it: an empty reply that does not say why it
     is empty cannot be told apart from a command that printed nothing.
+
+    A tempting objection is that `subprocess.run(timeout=...)` *does* return the
+    output on Windows, so this careful salvage looks like a downgrade. It does,
+    and the price is the whole reason this function exists: `run` reacts to a
+    timeout by killing the direct child and then calling `communicate()` again
+    with **no deadline**, and that second call is what eventually returns the
+    bytes -- once the surviving grandchildren close the pipe, whenever that is.
+    Atom's own measurement harness took 6h22m against a 300-second limit that
+    way. The output and the bound are not both available here; this picks the
+    bound and says so.
     """
 
     detail = _kill_process_tree(process)
