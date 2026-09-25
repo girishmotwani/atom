@@ -20,6 +20,7 @@ from pathlib import Path
 import pytest
 
 from atom.cli import EXIT_CHECK_FAILED, EXIT_PASSED, EXIT_USAGE_ERROR, main
+from atom.review import DEFAULT_REVIEW_MODELS
 from atom.runner import CommandOutcome, CommandResult
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -143,7 +144,7 @@ class TestExitCodes:
     def test_a_partial_review_exits_non_zero(self, monkeypatch, capsys):
         # P4-3: a CI job where one model fails every run would otherwise stay
         # green forever while nobody reads the banner.
-        runner = ScriptedRunner(failing_models=("claude-haiku-4.5",))
+        runner = ScriptedRunner(failing_models=(DEFAULT_REVIEW_MODELS[1],))
         monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
 
         assert review("--working", "--runs", "1") == EXIT_CHECK_FAILED
@@ -151,7 +152,7 @@ class TestExitCodes:
 
     def test_no_usable_response_fails_loudly(self, monkeypatch, capsys):
         # B130. The dangerous case: an empty report reads as a clean one.
-        runner = ScriptedRunner(failing_models=("gpt-5.4", "claude-haiku-4.5"))
+        runner = ScriptedRunner(failing_models=DEFAULT_REVIEW_MODELS)
         monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
 
         code = review("--working", "--runs", "1")
@@ -164,7 +165,7 @@ class TestExitCodes:
         self, monkeypatch, capsys
     ):
         runner = ScriptedRunner(
-            unavailable_models=("gpt-5.4", "claude-haiku-4.5")
+            unavailable_models=DEFAULT_REVIEW_MODELS
         )
         monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
 
@@ -197,7 +198,7 @@ class TestChannels:
         assert "# Code review" in capsys.readouterr().out
 
     def test_failure_detail_goes_to_stderr_only(self, monkeypatch, capsys):
-        runner = ScriptedRunner(failing_models=("claude-haiku-4.5",))
+        runner = ScriptedRunner(failing_models=(DEFAULT_REVIEW_MODELS[1],))
         monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
 
         review("--working", "--runs", "1")
@@ -315,3 +316,39 @@ class TestTheProgramActuallyRuns:
 
         assert tail.strip() == "raise SystemExit(main())"
 
+
+
+class TestTheDefaultModelPairIsTheMeasuredOne:
+    """The default pair is a measurement result, so it is pinned like one.
+
+    Until A23 nothing asserted which models `atom review` consults by default.
+    That is how a default drifts: someone edits the tuple to try a model, the
+    whole suite stays green because every other test passes its models in
+    explicitly, and the edit ships. These tests do not judge the choice -- they
+    make changing it a deliberate act that has to update a stated reason.
+    """
+
+    def test_the_default_models_are_the_two_that_scored_above_ninety_percent(self):
+        # gpt-5.4 named the exact defect line on 98% of planted defects and
+        # gemini-3.8-flash on 100%. No other candidate measured above 56%.
+        assert DEFAULT_REVIEW_MODELS == ("gpt-5.4", "gemini-3.8-flash")
+
+    def test_the_help_text_names_the_models_it_actually_uses(self):
+        # The help string is written by hand, so it can disagree with the
+        # tuple. A developer who is told the wrong default cannot tell that
+        # the review they ran was not the review that was measured.
+        result = self._help()
+
+        for model in DEFAULT_REVIEW_MODELS:
+            assert model in result
+
+    @staticmethod
+    def _help() -> str:
+        completed = subprocess.run(
+            [sys.executable, "-m", "atom.cli", "review", "--help"],
+            capture_output=True,
+            text=True,
+            cwd=TOOLS_DIR,
+            timeout=60,
+        )
+        return completed.stdout

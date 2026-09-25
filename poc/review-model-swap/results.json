@@ -440,11 +440,24 @@
     "seconds": 3900.9,
     "exit_code": -1,
     "timed_out": true,
-    "readable": false,
-    "note": "run did not complete (timed_out)",
-    "lines_reported": [],
-    "hits": [],
-    "false_positives": []
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      37,
+      44,
+      45,
+      48
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      48
+    ]
   },
   {
     "model": "claude-opus-5",
@@ -742,6 +755,234 @@
       42,
       43
     ]
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 1,
+    "seconds": 161.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 2,
+    "seconds": 107.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 3,
+    "seconds": 121.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 4,
+    "seconds": 46.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 5,
+    "seconds": 76.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 6,
+    "seconds": 194.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 7,
+    "seconds": 164.6,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 8,
+    "seconds": 96.6,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 9,
+    "seconds": 92.3,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gemini-3.8-flash",
+    "trial": 10,
+    "seconds": 97.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
   },
   {
     "model": "gpt-5.4",
@@ -1209,6 +1450,278 @@
     "false_positives": [
       37,
       38,
+      46
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 1,
+    "seconds": 47.9,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      38,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      46
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 2,
+    "seconds": 22516.0,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      37,
+      38,
+      44,
+      45,
+      48
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      38,
+      48
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 3,
+    "seconds": 22434.7,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      38,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      46
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 4,
+    "seconds": 22447.2,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      38,
+      44,
+      45,
+      48
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      48
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 5,
+    "seconds": 22420.1,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      38,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      46
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 6,
+    "seconds": 82.7,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      38,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      46
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 7,
+    "seconds": 91.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      38,
+      44,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      46
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 8,
+    "seconds": 76.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      38,
+      36,
+      37,
+      44,
+      45,
+      48
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      37,
+      48
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 9,
+    "seconds": 125.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      37,
+      38,
+      44,
+      44,
+      45,
+      48
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      38,
+      48
+    ]
+  },
+  {
+    "model": "grok-4.7",
+    "trial": 10,
+    "seconds": 68.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      38,
+      37,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      38,
+      37,
       46
     ]
   }

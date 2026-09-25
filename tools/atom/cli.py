@@ -150,7 +150,7 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
     )
     review_parser.add_argument(
         "--model", action="append", dest="models", metavar="NAME",
-        help="Model to consult; repeat for several (default: gpt-5.4 and claude-haiku-4.5).",
+        help="Model to consult; repeat for several (default: gpt-5.4 and gemini-3.8-flash).",
     )
     review_parser.add_argument(
         "--runs", type=int, default=DEFAULT_RUNS,

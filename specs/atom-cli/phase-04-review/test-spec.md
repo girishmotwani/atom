@@ -201,3 +201,14 @@ covered at all. Each is recorded here rather than quietly omitted:
 | --- | --- | --- | --- |
 | A23-1 | The review payload carries the bumped review version | `test_the_review_schema_version_records_the_corroboration_narrowing` | High |
 | A23-2 | The four unaffected reports keep version 1 | `test_the_other_reports_did_not_change_and_keep_their_version` | High |
+
+## A26 — the default model pair is pinned to the measured one
+
+Until A26 nothing asserted which models `atom review` consults by default. Every
+other test passes its models in explicitly, so the tuple could be edited to try a
+candidate and ship with the suite fully green. These two make that a deliberate act.
+
+| ID | Case | Test | Priority |
+|---|---|---|---|
+| A26-1 | The default pair is the two models that scored above 90% | `test_the_default_models_are_the_two_that_scored_above_ninety_percent` | High |
+| A26-2 | `--help` names the models the CLI actually uses | `test_the_help_text_names_the_models_it_actually_uses` | Medium |

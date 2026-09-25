@@ -52,15 +52,23 @@ two things countable that a review of real code cannot:
 * **hit rate** -- how reliably a model finds each planted defect
 * **false positive rate** -- every reported line that is not one of the four
 
-How to read the three long durations in `results.json`
-------------------------------------------------------
-Three `claude-opus-5` calls record roughly 3,890 seconds against a 300-second timeout.
-That is not how long opus takes. It is how long *this harness* took to give up, and the
-reason is a defect it went on to expose in Atom itself: `subprocess.run` kills a
-timed-out process and then drains its pipes with no deadline, so the wait is bounded by
-whatever child the killed process left behind rather than by the timeout. Read those
-three rows as "did not answer", not as a latency measurement. The median figures, which
-are taken over calls that did answer, are unaffected.
+How to read the long durations in `results.json`
+------------------------------------------------
+Some rows record thousands of seconds against a 300-second timeout -- three
+`claude-opus-5` calls near 3,890s, four `grok-4.7` calls above 22,400s. That is not
+how long those models take. It is how long *this harness* took to give up, and the
+reason was a defect it went on to expose in Atom itself: `subprocess.run` kills a
+timed-out process and then drains its pipes with no deadline, so the wait is bounded
+by whatever child the killed process left behind rather than by the timeout.
+
+That defect is **fixed** here now, not merely explained: the timeout below uses the
+same bounded process-tree kill as production, imported from `runner.py` rather than
+copied. It was left explained rather than fixed for one earlier run, on the grounds
+that it only moved rows the medians already excluded. It then cost six hours and
+four discarded results -- see findings 31 and 32. The rows above survive as a record
+of what the harness did, not as latency measurements.
+
+The medians are taken over calls that answered, so they were never affected.
 """
 
 from __future__ import annotations
@@ -69,6 +77,7 @@ import argparse
 import concurrent.futures
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -88,6 +97,11 @@ sys.path.insert(0, str(HERE.parent.parent / "tools"))
 from atom.extract import extract_from_run  # noqa: E402
 from atom.invoke import ModelRun, RunOutcome, review_command  # noqa: E402
 from atom.review import REVIEW_PROMPT  # noqa: E402
+from atom.runner import (  # noqa: E402
+    _DRAIN_GRACE_SECONDS,
+    _kill_process_tree,
+    _normalise_stream,
+)
 
 # Load the Phase 4 spike by path rather than by name. Both POCs are called
 # `spike.py`, so a plain `from spike import ...` resolves to *this* module and
@@ -109,11 +123,20 @@ PROMPT = REVIEW_PROMPT
 
 # --- experiment shape -------------------------------------------------------
 
-# `claude-haiku-4.5` is the model under review and is measured live rather than
-# quoted. `gpt-5.4` is measured too: it is the other half of the shipped pair, and
-# the Phase 4 harness that produced its published figure has since been shown not to
-# work, so that figure describes a call this CLI no longer makes.
-MODELS = ["gpt-5.4", "claude-haiku-4.5", "claude-sonnet-5", "claude-opus-5", "gpt-5.6-luna"]
+# Seven candidates, measured live rather than quoted. `gpt-5.4` is measured too: it
+# is the other half of the shipped pair, and the Phase 4 harness that produced its
+# published figure has since been shown not to work, so that figure describes a call
+# this CLI no longer makes. The Claude entries were the original question (A24); the
+# gemini and grok entries are what actually answered it (A26).
+MODELS = [
+    "gpt-5.4",
+    "claude-haiku-4.5",
+    "claude-sonnet-5",
+    "claude-opus-5",
+    "gpt-5.6-luna",
+    "gemini-3.8-flash",
+    "grok-4.7",
+]
 
 # Matches the Phase 4 spike's per-cell count, which was chosen to tell 100% from 90%
 # and explicitly not to tell 93% from 95%. Two candidates landing within a couple of
@@ -196,26 +219,52 @@ def run_one_call(model: str, trial: int, prompt: str) -> RunResult:
     # An empty directory also removes the AGENTS.md priming that had the same model
     # trying to open `skills/atom-review/SKILL.md` before it read anything else.
     with tempfile.TemporaryDirectory(prefix="atom-model-swap-") as neutral_directory:
+        # `subprocess.run(timeout=...)` is not usable here, and this harness found
+        # out the expensive way: the gemini/grok batch took 6h22m against a
+        # 300-second limit, because four calls each blocked for over 22,000
+        # seconds. `run` reacts to a timeout by killing the direct child and then
+        # calling `communicate()` again with *no* timeout, and a pipe only reaches
+        # EOF when the last handle to its write end closes. The CLI's own children
+        # inherited that handle, so the second wait ran until they chose to exit.
+        #
+        # This is the same defect the phase-01 fix removed from production's
+        # `runner.py`, which is why the kill below is imported from there rather
+        # than reimplemented: a second copy would need fixing a second time.
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=neutral_directory,
+            # Give the child its own process group so the kill can take the whole
+            # tree with it. Windows gets the tree from `taskkill /T` instead.
+            start_new_session=(os.name != "nt"),
+        )
         try:
-            completed = subprocess.run(
-                command,
-                # Production pipes the prompt rather than passing `-p`, and the
-                # difference is not cosmetic: over argv this CLI answers as though
-                # no diff arrived at all. See the module docstring.
-                input=prompt,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=CALL_TIMEOUT_SECONDS,
-                cwd=neutral_directory,
-            )
-            stdout, stderr = completed.stdout, completed.stderr
-            exit_code = completed.returncode
-        except subprocess.TimeoutExpired as expired:
+            # Production pipes the prompt rather than passing `-p`, and the
+            # difference is not cosmetic: over argv this CLI answers as though
+            # no diff arrived at all. See the module docstring.
+            stdout, stderr = process.communicate(prompt, timeout=CALL_TIMEOUT_SECONDS)
+            exit_code = process.returncode
+        except subprocess.TimeoutExpired:
             timed_out = True
-            stdout = _as_text(expired.stdout)
-            stderr = _as_text(expired.stderr)
+            _kill_process_tree(process)
+            try:
+                stdout, stderr = process.communicate(timeout=_DRAIN_GRACE_SECONDS)
+            except subprocess.TimeoutExpired as drain_expired:
+                # Bounded means bounded, but "bounded" is not "discard". POSIX
+                # reads pipes incrementally, so this exception can still be
+                # carrying a complete reply; throwing it away here would re-file
+                # an answered call as unanswered, which is finding 31 again.
+                process.kill()
+                stdout = _normalise_stream(drain_expired.stdout)
+                stderr = (
+                    _normalise_stream(drain_expired.stderr)
+                    or "drain did not finish after the kill"
+                )
             exit_code = -1
 
     seconds = time.monotonic() - started
@@ -235,12 +284,6 @@ def run_one_call(model: str, trial: int, prompt: str) -> RunResult:
     return result
 
 
-def _as_text(value) -> str:
-    if isinstance(value, bytes):
-        return value.decode("utf-8", "replace")
-    return value or ""
-
-
 def _reduce(
     model: str, trial: int, seconds: float, exit_code: int, timed_out: bool, stdout: str
 ) -> RunResult:
@@ -258,7 +301,17 @@ def _reduce(
     run = ModelRun(
         model=model,
         run_index=trial,
-        outcome=RunOutcome.TIMED_OUT if timed_out else RunOutcome.COMPLETED,
+        # Deliberately *not* `TIMED_OUT if timed_out`. That reading cost this
+        # experiment its second-best result: four grok-4.7 calls exceeded the
+        # harness's clock, but every one of them had already written a complete,
+        # correct reply, and the extractor discards a TIMED_OUT run without
+        # looking at it. Grok published as 6/10 when it had answered 10/10.
+        #
+        # "The harness stopped waiting" and "the model did not answer" are
+        # different facts. A reply that arrived is scored on what it says; the
+        # expired clock stays on the result as a latency note, where it is
+        # already excluded from the median.
+        outcome=RunOutcome.COMPLETED if stdout.strip() else RunOutcome.TIMED_OUT,
         response_text=stdout,
         duration_seconds=seconds,
     )
@@ -338,14 +391,24 @@ def report(results: list[RunResult]) -> None:
         runs = by_model.get(model, [])
         readable = [run for run in runs if run.readable]
 
-        # Timed out over readable runs only, and a true median rather than the
-        # upper-middle value. A call that never produced a report did not take
-        # that long to answer -- it failed to answer -- so folding its duration
-        # into a latency figure describes the harness rather than the model.
-        median = _median(sorted(run.seconds for run in readable))
+        # Latency is measured over calls that answered *within the clock*, which
+        # since finding 31 is a narrower set than "readable". A run whose clock
+        # expired still has its reply scored -- the model did answer -- but its
+        # recorded duration is the harness's cleanup time, not the model's
+        # response time, so it says nothing about latency and is left out here.
+        #
+        # This filter and the readable filter used to be the same test. Splitting
+        # "did it answer" from "did the clock expire" is what made them different,
+        # and missing that would have put 22,000-second cleanups into a median.
+        timely = [run for run in readable if not run.timed_out]
+        # An empty `timely` set is not a latency of zero, and `_median` returns
+        # 0.0 for an empty list. Printing that would claim the fastest possible
+        # model for one that never answered inside the clock -- the same class of
+        # error as finding 31, arriving through the formatter this time.
+        median = f"{_median(sorted(run.seconds for run in timely)):.1f}" if timely else "n/a"
 
         if not readable:
-            print(f"{model:<20} {0:>4}/{len(runs):<4} {'-':>9} {'-':>9} {'-':>8} {median:>9.1f}")
+            print(f"{model:<20} {0:>4}/{len(runs):<4} {'-':>9} {'-':>9} {'-':>8} {median:>9}")
             continue
 
         findings = sum(len(run.lines_reported) for run in readable) / len(readable)
@@ -354,7 +417,7 @@ def report(results: list[RunResult]) -> None:
 
         print(
             f"{model:<20} {len(readable):>4}/{len(runs):<4} {findings:>9.1f} "
-            f"{planted:>9.1f} {false_positives:>8.1f} {median:>9.1f}"
+            f"{planted:>9.1f} {false_positives:>8.1f} {median:>9}"
         )
 
     print("\n(findings, planted and false+ are means per readable run; 4 defects were planted)")
@@ -447,16 +510,49 @@ def main() -> int:
         "being re-called, so a new candidate can be measured on its own.",
     )
     parser.add_argument("--trials", type=int, default=TRIALS_PER_MODEL)
+    parser.add_argument(
+        "--rescore",
+        action="store_true",
+        help="Make no calls. Re-derive every banked result from the saved replies "
+        "in raw/, which is how a scoring bug is repaired without re-paying for "
+        "the calls it mis-scored.",
+    )
     arguments = parser.parse_args()
 
     summary_path = HERE / "results.json"
-    fresh = collect(arguments.models, arguments.trials)
 
-    # Fresh results win: a model called again is being re-measured, not topped up.
-    recalled = {(run.model, run.trial) for run in fresh}
-    results = fresh + [
-        run for run in _load_previous(summary_path) if (run.model, run.trial) not in recalled
-    ]
+    if arguments.rescore:
+        # The raw replies are the evidence; results.json is a view of them. When the
+        # reducer was wrong -- as it was for four grok-4.7 replies that had answered
+        # correctly and were filed as unreadable (finding 31) -- the replies were
+        # still on disk and only the view needed rebuilding.
+        results = []
+        for run in _load_previous(summary_path):
+            reply_path = raw_path_for(run.model, run.trial)
+            if not reply_path.exists():
+                results.append(run)
+                continue
+            results.append(
+                _reduce(
+                    run.model,
+                    run.trial,
+                    run.seconds,
+                    run.exit_code,
+                    run.timed_out,
+                    reply_path.read_text(encoding="utf-8"),
+                )
+            )
+        print(f"re-scored {len(results)} banked replies; no calls made\n", flush=True)
+    else:
+        fresh = collect(arguments.models, arguments.trials)
+
+        # Fresh results win: a model called again is being re-measured, not topped up.
+        recalled = {(run.model, run.trial) for run in fresh}
+        results = fresh + [
+            run
+            for run in _load_previous(summary_path)
+            if (run.model, run.trial) not in recalled
+        ]
 
     report(results)
 

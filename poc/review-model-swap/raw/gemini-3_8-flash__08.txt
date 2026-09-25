@@ -1,0 +1,33 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Map read occurs without acquiring a read lock, leading to a data race with concurrent writes."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "medium",
+    "message": "The SKU existence and available stock are not validated, which can create non-existent items with empty SKUs or negative quantities."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "The error returned by os.Create is ignored, which will cause a nil pointer dereference if the file cannot be created."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "medium",
+    "message": "The opened file is never closed, resulting in a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Iterating over the map without acquiring a lock causes a data race with concurrent map writes."
+  }
+]
+

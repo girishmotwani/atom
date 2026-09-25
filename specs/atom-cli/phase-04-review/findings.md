@@ -824,3 +824,79 @@ places on the model, not a property it can recover in aggregation.
 - *An aggregation step carries assumptions about its inputs.* Grouping by line
   proximity is sound only while models agree on lines; nothing in the code says
   so, and nothing measured it until a model turned up that does not.
+
+## Finding 31 — "the harness stopped waiting" was reported as "the model did not answer"
+
+The A26 measurement published `grok-4.7` at 6/10 answered. It had answered 10/10.
+The four missing runs contain complete, correct JSON naming all four planted
+defects; one of them is 1,150 bytes of accurate review. They were discarded
+without being read.
+
+The mechanism is one line in the harness:
+
+```python
+outcome=RunOutcome.TIMED_OUT if timed_out else RunOutcome.COMPLETED
+```
+
+`extract_from_run` refuses a `TIMED_OUT` run on principle -- correctly, because in
+production a timed-out run is one that genuinely produced nothing usable. But
+`timed_out` in the harness meant *the harness's clock expired*, which is a fact
+about the harness. Whether the model answered is a fact about the model. The two
+were fused into one flag, and the flag was named after the wrong one.
+
+The cost was not a cosmetic error in a table. It was very nearly a wrong decision:
+the second-most-accurate model available was presented as the least reliable, with
+a 40% failure rate it did not have. Had gemini not also been measured in the same
+batch, the run would have concluded that no non-Claude model was worth adopting.
+
+**This is the fifth instance this phase of a name being a claim** -- after the
+review denominator counting runs that never spoke, a false-positive count rendered
+as a rate, `runs_per_model` answering two questions, and A25's "planted found"
+column being read as detection when it measured attribution. The recurring shape
+is now specific enough to state as a rule: **when one value is derived from two
+independent facts, it will eventually be read as whichever of the two is more
+convenient.** The fix is always the same -- separate the facts, and let the name
+describe exactly one of them.
+
+**Fixed** by deriving the outcome from whether a reply arrived, and keeping the
+expired clock as a latency note that is already excluded from the median:
+
+```python
+outcome=RunOutcome.COMPLETED if stdout.strip() else RunOutcome.TIMED_OUT
+```
+
+Verified against the banked reply that had been discarded: it now scores 4/4.
+
+## Finding 32 — the fix landed in one of the two places the defect lived
+
+The same batch took **6 hours 22 minutes** against a 300-second per-call timeout,
+because four calls each blocked for over 22,000 seconds. The cause was the
+unbounded post-kill drain in `subprocess.run` -- the exact defect repaired in
+`runner.py` earlier in the same session, and repaired properly, with tests.
+
+The harness never used `runner.py`. It borrows production's command construction
+and production's extractor, so it looked like it was exercising the real path, but
+it executed calls through its own `subprocess.run`. One defect, two implementations,
+and the fix went to the one that was on screen.
+
+**The aggravating detail is that this was already known.** The spike's own module
+docstring, written in the same session, described the mechanism exactly:
+
+> `subprocess.run` kills a timed-out process and then drains its pipes with no
+> deadline, so the wait is bounded by whatever child the killed process left
+> behind rather than by the timeout.
+
+It was diagnosed correctly and then *documented instead of fixed*. The
+justification was that it touched only three rows and the medians excluded them,
+so no published figure was wrong -- reasoning about the numbers rather than about
+the defect. That held until a model hit the same path four times and the cost
+arrived as six lost hours plus the discarded results of finding 31.
+
+**Rule.** A defect that is understood well enough to write a paragraph explaining
+how to read around it is understood well enough to fix. Documentation that tells
+a reader to discount a value is a repair deferred, not a repair made.
+
+**Fixed** by giving the harness the same bounded kill, imported from `runner.py`
+rather than copied, so the next repair has one site and not two. Verified live: a
+call with a 5-second limit now returns in 5.6 seconds where this shape previously
+produced 22,434.

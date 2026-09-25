@@ -1,0 +1,76 @@
+making 20 calls, 4 at a time
+planted defects: [24, 36, 44, 45] in inventory/stock.go
+
+  gemini-3.8-flash     trial  4    46.8s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  2   107.4s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  3   121.1s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  5    76.4s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  1   161.0s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  8    96.6s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  9    92.3s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial  7   164.6s  exit 0   4/4 planted, 0 other
+  grok-4.7             trial  1    47.9s  exit 0   3/4 planted, 2 other
+  gemini-3.8-flash     trial  6   194.1s  exit 0   4/4 planted, 0 other
+  gemini-3.8-flash     trial 10    97.5s  exit 0   4/4 planted, 0 other
+  grok-4.7             trial  3  22434.7s  TIMEOUT  unreadable (run did not complete (timed_out))
+  grok-4.7             trial  5  22420.1s  TIMEOUT  unreadable (run did not complete (timed_out))
+  grok-4.7             trial  4  22447.2s  TIMEOUT  unreadable (run did not complete (timed_out))
+  grok-4.7             trial  2  22516.0s  TIMEOUT  unreadable (run did not complete (timed_out))
+  grok-4.7             trial  6    82.7s  exit 0   4/4 planted, 2 other
+  grok-4.7             trial  8    76.8s  exit 0   4/4 planted, 3 other
+  grok-4.7             trial  7    91.8s  exit 0   4/4 planted, 2 other
+  grok-4.7             trial 10    68.0s  exit 0   3/4 planted, 3 other
+  grok-4.7             trial  9   125.5s  exit 0   3/4 planted, 3 other
+
+==============================================================================
+PER MODEL
+==============================================================================
+model                 readable  findings   planted   false+  median s
+---------------------------------------------------------------------
+gpt-5.4                10/10         4.1       3.9      0.2      47.6
+claude-haiku-4.5       10/10         3.7       1.2      2.4      38.6
+claude-sonnet-5        10/10         6.3       1.9      4.1      32.4
+claude-opus-5           7/10         8.3       2.1      5.7      37.8
+gpt-5.6-luna           10/10         5.1       0.6      4.5      93.3
+gemini-3.8-flash       10/10         4.8       4.0      0.0     102.5
+grok-4.7                6/10         6.3       3.5      2.5      79.7
+
+(findings, planted and false+ are means per readable run; 4 defects were planted)
+
+==============================================================================
+PER PLANTED DEFECT -- how often each model found it
+==============================================================================
+model                line 24     line 36     line 44     line 45     
+------------------------------------------------------------------------------
+gpt-5.4              10/10       10/10        9/10       10/10       
+claude-haiku-4.5      2/10        1/10        6/10        3/10       
+claude-sonnet-5       2/10        0/10        8/10        9/10       
+claude-opus-5         4/7         3/7         4/7         4/7        
+gpt-5.6-luna          2/10        0/10        2/10        2/10       
+gemini-3.8-flash     10/10       10/10       10/10       10/10       
+grok-4.7              6/6         3/6         6/6         6/6        
+
+==============================================================================
+FALSE POSITIVES -- lines reported that were never planted
+==============================================================================
+gpt-5.4              1 distinct lines, 2 reports across 10 runs: line 46 x2
+claude-haiku-4.5     8 distinct lines, 24 reports across 10 runs: line 43 x13, line 35 x4, line 23 x2, line 25 x1, line 46 x1, line 34 x1, line 47 x1, line 37 x1
+claude-sonnet-5      18 distinct lines, 41 reports across 10 runs: line 33 x6, line 43 x4, line 27 x3, line 38 x3, line 47 x3, line 42 x3, line 46 x3, line 22 x3
+claude-opus-5        15 distinct lines, 40 reports across 7 runs: line 46 x7, line 48 x5, line 47 x4, line 37 x4, line 38 x4, line 39 x3, line 27 x2, line 49 x2
+gpt-5.6-luna         18 distinct lines, 45 reports across 10 runs: line 38 x5, line 39 x5, line 40 x5, line 42 x4, line 43 x4, line 22 x3, line 35 x3, line 18 x2
+gemini-3.8-flash     none
+grok-4.7             4 distinct lines, 15 reports across 6 runs: line 38 x6, line 46 x4, line 37 x3, line 48 x2
+
+==============================================================================
+UNREADABLE REPLIES
+==============================================================================
+  claude-opus-5        trial  8  run did not complete (timed_out)
+  claude-opus-5        trial  9  run did not complete (timed_out)
+  claude-opus-5        trial 10  run did not complete (timed_out)
+  grok-4.7             trial  2  run did not complete (timed_out)
+  grok-4.7             trial  3  run did not complete (timed_out)
+  grok-4.7             trial  4  run did not complete (timed_out)
+  grok-4.7             trial  5  run did not complete (timed_out)
+
+raw replies: C:\Users\gimotwan\work\atom\poc\review-model-swap\raw
+summary:     C:\Users\gimotwan\work\atom\poc\review-model-swap\results.json
