@@ -21,10 +21,11 @@ The **BUILD** beat. Implements one phase from its approved design spec, test-fir
 Read:
 
 1. [tdd-discipline.md](../atom/references/tdd-discipline.md) — **the authority for this skill**
-2. [go-style.md](../atom/references/go-style.md)
-3. [anti-rationalization.md](../atom/references/anti-rationalization.md)
-4. [verification.md](../atom/references/verification.md)
-5. This phase's approved `design-spec.md`
+2. [what-the-toolchain-proves.md](../atom/references/what-the-toolchain-proves.md) — which tests are worth writing
+3. [go-style.md](../atom/references/go-style.md)
+4. [anti-rationalization.md](../atom/references/anti-rationalization.md)
+5. [verification.md](../atom/references/verification.md)
+6. This phase's approved `design-spec.md`
 
 ---
 
@@ -41,6 +42,23 @@ go back to `atom-spec` rather than papering over it.
 Add the cases the spec did not enumerate: error paths, boundaries, zero values, empty
 inputs, cancelled contexts. Uncovered error branches are where real coverage gaps
 live.
+
+Then **audit the list for cases that can never fail**, per
+[what-the-toolchain-proves.md](../atom/references/what-the-toolchain-proves.md). Ask
+of every case:
+
+> Could this test ever fail, given the code compiles and `go vet` passes?
+
+If not, it is not a weak test — it is not a test. A Go `string` cannot be nil, so a
+nil-string case can never be written; a `""` case can, and should be. Delete the
+unfailable cases into the test spec's Redundancy Audit with their evidence, and carry
+the decision into `decisions.md` — a deleted test and a forgotten test look identical
+a month later.
+
+Then spend the time you just saved on the opposite list: the properties the toolchain
+accepts **silently**, where a wrong answer arrives with no panic and no diagnostic —
+ignored errors, typed nils, non-exhaustive switches, runtime overflow, empty strings.
+Those are the tests that earn their keep.
 
 Order the cases so the first ones build the simplest working path through the phase.
 
@@ -151,6 +169,8 @@ left in `findings.md`, and one specific question.
 ## Done when
 
 - [ ] Every numbered behaviour maps to at least one test case
+- [ ] No test asserts something the compiler or `go vet` already refuses
+- [ ] Silent-failure properties are covered or explicitly marked not applicable
 - [ ] Every test was watched failing, for the right reason, before its code existed
 - [ ] Error paths, boundaries and cancellation covered
 - [ ] Concurrent code tested under `-race`

@@ -1,0 +1,13 @@
+[
+  {"file": "inventory/stock.go", "line": 27, "severity": "high", "message": "Lookup reads s.items without acquiring s.mu.RLock, causing a data race with concurrent Reserve calls."},
+  {"file": "inventory/stock.go", "line": 39, "severity": "high", "message": "Reserve does not check that the SKU exists, so reserving an unknown SKU silently creates a new zero-value entry with a negative quantity."},
+  {"file": "inventory/stock.go", "line": 40, "severity": "high", "message": "Reserve allows the quantity to go negative and does not validate that count is positive or that sufficient stock exists."},
+  {"file": "inventory/stock.go", "line": 47, "severity": "critical", "message": "The error from os.Create is discarded, so a failed create leaves f nil and the subsequent Fprintf writes will fail or panic."},
+  {"file": "inventory/stock.go", "line": 47, "severity": "high", "message": "The created file is never closed, leaking a file descriptor and risking unflushed data."},
+  {"file": "inventory/stock.go", "line": 49, "severity": "medium", "message": "Errors returned by fmt.Fprintf are ignored, so partial or failed writes are reported as success."},
+  {"file": "inventory/stock.go", "line": 48, "severity": "high", "message": "Export iterates s.items without holding s.mu.RLock, racing with concurrent Reserve mutations."},
+  {"file": "inventory/stock.go", "line": 51, "severity": "medium", "message": "Export always returns nil, hiding every I/O failure from callers."},
+  {"file": "inventory/stock.go", "line": 49, "severity": "low", "message": "SKU values are written to CSV without escaping, so a SKU containing a comma or newline corrupts the output format."},
+  {"file": "inventory/stock.go", "line": 21, "severity": "medium", "message": "There is no constructor initializing the items map, so a zero-value Store panics on the map write in Reserve."}
+]
+

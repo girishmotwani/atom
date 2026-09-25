@@ -210,3 +210,65 @@ asked the right questions, that the program starts, or that the operating system
 can carry the input. Phase 4 had green suites at 475, 478, and 482 tests while
 `atom review` could not produce a single review. The probes were not extra polish;
 they were the step that found the defects.
+
+## Cycle 8 (late) — the denominator counted runs that said nothing
+
+Run after Phase 4 shipped, prompted by a developer discussion of the open A5 decision
+rather than by a failing test.
+
+| Step | Result |
+| --- | --- |
+| Evidence gathered first | Run tables from two committed review artifacts: 0 incomplete runs, 2 unreadable replies |
+| Tests written | 5 red (denominator, agreement fraction, partial, banner count, JSON) + 3 guards that passed immediately |
+| Guards re-checked after the fix | All 3 still green — the only moment they mean anything |
+| Suite | 756 -> 783 |
+| Real CLI runs | 4, each one finding a defect the tests did not |
+
+**Rounds with the review gate, all four of which found something true:**
+
+1. Silence was based on `usable_runs`, which drops empty replies before extraction — so a
+   blank reply was in neither the answered set nor the silent one. Claimed refuted by a
+   measurement that bypassed `usable_runs`; the test, written against the real path,
+   proved the model right. See Finding 20.
+2. A reply overruled by the file guard was reported as unreadable and reddened CI.
+   Escalated to the developer as a decision rather than resolved silently.
+3. `reply_was_readable` was set for any rejected element, so schema-invalid replies counted
+   as answered. Narrowed to the file guard alone (A19).
+4. Answered and overruled overlapped, so the partial total subtracted one run twice and the
+   report filed an answered run under a heading about replies that produced nothing (A20).
+
+**Two findings were refuted by measurement and not acted on** — both claimed a valid empty
+JSON array would be classified as silent. One command over seven reply shapes showed
+`[]` classified as answered, denominator 1, not partial.
+
+**Process deviation, recorded honestly.** The fourth round's fix was implemented before its
+tests were written, so those five tests are regression pins rather than red-green. The
+behaviours they assert did not exist beforehand and would have failed, but the order was
+wrong and is noted rather than presented as TDD.
+
+## Cycle 9 — corroboration (A21, A22)
+
+**Round 1, A21.** Six tests written first. Red run gave exactly one failure — the new
+behaviour — with five over-correction guards passing, as guards should. Implemented
+same-line bucketing in `is_corroborated`. Suite 783 -> 789. Four shapes verified by hand.
+
+**Round 2, the gate.** Two real `atom review --working` passes. The first returned no
+findings with 4 of 6 runs readable; rather than accept a weak clean result, a second pass
+was run. It reported that same-line-only corroboration hides genuine agreement when two
+models anchor one defect at adjacent lines. Measured: correct, and the shape is the one the
+original analysis observed most often.
+
+**Round 3, A22.** Five tests written first for the disjoint companion signal. Implemented
+`has_nearby_multi_model_reports`, plus report rendering and the JSON field. Suite 789 -> 794.
+Four shapes verified disjoint by hand.
+
+**Process note, recorded honestly.** A21 reached written-up artifacts before the gate ran.
+The decision, finding, design-spec and test-spec entries for it were all committed to disk
+describing a fix that was incomplete. They were corrected rather than rewritten, so the
+record shows the error and its repair rather than a clean result that never happened.
+
+**Round 4, A23.** Gate found the review JSON contract had broken silently. Two tests
+written first; red run failed at import, as intended, because the constants did not exist.
+Split `SCHEMA_VERSION` into five per-report constants and bumped only review to 2.
+Suite 794 -> 796. The four unmoved reports are pinned at 1 by an over-correction guard, and
+`atom status --json` was checked through the real CLI to confirm it still reports 1.

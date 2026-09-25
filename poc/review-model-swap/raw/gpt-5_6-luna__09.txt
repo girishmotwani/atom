@@ -1,0 +1,39 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 19,
+    "severity": "high",
+    "message": "Lookup reads s.items without acquiring the read lock, so concurrent Lookup and Reserve calls can race and trigger a fatal concurrent map read/write."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 31,
+    "severity": "high",
+    "message": "Reserve permits reservations exceeding available stock, negative counts, and unknown SKUs, allowing negative inventory and unintended stock creation."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 38,
+    "severity": "high",
+    "message": "The os.Create error is discarded, so a failed create leaves f nil and the subsequent write can panic instead of returning an error."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 39,
+    "severity": "high",
+    "message": "Export iterates over s.items without acquiring the read lock, so concurrent Reserve calls can race and trigger a fatal concurrent map iteration/write."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 40,
+    "severity": "medium",
+    "message": "Write errors are ignored and Export always returns nil, causing callers to believe the ledger was persisted when writes fail."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 42,
+    "severity": "low",
+    "message": "Export never closes the created file, leaking a file descriptor and failing to report close-time errors."
+  }
+]
+

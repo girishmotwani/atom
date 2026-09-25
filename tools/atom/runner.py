@@ -5,11 +5,18 @@ from __future__ import annotations
 import enum
 import os
 import shutil
+import signal
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, Sequence
+
+# How long a timed-out command may spend handing back what it already printed,
+# once its process tree has been killed. Long enough for a drain that is going to
+# finish, short enough that it cannot become the unbounded wait it replaces.
+_DRAIN_GRACE_SECONDS = 2.0
 
 
 class CommandOutcome(enum.Enum):
@@ -98,34 +105,10 @@ class SubprocessRunner:
         started_at = time.perf_counter()
         command_tuple = tuple(command)
         try:
-            completed_process = subprocess.run(
+            process = _launch(
                 _resolve_for_launch(command_tuple),
-                cwd=working_directory,
-                input=stdin_text if stdin_text is not None else "",
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=timeout_seconds,
-                check=False,
+                working_directory,
             )
-            duration_seconds = time.perf_counter() - started_at
-            return CommandResult(
-                command=command_tuple,
-                working_directory=working_directory,
-                outcome=CommandOutcome.COMPLETED,
-                exit_code=completed_process.returncode,
-                stdout=completed_process.stdout,
-                stderr=completed_process.stderr,
-                duration_seconds=duration_seconds,
-            )
-        except subprocess.TimeoutExpired as error:
-            duration_seconds = time.perf_counter() - started_at
-            stdout = _normalise_stream(error.stdout)
-            stderr = _normalise_stream(error.stderr)
-            timeout_message = f"Command timed out after {timeout_seconds:g} seconds."
-            stderr = f"{stderr}\n{timeout_message}" if stderr else timeout_message
-            return CommandResult(command_tuple, working_directory, CommandOutcome.TIMED_OUT, None, stdout, stderr, duration_seconds)
         except (FileNotFoundError, NotADirectoryError):
             # Windows raises NotADirectoryError (WinError 267) for a bad working
             # directory and FileNotFoundError for a bad executable. Both mean the
@@ -140,6 +123,177 @@ class SubprocessRunner:
                 _diagnose_missing_file(command_tuple, working_directory),
                 duration_seconds,
             )
+
+        try:
+            stdout, stderr = process.communicate(
+                stdin_text if stdin_text is not None else "",
+                timeout=timeout_seconds,
+            )
+            duration_seconds = time.perf_counter() - started_at
+            return CommandResult(
+                command=command_tuple,
+                working_directory=working_directory,
+                outcome=CommandOutcome.COMPLETED,
+                exit_code=process.returncode,
+                stdout=stdout,
+                stderr=stderr,
+                duration_seconds=duration_seconds,
+            )
+        except subprocess.TimeoutExpired:
+            stdout, stderr, detail = _stop_and_collect(process)
+            duration_seconds = time.perf_counter() - started_at
+            timeout_message = f"Command timed out after {timeout_seconds:g} seconds."
+            if detail:
+                timeout_message = f"{timeout_message} ({detail})"
+            stderr = f"{stderr}\n{timeout_message}" if stderr else timeout_message
+            return CommandResult(
+                command_tuple,
+                working_directory,
+                CommandOutcome.TIMED_OUT,
+                None,
+                stdout,
+                stderr,
+                duration_seconds,
+            )
+        except KeyboardInterrupt:
+            # Ctrl-C reaches Atom but not the command: on POSIX the child was put
+            # in its own session precisely so a timeout could signal the group,
+            # which also takes it out of the terminal's reach. Without this the
+            # prompt would come back while `go test` kept running unattended, so
+            # the cleanup the new session costs is done here instead. The
+            # interrupt is re-raised: the developer asked to stop, not to wait.
+            detail = _kill_process_tree(process)
+            if "tree" not in detail and "group" not in detail:
+                # The fallback killed the direct child only, so descendants are
+                # still running. There is no report to put this in -- the
+                # interrupt discards the result -- and a developer who is about
+                # to see their prompt return needs to know the build did not
+                # stop with it. One line to stderr is the only channel left.
+                print(f"atom: {detail} after interrupt", file=sys.stderr)
+            raise
+
+
+def _launch(command: Sequence[str], working_directory: Path) -> subprocess.Popen:
+    """Start a command with both streams captured and stdin closed immediately.
+
+    On POSIX the child is given its own session so that a timeout can signal the
+    whole group. The cost is real and deliberate: a process in its own session no
+    longer receives the terminal's Ctrl-C, so an interrupted `atom check` stops
+    reaching `go test` directly. That is accepted because the alternative is the
+    failure this launch shape exists to prevent -- an unbounded wait on a tool
+    that will not stop on its own -- and because Atom kills the group itself on
+    the way out.
+
+    Windows has no sessions to join; its tree is walked at kill time instead.
+    """
+
+    platform_options: dict[str, object] = {}
+    if os.name != "nt":
+        platform_options["start_new_session"] = True
+
+    return subprocess.Popen(
+        list(command),
+        cwd=working_directory,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        **platform_options,
+    )
+
+
+def _stop_and_collect(process: subprocess.Popen) -> tuple[str, str, str]:
+    """End a timed-out command and recover whatever it managed to say.
+
+    Killing the process is not enough to end the wait. A pipe reaches
+    end-of-file when the last handle to its write end closes, and any child the
+    command started inherited that handle. `subprocess.run` drains with no
+    deadline at this point, so the caller waits for the *descendants* to finish
+    rather than for the timeout it asked for: measured at 65 minutes against a
+    300-second limit, with the CLI's own worker processes holding the pipe.
+
+    Killing the whole tree closes those handles, so the drain finishes at once
+    and the partial output survives -- which matters, because what a stuck
+    command already printed is usually the only clue to why it stuck.
+
+    The bounded second wait is a backstop for the case where the tree kill does
+    not take. What survives it differs by platform, and the difference is worth
+    stating rather than averaging away: POSIX reads the pipes incrementally, so
+    the timeout exception carries everything that had arrived and it is handed
+    back; Windows reads each pipe with a single blocking `read()` that returns
+    only at end-of-file, so bytes written before the deadline sit unreachable
+    inside that call while a surviving process holds the pipe open.
+
+    So this path recovers what it can and names what it cannot. Reporting the
+    loss matters as much as avoiding it: an empty reply that does not say why it
+    is empty cannot be told apart from a command that printed nothing.
+    """
+
+    detail = _kill_process_tree(process)
+    try:
+        stdout, stderr = process.communicate(timeout=_DRAIN_GRACE_SECONDS)
+        return stdout or "", stderr or "", detail
+    except subprocess.TimeoutExpired as expired:
+        # The reader threads are left to end with the surviving processes. The
+        # caller is no longer waiting on them, which is the point.
+        salvaged_stdout = _normalise_stream(expired.stdout)
+        salvaged_stderr = _normalise_stream(expired.stderr)
+        note = f"{detail}; stopped waiting for output after {_DRAIN_GRACE_SECONDS:g}s"
+        if not salvaged_stdout and not salvaged_stderr:
+            note = f"{detail}; output abandoned after {_DRAIN_GRACE_SECONDS:g}s"
+        return salvaged_stdout, salvaged_stderr, note
+
+
+def _normalise_stream(stream: bytes | str | None) -> str:
+    """Present a captured stream as text, whatever the platform handed back.
+
+    `TimeoutExpired` carries the partial output undecoded on POSIX and not at
+    all on Windows, so the three shapes -- bytes, text and nothing -- all reach
+    the same caller. Decoding with replacement matches the rest of the runner:
+    one bad byte must not cost the whole capture.
+    """
+
+    if stream is None:
+        return ""
+    if isinstance(stream, bytes):
+        return stream.decode("utf-8", errors="replace")
+    return stream
+
+
+def _kill_process_tree(process: subprocess.Popen) -> str:
+    """Terminate the command and every process it started, and say what happened.
+
+    The detail is returned rather than logged because it ends up in the timeout
+    message: "killed the process only" explains a truncated reply that "timed
+    out" alone would not.
+    """
+
+    if os.name == "nt":
+        # Windows has no process groups to signal, so the tree is walked by PID.
+        killed = subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(process.pid)],
+            capture_output=True,
+            text=True,
+        )
+        if killed.returncode == 0:
+            return "killed the process tree"
+        process.kill()
+        return f"taskkill exited {killed.returncode}; killed the process only"
+
+    try:
+        # The process id is used directly rather than looked up with `getpgid`,
+        # because `_launch` made this child its own session leader, so the group
+        # id equals the process id by construction. The lookup would add a way to
+        # fail -- it raises once the direct child has been reaped -- in exchange
+        # for re-deriving a number that is already known. A group outlives its
+        # leader as long as any member is alive, which is exactly the case here.
+        os.killpg(process.pid, signal.SIGKILL)
+        return "killed the process group"
+    except (ProcessLookupError, PermissionError) as error:
+        process.kill()
+        return f"could not signal the process group ({error}); killed the process only"
 
 
 def _resolve_for_launch(command: tuple[str, ...]) -> list[str]:
@@ -214,11 +368,3 @@ def _path_matches_after_first(tool_name: str) -> list[str]:
         if found is not None:
             matches.append(found)
     return matches[1:]
-
-
-def _normalise_stream(stream: bytes | str | None) -> str:
-    if stream is None:
-        return ""
-    if isinstance(stream, bytes):
-        return stream.decode(errors="replace")
-    return stream

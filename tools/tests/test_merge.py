@@ -199,6 +199,160 @@ class TestAgreement:
         assert merged[0].is_corroborated is True
 
 
+class TestCorroborationMeansTheSameLine:
+    """A21 - two models in one group is not two models on one problem.
+
+    Proximity grouping is deliberately loose, so a group can hold two entirely
+    different defects that happen to sit a line apart. Counting distinct models
+    per *group* then reports cross-model agreement that nobody expressed. The
+    corroboration flag is the single signal the analysis found separated real
+    defects from noise, so it has to mean what it says.
+    """
+
+    def test_two_models_on_different_lines_of_one_group_is_not_corroboration(self):
+        # The measured case: one model reports a nil map write at 44, the other
+        # an unchecked error at 45. Different problems, one line apart.
+        merged = merge_findings(
+            [
+                finding(44, "gpt-5.4", 1, message="Nil map write."),
+                finding(45, "claude-haiku-4.5", 1, message="Unchecked error."),
+            ],
+            RUNS,
+        )
+
+        assert len(merged) == 1, "the grouping itself is unchanged"
+        assert merged[0].lines == (44, 45)
+        assert merged[0].is_corroborated is False
+
+    def test_two_models_on_the_same_line_is_still_corroboration(self):
+        # Guard against over-correction: the flag must keep firing for the case
+        # it exists to mark.
+        merged = merge_findings(
+            [finding(44, "gpt-5.4", 1), finding(44, "claude-haiku-4.5", 1)], RUNS
+        )
+
+        assert merged[0].is_corroborated is True
+
+    def test_agreement_on_one_line_survives_an_unrelated_line_joining_the_group(self):
+        # Two models agree at 44; a third, different problem at 46 is pulled in
+        # by proximity. The real agreement at 44 must not be erased by it.
+        merged = merge_findings(
+            [
+                finding(44, "gpt-5.4", 1),
+                finding(44, "claude-haiku-4.5", 1),
+                finding(46, "gpt-5.4", 2, message="Something else."),
+            ],
+            RUNS,
+        )
+
+        assert len(merged) == 1
+        assert merged[0].is_corroborated is True
+
+    def test_one_model_reporting_twice_on_a_line_is_not_corroboration(self):
+        # Repetition by a single model is not a second opinion, on one line or
+        # across a group.
+        merged = merge_findings(
+            [finding(44, "gpt-5.4", 1), finding(44, "gpt-5.4", 2)], RUNS
+        )
+
+        assert merged[0].is_corroborated is False
+
+    def test_model_count_still_reports_every_model_in_the_group(self):
+        # Guard against over-correction in the other direction: narrowing
+        # corroboration must not hide who contributed to the entry.
+        merged = merge_findings(
+            [
+                finding(44, "gpt-5.4", 1),
+                finding(45, "claude-haiku-4.5", 1),
+            ],
+            RUNS,
+        )
+
+        assert merged[0].model_count == 2
+        assert {entry.model for entry in merged[0].agreement} == {
+            "gpt-5.4",
+            "claude-haiku-4.5",
+        }
+
+    def test_a_single_line_group_from_two_models_is_unaffected(self):
+        # The common shape: no grouping happened at all.
+        merged = merge_findings(
+            [finding(44, "gpt-5.4", 1), finding(44, "claude-haiku-4.5", 2)], RUNS
+        )
+
+        assert merged[0].lines == (44,)
+        assert merged[0].is_corroborated is True
+
+
+class TestNearbyReportsAreTheirOwnSignal:
+    """A22 - the weaker companion signal, kept disjoint from corroboration.
+
+    Two models a line apart may be describing one defect or two unrelated
+    ones, and the line numbers cannot tell those apart. Rather than force one
+    boolean to be wrong in one direction, the measured fact - several models,
+    nearby lines - is reported on its own.
+    """
+
+    def test_the_same_defect_at_adjacent_lines_is_reported_as_nearby(self):
+        # The shape the original analysis observed most often, and the one a
+        # same-line-only rule would have hidden entirely.
+        merged = merge_findings(
+            [
+                finding(44, "gpt-5.4", 1, message="Nil map write on the cache field."),
+                finding(45, "claude-haiku-4.5", 1, message="Writing to a nil map panics."),
+            ],
+            RUNS,
+        )
+
+        assert merged[0].is_corroborated is False
+        assert merged[0].has_nearby_multi_model_reports is True
+
+    def test_same_line_agreement_is_not_also_reported_as_nearby(self):
+        # Disjointness is load-bearing: an entry counted in both would be
+        # rendered under two contradictory headings.
+        merged = merge_findings(
+            [finding(44, "gpt-5.4", 1), finding(44, "claude-haiku-4.5", 1)], RUNS
+        )
+
+        assert merged[0].is_corroborated is True
+        assert merged[0].has_nearby_multi_model_reports is False
+
+    def test_agreement_on_one_line_wins_over_a_nearby_report(self):
+        # Two models agree at 44; one of them also reports 46. The strong
+        # signal is what gets claimed, and the weak one stays silent.
+        merged = merge_findings(
+            [
+                finding(44, "gpt-5.4", 1),
+                finding(44, "claude-haiku-4.5", 1),
+                finding(46, "gpt-5.4", 2, message="Something else."),
+            ],
+            RUNS,
+        )
+
+        assert merged[0].is_corroborated is True
+        assert merged[0].has_nearby_multi_model_reports is False
+
+    def test_one_model_across_several_lines_is_neither_signal(self):
+        # Repetition by a single model is not a second opinion, however it is
+        # spread across the group.
+        merged = merge_findings(
+            [
+                finding(44, "gpt-5.4", 1),
+                finding(45, "gpt-5.4", 2, message="Something else."),
+            ],
+            RUNS,
+        )
+
+        assert merged[0].is_corroborated is False
+        assert merged[0].has_nearby_multi_model_reports is False
+
+    def test_a_lone_finding_is_neither_signal(self):
+        merged = merge_findings([finding(44, "gpt-5.4", 1)], RUNS)
+
+        assert merged[0].is_corroborated is False
+        assert merged[0].has_nearby_multi_model_reports is False
+
+
 class TestSeverity:
     """B123, B124 - severity is what the models said, not a verdict."""
 

@@ -475,3 +475,352 @@ against `REF`, so the only reviewable ranges are ones ending at HEAD.
 Not a defect in anything built, but a capability the gate itself needs, which
 is the kind of gap a gate is supposed to find. Recorded for the Phase 5 plan
 rather than fixed here.
+
+## Finding 19 — the confidence signal was counting runs that said nothing
+
+Phase 4 exists to turn repetition into a confidence signal: a finding "reported in 2 of 3
+runs" means more than one reported once. The denominator of that fraction came from
+`InvocationReport.completed_for`, which counts runs whose *process* exited — not runs whose
+*reply* could be read.
+
+Across three real reviews, 18 model calls, `gpt-5.4` returned an unparseable reply four
+times and never once failed to complete. Every one of those four stayed in the denominator.
+A finding both readable replies agreed on printed "2 of 3": a dissent manufactured from a
+run that never spoke.
+
+**How it was found.** Not by a model. By pulling the run tables out of two committed review
+artifacts before opening a discussion about whether A5's strictness had proved annoying in
+practice. The question was "has the feared cost materialised"; the answer was "no, and a
+different one did".
+
+**What it cost to fix.** Twenty-seven tests and four rounds with the review gate, because
+the first fix was wrong in three separate ways that only a real run exposed.
+
+## Finding 20 — a measurement that skips the real path is not a measurement
+
+The review gate reported that basing silence on `invocation.usable_runs` would miss
+completed runs whose reply was empty. The claim was checked by handing an empty reply
+straight to `extract_all`, which duly recorded a failure. The finding was marked refuted.
+
+It was not refuted. `extract_all` is never called with raw runs in production — it is
+called with `invocation.usable_runs`, which filters empty replies out *first*. The
+measurement had bypassed the exact filter the finding was about, and confirmed a path that
+does not exist.
+
+The test, written against the real path, failed immediately and proved the model right.
+
+**The lesson is narrower than "measure":** a measurement is only evidence about the code it
+actually traverses. Reproducing a claim through a shortcut answers a question nobody asked.
+This is the second time in this project an unreproduced defect was real (see the Phase 1
+cold-cache non-reproduction); both times the shortcut was the problem, not the claim.
+
+## Finding 21 — the two models are not two opinions
+
+Across three real reviews of this change:
+
+| Model | Findings | Real defects | False positives |
+| --- | --- | --- | --- |
+| `gpt-5.4` | 15 | **5** | 10 |
+| `claude-haiku-4.5` | 9 | 0 | **9** |
+
+Every one of haiku's nine was the same error: reporting a symbol as undefined because its
+definition was not in the diff. It is a structural consequence of showing a reviewer only
+the changed lines, so it will recur on essentially every diff that references unchanged
+code — which is nearly all of them.
+
+`gpt-5.4`'s ten false positives were not noise of that kind: several were precise, specific,
+and wrong only because the behaviour they described had already been handled. Two were
+confidently wrong about a case that measurement settled in one command.
+
+**This does not argue for dropping a model.** It argues that agreement between these two
+models is not the confidence signal Phase 4 assumes it is, and that the *denominator* fixed
+in Finding 19 matters more than the numerator. It is recorded here because the sample is
+still small and the conclusion is not yet earned.
+
+## Finding 22 — the gate found four real defects in the fix for the gate
+
+The change that corrected the denominator was itself reviewed by `atom review`, four times,
+and every round found something true:
+
+| Round | Defect |
+| --- | --- |
+| 1 | silence based on `usable_runs` missed empty replies entirely |
+| 2 | a reply refused by the file guard was reported as unreadable, and reddened CI |
+| 3 | `reply_was_readable` was set for schema-invalid replies, not just out-of-scope ones |
+| 4 | answered and overruled overlapped, so the partial total subtracted a run twice |
+
+None of the four were found by running the tests, which were green at every round. Three of
+the four were found by a model and confirmed by measurement; one was found by a test written
+*because* a model's claim needed checking.
+
+---
+
+## Finding 23 — the over-merge manufactures the corroboration it was chosen to avoid
+
+A13 keeps `DEFAULT_PROXIMITY_WINDOW` at 3 and justifies it by arguing the opposite error
+is worse: splitting a real defect in two "manufactures corroboration that was never
+observed."
+
+Rendering the exact measured over-merge case showed the reasoning is half right. The
+over-merge manufactures corroboration too — and in the cross-model channel, which is the
+one B122 says carries all the signal.
+
+| input | `is_corroborated` (before) |
+| --- | --- |
+| `gpt-5.4` "nil map write" @44, `claude-haiku-4.5` "unchecked error" @45 | **True**, model_count 2 |
+
+Two models, two demonstrably different messages, one line apart — counted as agreement.
+`is_corroborated` was `model_count > 1`, and `model_count` counts distinct models in the
+*group*, not on a line. Proximity grouping is deliberately loose (B118), so the group is
+exactly the wrong unit for an agreement claim.
+
+**How it was found.** Not by a model and not by a test. By rendering the case A13 already
+described in prose, to check whether a different claim was true. The output answered the
+question asked and exposed something else in passing.
+
+**The general lesson.** A decision's *justification* can be stale even when its
+*conclusion* is still right. The window of 3 survived; the argument for it did not. When
+re-opening a decision, re-check the reasoning, not just the verdict.
+
+**Scope, named honestly.** Never observed on real data — but only because
+`claude-haiku-4.5` has never agreed with `gpt-5.4` on anything (Finding 21). Latent, not
+absent. Fixed under A21.
+
+---
+
+## Finding 24 — three of four re-opened decisions needed no code
+
+A2, A6, A13 and A17 were re-opened with fresh data from 18 further model calls. The
+outcome:
+
+| Decision | Outcome | Code change |
+| --- | --- | --- |
+| A2 | Kept — 58 calls, zero firings, kept anyway on failure-mode grounds | none |
+| A6 | Unchanged — no new data | none |
+| A13 | Flagged question **already satisfied** by shipped code | none |
+| A17 | Closed as settled — 18 hang-free calls | none |
+
+A13 is the instructive one. The flagged question asked for behaviour that `_line_span`
+and the grouping caveat already provided; building it would have duplicated working code.
+**Checking the current behaviour before implementing an agreed change cost one render and
+saved a wasted cycle.**
+
+The value of the exercise was not in the four verdicts. It was that looking closely enough
+to confirm "no change needed" is what surfaced Finding 23.
+
+---
+
+## Finding 25 — a fix for a false positive shipped a false negative, and the gate caught it
+
+A21 narrowed `is_corroborated` from group-level to same-line to stop the over-merge
+manufacturing agreement (Finding 23). Six tests passed, four shapes were verified by hand,
+and the artifacts were already written up.
+
+The review gate then reported, in **one readable run out of six**:
+
+> Requiring two models to match the exact same line drops corroboration for the
+> nearby-line reports that `merge_findings` intentionally treats as one defect, so real
+> cross-model agreement will now be understated whenever models anchor the same issue on
+> adjacent lines.
+
+Measured directly: correct. The narrowed rule hid genuine agreement for **the shape the
+original analysis observed most often**, which is the shape proximity merging was built for.
+
+**What the six tests missed.** Every over-correction guard asked "does the strong case
+still fire?" using *same-line* inputs. Not one asked "what happens to two models at
+adjacent lines describing the same defect" — the case the fix actually changed. The guards
+were written against the mechanism that was altered, not against the behaviour that
+depended on it.
+
+**The generalisable lesson.** When narrowing a rule, the over-correction guard must be
+built from the inputs that *used* to satisfy the rule and no longer do. Guards drawn from
+inputs that still satisfy the rule cannot fail, and six of them passing says nothing.
+
+**Second-order lesson.** Two decisions in a row (A5, A21) were fixes for "a number that was
+not true" that themselves reported a number that was not true. Narrowing a signal is not
+obviously safer than widening it — both directions are errors, and the choice needs the
+same evidence either way.
+
+**Also consistent with Finding 21:** `claude-haiku-4.5` again returned nothing across 3/3
+runs; the finding came from a single `gpt-5.4` run. That is now the third change in a row
+where the entire review signal came from one model.
+
+---
+
+## Finding 26 — the contract broke in the same commit that documented it as unbroken
+
+The design-spec entry for A22 ended: *"The addition is additive, so `SCHEMA_VERSION` is
+unchanged."*
+
+That sentence was written while the same working tree also contained A21, which narrowed
+`is_corroborated` from "several models in this group" to "several models on this line". The
+new field beside it was indeed additive. The existing field was not — the same input now
+produces a different answer under the same version number.
+
+**Found by the gate, in one readable run of six:**
+
+> This changes the meaning of the existing `is_corroborated` JSON field without bumping
+> `schema_version`, so consumers treating version 1 as a stable machine contract cannot
+> detect the incompatible semantics change.
+
+**Why the reasoning failed.** "Additive" was assessed against the change being written at
+that moment (A22's new field) rather than against the whole diff. A21 had already been
+mentally filed as finished. **A contract question has to be asked of the release, not of the
+edit.**
+
+**What it exposed underneath.** Fixing it revealed that one `SCHEMA_VERSION` served five
+independent reports, so no value of it could be true — the identical defect shape being
+fixed two decisions earlier in `is_corroborated`. A single symbol answering several
+questions produces a number that is not true, whatever the domain.
+
+**Third finding in a row from a lone `gpt-5.4` run**, with `claude-haiku-4.5` again
+contributing nothing. See Finding 21.
+
+---
+
+## Finding 27 — superseding a false sentence does not make the document true
+
+The B122b design-spec note said `SCHEMA_VERSION` was unchanged. When A23 fixed that, the
+correction was written as a **"Supersedes"** paragraph further down the file, and the
+original sentence was left in place.
+
+The gate caught it on the next pass:
+
+> This spec now states that the schema version is unchanged, but the same diff bumps the
+> review JSON contract to version 2, so the documented machine contract is incorrect.
+
+A reader who stops at the first statement gets the wrong answer, and nothing on that line
+warns them a correction exists. **A document is not a changelog.** Where a statement is
+simply wrong, fix it where it is written and record the history in the findings; reserve
+supersession notes for decisions that were reasonable when made.
+
+The sentence was corrected in place, the amendment now says it corrects rather than
+supersedes, and the original wording is preserved in Finding 26.
+
+**Worth noting about the run.** This was the first fully clean review of the session:
+6 of 6 runs answered, not partial, exit 0 — and it still found something. A clean run is
+not an empty one.
+
+
+## Finding 28 — the model that scored highest had read the answer key
+
+While building the swap comparison, `claude-sonnet-5` scored a perfect 4/4 on
+the fixture. It did so by running a repository-wide search for the string
+`"planted defect"` and reading `specs/atom-cli/phase-04-review/design-spec.md`,
+`decisions.md` and `findings.md` — all of which name the four planted defects by
+line number, and all of which are committed.
+
+The score was real. The measurement was worthless.
+
+This is not a quirk of one model. Any agent given a working directory inside
+this repository can reach the ground truth of every fixture-based experiment the
+repository contains, and the stronger the model, the more likely it is to go
+looking. **Every fixture-based measurement must run from an empty temporary
+directory.** The harness now does.
+
+> *When a subject can reach the answer key, a high score is evidence about the
+> filesystem, not about the subject.*
+
+## Finding 29 — the Phase 4 measurement harness stopped working; its numbers did not
+
+The Phase 4 POC passes the prompt in argv, via `copilot -p`. On CLI 1.0.89-1
+that call still exits zero, and the model answers as though no diff arrived and
+then starts searching the filesystem for one. A 2×2 probe (baseline prompt vs
+scoped prompt × repo cwd vs neutral cwd) failed in all four cells, which is what
+ruled out the prompt wording; the prompt was verified intact in argv at 1,896
+chars, which ruled out truncation. Delivering the identical prompt on **stdin**
+returned clean JSON in all four cells.
+
+Production was never affected: `invoke.review_command` pipes the prompt on stdin
+and passes no `-p` at all, for the unrelated reason that argv corrupts large
+diffs near 8,000 characters on Windows. A decision taken for one reason turned
+out to be load-bearing for another.
+
+**The harness is broken; the published numbers are not.** Both Phase 4 controls
+reproduced over stdin, which is precisely the evidence needed to say so. The
+first version of this finding claimed the harness "silently invalidates" its
+published figures — that was written before the controls were run, and it was
+false. It has been corrected where it was written rather than corrected
+underneath.
+
+> *"The tool that produced this number no longer runs" and "this number is
+> wrong" are different claims, and only one of them was true.* Running the
+> controls is what separated them; without controls the alarming reading is the
+> one that survives.
+
+
+## Finding 30 — the models differ at attribution, not at detection, and the confidence signal pays for it
+
+Measuring `gpt-5.6-luna` produced a 15% "planted found" rate, which read as a
+model that cannot review Go. Reading its replies instead of its score showed the
+opposite: it identifies all four planted defects in nearly every run, describes
+each one accurately, and volunteers two more that are real but unplanted -- the
+nil-map assignment on a zero-value `Store`, and the file that is never closed.
+
+Across ten runs it reported the *same* `Lookup` race at lines **18, 19, 22, 23
+and 24**, anchoring it to the struct field, the doc comment, the function
+signature, or the offending statement, depending on the run.
+
+Re-scoring every model as the line tolerance widens separates the two abilities:
+
+| Model | exact line | +/-3 | +/-6 |
+|---|---|---|---|
+| `gpt-5.4` | 98% | 100% | 100% |
+| `claude-haiku-4.5` | 30% | 80% | 80% |
+| `claude-sonnet-5` | 48% | 100% | 100% |
+| `claude-opus-5` | 54% | 100% | 100% |
+| `gpt-5.6-luna` | 15% | 70% | 100% |
+
+(+/-6 is included to show where the curve flattens and should not be read as a
+score: on a 48-line file with planted defects at 24, 36, 44 and 45, a window
+that wide makes a hit nearly free.)
+
+**Detection is not the differentiator. Attribution is.** Every model finds the
+defects. Only `gpt-5.4` reliably says where they are.
+
+### The cost is paid in the corroboration signal, and it is measurable
+
+Atom's confidence signal groups findings within `--window 3` and reports how
+many runs agreed. Three runs of each model, through production's own
+`_group_by_proximity`:
+
+| Model | Findings | Groups | Corroboration |
+|---|---|---|---|
+| `gpt-5.4` | 12 | 3 | **3/3, 3/3, 3/3** -- at lines 24, 36, 44-46 |
+| `gpt-5.6-luna` | 13 | 6 | 1/3, 2/3, 2/3, 1/3, 3/3, 1/3 |
+
+Luna found the `Lookup` race in all three runs. It is reported as **two separate
+findings, at 1/3 and 2/3** -- neither showing the unanimity that actually
+existed. Half its groups are single-run findings, which is exactly the signal a
+developer uses to decide what to ignore.
+
+So a model with unstable attribution is punished twice over: once because the
+finding points at the wrong line, and again because Atom cannot tell that its
+own repeated findings are the same finding. **The confidence signal silently
+assumes that a model attributes consistently.**
+
+### Widening the window cannot fix this
+
+The obvious repair -- group at a wider tolerance -- is already ruled out by
+evidence in this phase: the planted defects at 44 and 45 are genuinely distinct
+and one line apart, and `--window 3` **already** merges them (`gpt-5.4`'s
+`[44, 45, 46]` group above is two real defects reported as one). Luna shows both
+failures at once: `[38, 39, 40, 41]` merges three distinct problems while `[18]`
+and `[22]` split one.
+
+There is no window that separates defects one line apart while also uniting the
+same defect reported six lines apart. Precise attribution is a requirement Atom
+places on the model, not a property it can recover in aggregation.
+
+**Learnings.**
+
+- *A metric's name is a claim, and it needs checking too.* "Planted found" was
+  an exact-line match reported as a detection rate. Three times this session a
+  headline number has turned out to measure something other than its label.
+- *Read the replies, not only the score.* The score said luna could not review
+  Go. Sixty seconds of reading said it reviews well and cannot point. Opposite
+  conclusions from the same data, and only one of them survives contact with the
+  raw output.
+- *An aggregation step carries assumptions about its inputs.* Grouping by line
+  proximity is sound only while models agree on lines; nothing in the code says
+  so, and nothing measured it until a model turned up that does not.

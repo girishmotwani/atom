@@ -1,0 +1,12 @@
+```json
+[
+  {"file": "inventory/stock.go", "line": 24, "severity": "high", "message": "Lookup reads s.items without acquiring s.mu, causing a data race with the locked writes in Reserve."},
+  {"file": "inventory/stock.go", "line": 33, "severity": "medium", "message": "Reserve does not check whether the SKU exists before decrementing, silently creating a zero-quantity entry for unknown SKUs."},
+  {"file": "inventory/stock.go", "line": 35, "severity": "medium", "message": "Reserve allows Quantity to go negative since it never validates count against the current stock level."},
+  {"file": "inventory/stock.go", "line": 33, "severity": "high", "message": "s.items is never initialized (nil map) for a zero-value Store, so writing item := s.items[sku]; s.items[sku] = item will panic on assignment to a nil map."},
+  {"file": "inventory/stock.go", "line": 44, "severity": "high", "message": "Export ignores the error returned by os.Create, so a nil file pointer f will be used and cause a nil pointer dereference on failure."},
+  {"file": "inventory/stock.go", "line": 45, "severity": "medium", "message": "Export never closes the file handle, leaking file descriptors."},
+  {"file": "inventory/stock.go", "line": 44, "severity": "medium", "message": "Export iterates s.items without holding s.mu, racing with concurrent Reserve calls."}
+]
+```
+

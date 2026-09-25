@@ -409,3 +409,350 @@ of health, and the process boundary is one layer too early to tell the differenc
 **Why not simply require findings.** A model that answers `[]` has reviewed the diff and
 found nothing. Treating an empty finding list as failure would make a clean review
 unreportable — the exact inversion B130 warns about.
+
+---
+
+## A5 (revised) — a run that did not *answer* makes the review partial
+
+**Supersedes the original A5**, which made a run that did not *complete* make the review
+partial. The original invited revision "by the first week of real timeout data". That data
+now exists, and it overturned the classification rather than the strictness.
+
+**Measured across three real reviews (Phase 6, Phase 1, and this change), 18 model calls:**
+
+| Event | Times observed |
+| --- | --- |
+| Run failed to complete (timeout, crash) | **0** |
+| Run completed, reply could not be read | **4** (all `gpt-5.4`) |
+
+The feared cost of A5 — a flaky timeout reddening CI — never happened once. The failure
+that *did* happen was invisible to A5, because the process exited zero.
+
+**The defect this exposed.** `runs_per_model` returned the completed-run count, so an
+unreadable reply stayed in the denominator of every agreement fraction. A finding reported
+by both readable `gpt-5.4` replies out of three runs printed **"2 of 3"** — inventing a
+dissenting run from a reply nobody could parse. The confidence signal is the entire premise
+of Phase 4, and it was reporting a number that was not true.
+
+**Decision.** Three disjoint categories, decided by what a run *contributed*:
+
+| Category | Denominator | Partial? |
+| --- | --- | --- |
+| **Answered** — contributed at least one in-scope finding, or a valid empty list | counted | no |
+| **Overruled** — reply read, but every finding refused by the B117 file guard | left | no |
+| **Silent** — no readable reply at all: empty, unparseable, or never completed | left | **yes** |
+
+**Why overruled is not partial.** Partial means "no answer arrived", not "the answer was
+refused". A working guard must not redden CI. It still leaves the denominator, because it
+offered no opinion about *this* diff — shrinking a fraction and failing a build are
+different penalties for different faults.
+
+**Why the categories must be disjoint.** A reply holding one in-scope finding and one
+out-of-scope one produced both a finding and a file-guard failure, landing in two sets at
+once. That made the partial total subtract it twice and filed an answered run under a
+heading about replies that produced nothing. Found by the review gate, on this change.
+
+**Decided by the developer at the Phase 4 gate**, on the measurements above.
+
+## A19 — `reply_was_readable` is set only when the file guard alone objected
+
+**Decision.** An extraction failure is marked readable only if *every* rejected element was
+refused by B117. One malformed element anywhere drops the reply back to silence.
+
+**Why.** The first implementation set the flag for any rejected element, so a reply whose
+findings were all schema-invalid — missing fields, impossible line numbers — counted as
+"answered but overruled" and kept the review green. A reply Atom could not understand is
+silence no matter how much well-formed JSON surrounded it.
+
+**Found by the review gate** reviewing this very change, and confirmed by measurement
+before being accepted.
+
+## A20 — the report sections are keyed to the run, not to the failure
+
+**Decision.** "Responses that could not be read" and "Replies that named files outside this
+diff" list runs, chosen by which category the run fell into — never by inspecting an
+individual failure record.
+
+**Why.** A run can answer and still produce a failure record. Keying the headings to the
+failure reported an answered run as a missing one. The banner's count is derived the same
+way, from the disjoint totals.
+
+**Also fixed here.** The partial banner promised "Details were written to stderr" for runs
+that produce no stderr detail at all — an empty reply is dropped before extraction and
+generates no failure record. The banner now says every counted run is named above, and a
+section exists to name the ones that returned nothing.
+
+---
+
+## Resolved at the Phase 4 gate discussion
+
+### A2 (resolved) — B117 stays
+
+**Decision.** Keep the file guard. B117 rejects a finding naming a file outside the
+reviewed diff.
+
+**The evidence that settled it.** The guard has now never fired in **58 real calls** —
+both committed reviews (`phase-01-check/review.md`, `phase-06-state/review.md`) record
+only unreadable replies, never an out-of-diff finding. A1's rule would strike it.
+
+**Why it stays anyway.** 58 calls is too small a sample to remove a guard whose failure
+mode is loud, bounded and visible in the report. The developer weighed the cost of
+keeping an unfired guard against the cost of a corrupted finding reaching a reader, and
+kept it.
+
+**Named honestly:** the `overruled` run category added under A5 exists entirely for a
+guard that has never fired on real data. That is a deliberate, recorded bet, not an
+oversight.
+
+**Also named:** B117 does **not** catch the one false-positive class actually measured
+(Finding 21 — a model calling an in-diff symbol undefined because its definition was not
+in the diff). Those findings name files inside the diff. B117 was never going to help
+with the problem we actually have.
+
+---
+
+### A6 (resolved) — unchanged
+
+**Decision.** Diff size stays reported, not capped.
+
+**Why.** No new data in 18 further calls. Inventing a threshold still means picking a
+number nobody has measured. Reporting it still lets a developer reading a thin review of
+a huge diff see a plausible reason. Nothing observed argues for moving.
+
+---
+
+### A13 (resolved) — window stays 3; the flagged question was already answered
+
+**Decision.** `DEFAULT_PROXIMITY_WINDOW` remains 3. The flagged question — whether a
+merged finding spanning several lines should say so prominently — is **closed as already
+satisfied**, not by new code.
+
+**Verified by rendering the exact measured case** (two planted defects at 44 and 45):
+
+    #### g.py:44-45 - high
+    Reported at lines 44, 45; nearby lines are grouped, so this entry may cover
+    more than one problem.
+
+The headline carries the span (`_line_span`, A13) and the body states the grouping caveat.
+Both defects' messages stay visible per B120.
+
+**But the same render exposed a defect in A13's own reasoning — see A21.**
+
+---
+
+### A17 (resolved) — settled
+
+**Decision.** Children keep an explicitly empty stdin. Closed as settled.
+
+**Why.** 18 further subprocess calls across three real reviews, zero hangs, zero timeouts.
+The trade-off named in the original decision — a POC reading stdin sees EOF rather than a
+keyboard — remains the better failure and has cost nothing observed.
+
+---
+
+### A21 — corroboration means the same line, not the same group
+
+**Decision.** `MergedFinding.is_corroborated` is true only when two distinct models
+reported the **same line**. Distinct models scattered across a merged group no longer
+count.
+
+**Why.** A13 justifies the window of 3 by arguing that the opposite error, splitting a
+real defect, "manufactures corroboration that was never observed". Rendering the measured
+case showed the over-merge manufactures it too, in the channel that matters most:
+
+| input | old result |
+| --- | --- |
+| `gpt-5.4` "nil map write" @44, `claude-haiku-4.5` "unchecked error" @45 | `is_corroborated: True`, model_count 2 |
+
+Two models, two demonstrably different problems, one line apart, reported as cross-model
+agreement. B122 calls corroboration the one signal that separated the four real defects
+from the eight noise findings. A signal that fires on disagreement is not a signal.
+
+**Same defect class as A5:** the tool reported a number that was not true.
+
+**Scope, named honestly.** This has never fired on real data — but only because
+`claude-haiku-4.5` has never once agreed with `gpt-5.4` on anything (Finding 21). It is
+latent, not absent, and it sits in the one number Phase 4 exists to produce.
+
+**What deliberately did not change.** `model_count` and the per-model agreement fractions
+still report every model that contributed to the entry. Narrowing corroboration must not
+hide who spoke — guarded by
+`test_model_count_still_reports_every_model_in_the_group`.
+
+---
+
+### A22 — nearby multi-model reports are their own signal
+
+**Decision.** `is_corroborated` stays same-line only (A21). A second, weaker and
+deliberately **disjoint** signal, `has_nearby_multi_model_reports`, reports the case A21
+would otherwise have hidden: several models landed in one group but never on the same line.
+
+**Why A21 alone was wrong.** The review gate caught it, and measurement confirmed it:
+
+    SAME defect, adjacent lines, two models
+      lines: (44, 45)   model_count: 2   is_corroborated: False
+
+That is the shape `test_merge.py`'s own docstring names as what the original analysis
+observed most often — "the same defect reported at adjacent lines". Proximity merging
+(B118) exists precisely for it. A21 shipped alone would have understated genuine
+cross-model agreement on the commonest real case in order to fix a latent one.
+
+**The underlying problem, named.** These two shapes are indistinguishable in the data:
+
+| | lines | models | truth |
+| --- | --- | --- | --- |
+| same defect, adjacent lines | (44, 45) | 2 | genuine agreement |
+| different defects, adjacent lines | (44, 45) | 2 | no agreement |
+
+Line numbers cannot separate them, so **one boolean must be wrong in one direction**. A21
+did not fix the error; it swapped which error was made. Message-similarity matching was
+rejected as fuzzy and unmeasured.
+
+**Resolution.** Stop forcing one boolean to answer a question the data cannot answer.
+Report both measured facts and let the reader judge, with every contributing message still
+visible (B120):
+
+    Several models reported problems in this group, but on different lines,
+    so this is not recorded as agreement.
+
+**Disjointness is load-bearing**, for the same reason it was under A20: an entry counted in
+both would render under two contradictory headings. `has_nearby_multi_model_reports`
+returns false whenever `is_corroborated` is true.
+
+**Verified over four shapes**, all disjoint: same defect adjacent (nearby), different
+defects adjacent (nearby), same line (corroborated), one model two lines (neither).
+
+---
+
+### A23 — each report carries its own schema version
+
+**Decision.** The single shared `SCHEMA_VERSION` is replaced by one constant per report
+kind: `CHECK_SCHEMA_VERSION`, `SPIKE_SCHEMA_VERSION`, `SPIKE_LIST_SCHEMA_VERSION`,
+`STATUS_SCHEMA_VERSION` (all 1) and `REVIEW_SCHEMA_VERSION` (**2**).
+
+**Why.** The review gate found that A21 changed what `is_corroborated` answers for the same
+input — a breaking change to the review JSON contract — while `schema_version` stayed at 1.
+The design-spec entry written minutes earlier said "the addition is additive, so
+`SCHEMA_VERSION` is unchanged", which was true of the *new* field and false of the
+*narrowed* one. Both were in the same commit.
+
+**Why not simply bump the shared constant to 2.** One number served five independent
+contracts, so it could not be true for all of them: bumping it signals a change to four
+reports that did not move, and not bumping it hides a real change from review consumers.
+**This is the same shape as the defect it was reporting** — a single value forced to answer
+several questions — and it gets the same treatment.
+
+**The rule, now stated in the code.** Adding a field is not a bump. Changing what an
+existing field answers for the same input is.
+
+**Guarded against over-correction** by `test_the_other_reports_did_not_change_and_keep_their_version`,
+which pins the four unmoved reports at 1.
+
+
+## A21 — the second review model stays `claude-haiku-4.5`, on the evidence
+
+**Question.** `claude-haiku-4.5` contributes little to the review pair. Should it
+be swapped for a stronger Claude -- `claude-sonnet-5` or `claude-opus-5`?
+
+**Decision.** No. Keep the pair as `("gpt-5.4", "claude-haiku-4.5")`.
+
+**How this was settled.** By measurement, not by reputation:
+`poc/review-model-swap/spike.py`, 40 calls, four models by ten trials, against
+the Phase 4 fixture with four planted defects. Every call goes through
+production's own `review_command`, production's `REVIEW_PROMPT` and production's
+`extract_from_run`, so "readable" means exactly what it means to `atom review`.
+
+| Model | Readable | Planted found | Precision | Distinct FP lines | Median |
+|---|---|---|---|---|---|
+| `gpt-5.4` | 10/10 | **98%** | **95%** | **1** | 48s |
+| `claude-haiku-4.5` | 10/10 | 30% | 32% | 8 | 39s |
+| `claude-sonnet-5` | 10/10 | 48% | 30% | 18 | 32s |
+| `claude-opus-5` | **7/10** | 54% | 26% | 15 | 38s |
+
+Medians are taken over runs that produced a readable report. Three opus calls
+did not, and each recorded roughly 3,890 seconds -- not because opus is slow,
+but because the harness could not bound a timeout, which is the defect described
+in Phase 1 finding "The deadline that was not a deadline". Folding those three
+into a latency figure would have described the harness rather than the model.
+
+**Why the stronger models lose.** They do find more planted defects -- and they
+are *less precise* while doing it, at roughly double the false-positive volume.
+The swap trades a second model that is quiet and largely useless for one that is
+loud and largely wrong, and every false line it adds is a line a developer must
+read and dismiss. Opus additionally failed to produce a readable report 3 times
+in 10, which is a correctness problem before it is a quality one.
+
+**Correction, from the later `gpt-5.6-luna` evaluation (A22).** The "planted
+found" column above is an *exact-line* match, and measuring a fifth model showed
+that it does not mean what its name suggests. Re-scored at production's own
+grouping tolerance of +/-3 lines, the same runs read:
+
+| Model | exact line | +/-3 lines |
+|---|---|---|
+| `gpt-5.4` | 98% | 100% |
+| `claude-haiku-4.5` | 30% | 80% |
+| `claude-sonnet-5` | 48% | 100% |
+| `claude-opus-5` | 54% | 100% |
+
+Every model finds essentially all four defects. What separates them is not
+detection but **line attribution** -- whether they can say where the defect is.
+The decision is unchanged and its reason is sharper: `gpt-5.4` is the only model
+that reliably names the exact line, and a finding attributed to the wrong line
+costs a developer the same search as a finding that is simply wrong.
+
+**What the numbers actually say.** `gpt-5.4` does essentially all of the work.
+That confirms Finding 21 -- the two models are not two opinions -- at four times
+the original sample. The question worth asking is therefore not *which Claude*,
+but whether the second slot should hold a non-Claude model, or be spent on a
+second `gpt-5.4` pass instead. That is left open deliberately; this decision
+records only what was measured, which is that the proposed swap is not justified.
+
+**Trust in these figures rests on the controls.** Both incumbents reproduced
+their published Phase 4 behaviour in the new harness -- `gpt-5.4` found line 24
+in 10/10 (published 20/20), haiku found line 44 in 6/10 (published 13/20). A
+comparison whose controls do not reproduce is measuring the harness.
+
+
+## A22 — `gpt-5.6-luna` is not adopted, and measuring it corrected A21's reasoning
+
+**Question.** Is `gpt-5.6-luna` a better second review model than
+`claude-haiku-4.5`?
+
+**Decision.** No. The pair is unchanged.
+
+**Measured the same way as A21** -- same fixture, same planted defects, same
+production call shape, ten trials. The other four models were reloaded from
+`results.json` rather than re-called: every run in that file came from the same
+fixture, prompt and call shape, so reloading is sound, and re-running would have
+changed the comparison as well as its cost.
+
+| Model | Readable | Exact line | +/-3 lines | Precision | Distinct FP lines | Median |
+|---|---|---|---|---|---|---|
+| `gpt-5.4` | 10/10 | **98%** | **100%** | **95%** | **1** | 48s |
+| `claude-haiku-4.5` | 10/10 | 30% | 80% | 32% | 8 | 39s |
+| `claude-sonnet-5` | 10/10 | 48% | 100% | 30% | 18 | 32s |
+| `claude-opus-5` | 7/10 | 54% | 100% | 26% | 15 | 38s |
+| `gpt-5.6-luna` | 10/10 | 15% | 70% | 12% | 18 | 93s |
+
+**Why not, at production's own tolerance.** At +/-3 -- the window `atom review`
+actually groups findings with -- luna is the weakest of the five. It is also
+roughly twice as slow as anything else measured, and it produces the largest
+spread of lines that hold no planted defect.
+
+**What the 15% does not mean.** Read as a detection rate it would be a
+libel. Luna identifies all four planted defects in nearly every run, and its
+messages are accurate and specific: the unsynchronised `Lookup`, the unvalidated
+`Reserve`, the discarded `os.Create` error, the unlocked iteration in `Export`.
+It also volunteers two real defects the fixture's author did not plant -- the
+nil-map assignment on a zero-value `Store`, and the file that is never closed.
+
+What it cannot do is say **where**. Across ten runs it reported the *same*
+`Lookup` defect at lines 18, 19, 22, 23 and 24, anchoring it variously to the
+struct field, the doc comment, the function signature and, occasionally, the
+offending statement. Exact-line scoring charges that twice: once as a miss on
+the planted line, once as a false positive on the line it named.
+
+**The caveat on latency.** Quality here is fixture-determined and comparable
+across runs. Wall-clock is not: luna's ten calls were made on a different day
+from the other forty. The gap is wide enough (93s against 32-48s) to survive
+ordinary variation, but it is a weaker number than the rest of the table.

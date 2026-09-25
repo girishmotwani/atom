@@ -67,7 +67,7 @@ makes this phase testable without spawning processes.
 class CommandOutcome(enum.Enum):
     """Why a command ended. Distinguishes 'ran and failed' from 'never ran'."""
     COMPLETED = "completed"        # process ran to completion; consult exit_code
-    TIMED_OUT = "timed_out"        # exceeded the deadline and was killed
+    TIMED_OUT = "timed_out"        # exceeded the deadline; the process tree was killed
     TOOL_MISSING = "tool_missing"  # executable not found on PATH
 
 
@@ -206,6 +206,22 @@ Numbered; each becomes at least one test case.
    **separately** and the real exit code.
 2. `run` on a command exceeding `timeout_seconds` returns `outcome=TIMED_OUT` with
    `exit_code=None`, and does not raise.
+2a. `run` returns **within a bounded time** of `timeout_seconds` -- specifically
+   `timeout_seconds` plus a small fixed drain grace -- regardless of what the timed-out
+   command spawned. The deadline is a promise about when `run` returns, not merely about
+   when the direct child is signalled.
+2b. On timeout `run` terminates the whole **process tree**, not just the direct child,
+   and reports in `CommandResult.stderr` whether that termination succeeded. Output
+   produced before the deadline is preserved **whenever the termination works**: a
+   partial reply is the evidence that distinguishes a command that was slow from one
+   that was stuck. When termination fails, `run` still returns within the bound,
+   salvages whatever the platform still makes reachable, and says in `stderr` what
+   became of the rest -- so an empty reply is never mistaken for a command that
+   printed nothing.
+2c. `run` kills the process tree on `KeyboardInterrupt` and re-raises. Interrupting
+   Atom must not leave the command it started running unattended -- on POSIX the
+   session that makes rule 2b possible is the same session that puts the child out
+   of the terminal's reach.
 3. `run` with an executable not on PATH returns `outcome=TOOL_MISSING`, and does not raise.
 4. `run` never raises `CalledProcessError` — a failing command is data, not an exception.
 5. `CommandResult.succeeded` is true only when `outcome is COMPLETED and exit_code == 0`.
@@ -217,12 +233,45 @@ Numbered; each becomes at least one test case.
 8. `VetGate` behaves as 6–7 for `go vet ./...`.
 9. `FormatGate` fails when `gofmt -l .` prints any filename, **even though its exit code
    is 0**. The verdict comes from stdout content, not the exit code.
+
+   > **Amended after the Phase 1 review gate (run late — see `review.md`).** Two
+   > classes of printed filename are not formatting failures and are removed
+   > before the verdict. **(a) Files belonging to a nested module.** `gofmt -l .`
+   > walks the directory tree, so it crosses module boundaries that `go build`,
+   > `go vet` and `go test ./...` all respect — measured: it listed a file in a
+   > nested module that `go vet ./...` ignored. Atom's own method puts throwaway
+   > spikes under `poc/`, each its own module, so uncorrected this is the one
+   > gate whose scope is the filesystem rather than the module under test.
+   > **(b) Files whose only difference is CRLF line endings.** Measured: gofmt
+   > flags a correctly formatted file purely for its endings, and
+   > `core.autocrlf=true` is Git's default on Windows — so the identical commit
+   > failed on Windows and passed on Linux. A gate whose verdict depends on the
+   > checkout's line-ending policy is not measuring the code. Such files are
+   > reported in the passing summary, never dropped in silence. The test is not
+   > "does this file contain CRLF" but "is that the *only* thing gofmt would
+   > change": the file is normalised and handed back to gofmt on stdin, and only
+   > an unaltered return counts. A file that is both CRLF and genuinely
+   > misformatted still fails.
 10. `FormatGate` passes when `gofmt -l .` prints nothing.
 11. `FormatGate` names the unformatted files in its `summary`.
 12. `TestGate` passes when `go test ./...` exits 0.
 13. `TestGate` fails on non-zero exit, and `details` preserves the full raw output.
 14. `TestGate` returns `SKIPPED` when Go reports no test files in any package.
+
+    > **Amended after the Phase 1 review gate.** The scan reads **stdout only**,
+    > not stdout and stderr merged. Measured: Go prints per-package results to
+    > stdout and progress chatter (`go: downloading …`) to stderr, so one line of
+    > chatter made the all-packages-lack-tests test false and the gate reported
+    > **PASSED for a run in which nothing was tested**. A cold module cache is
+    > the normal state of CI.
 15. `RaceGate` runs `go test -race ./...`, and is `SKIPPED` when disabled.
+
+    > **Amended after the Phase 1 review gate.** `RaceGate` shares `TestGate`'s
+    > evaluator, so it also reports `SKIPPED` when no package has tests. It
+    > previously judged on exit code alone and reported `PASSED` for the same
+    > tree `TestGate` called `SKIPPED` — one tree, two contradictory verdicts,
+    > and the passing one was the lie. Observed in a real run: `SKIP test`
+    > printed directly above `PASS race`.
 16. Any gate whose command returns `TOOL_MISSING` yields `FAILED`, naming the missing tool.
 17. A gate's `details` always contains verbatim command output, never a paraphrase.
 

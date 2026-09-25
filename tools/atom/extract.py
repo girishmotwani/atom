@@ -81,6 +81,11 @@ class ExtractionFailure:
     run_index: int
     reason: str
     excerpt: str = ""
+    # True when the reply itself parsed and only its *contents* were refused.
+    # The difference matters upstream: a run that answered and was overruled
+    # still answered, while a run whose reply could not be read gave nothing.
+    # Only the second kind makes a review partial.
+    reply_was_readable: bool = False
 
 
 @dataclass(frozen=True)
@@ -165,9 +170,18 @@ def extract_from_run(
 
     findings: list[Finding] = []
     rejections: list[str] = []
+    # A reply counts as readable only if *every* rejection was the file guard.
+    # One malformed element means part of the reply could not be understood,
+    # and a reply Atom could not understand is silence no matter how much
+    # well-formed JSON surrounded it.
+    only_the_file_guard_objected = True
 
     for position, element in enumerate(parsed):
-        problem = _reject_reason(element, allowed_files)
+        problem = _reject_reason(element, allowed_files=None)
+        if problem:
+            only_the_file_guard_objected = False
+        else:
+            problem = _file_guard_reason(element, allowed_files)
         if problem:
             rejections.append(f"finding {position + 1}: {problem}")
             continue
@@ -183,7 +197,12 @@ def extract_from_run(
         )
 
     if rejections:
-        return findings, _failure(run, "; ".join(rejections), excerpt)
+        return findings, _failure(
+            run,
+            "; ".join(rejections),
+            excerpt,
+            reply_was_readable=only_the_file_guard_objected,
+        )
 
     return findings, None
 
@@ -238,6 +257,18 @@ def _reject_reason(element: object, allowed_files: Sequence[str] | None) -> str:
 
     # B117. Deliberately last, so that striking it (per A2) leaves the rest of
     # the validation untouched.
+    return _file_guard_reason(element, allowed_files)
+
+
+def _file_guard_reason(element: dict, allowed_files: Sequence[str] | None) -> str:
+    """Return why B117 refuses this element, or an empty string if it passes.
+
+    Split out from the structural checks because the two rejections mean
+    different things to the caller. A malformed element means the reply could
+    not be understood; a file outside the diff means it was understood and
+    declined. Only the first is silence.
+    """
+
     if allowed_files is not None and element["file"] not in allowed_files:
         return (
             f"file {element['file']!r} is not in the reviewed diff "
@@ -247,9 +278,15 @@ def _reject_reason(element: object, allowed_files: Sequence[str] | None) -> str:
     return ""
 
 
-def _failure(run: ModelRun, reason: str, excerpt: str) -> ExtractionFailure:
+def _failure(
+    run: ModelRun, reason: str, excerpt: str, reply_was_readable: bool = False
+) -> ExtractionFailure:
     return ExtractionFailure(
-        model=run.model, run_index=run.run_index, reason=reason, excerpt=excerpt
+        model=run.model,
+        run_index=run.run_index,
+        reason=reason,
+        excerpt=excerpt,
+        reply_was_readable=reply_was_readable,
     )
 
 

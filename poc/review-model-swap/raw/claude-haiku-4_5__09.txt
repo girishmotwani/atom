@@ -1,0 +1,23 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored, causing nil pointer dereference when file creation fails."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "File handle is never closed, causing a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "high",
+    "message": "Reserve does not validate that the SKU exists or that quantity would not go negative."
+  }
+]
+```
+

@@ -1,0 +1,11 @@
+```json
+[
+  {"file": "inventory/stock.go", "line": 27, "severity": "high", "message": "Lookup reads s.items without holding s.mu, causing a data race with concurrent Reserve/Export calls."},
+  {"file": "inventory/stock.go", "line": 38, "severity": "medium", "message": "Reserve does not check whether the SKU exists or whether count exceeds current quantity, allowing negative stock for unknown or over-reserved SKUs."},
+  {"file": "inventory/stock.go", "line": 45, "severity": "high", "message": "os.Create's error is ignored, so a failed file creation leaves f nil and the subsequent fmt.Fprintf will panic."},
+  {"file": "inventory/stock.go", "line": 44, "severity": "medium", "message": "Export never locks s.mu while iterating s.items, causing a data race with concurrent Reserve calls."},
+  {"file": "inventory/stock.go", "line": 46, "severity": "low", "message": "The file handle f is never closed, leaking the file descriptor."},
+  {"file": "inventory/stock.go", "line": 15, "severity": "medium", "message": "Store.items map has no exported constructor/initializer, so a zero-value Store will panic with a nil map assignment in Reserve."}
+]
+```
+

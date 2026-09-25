@@ -1,0 +1,39 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "medium",
+    "message": "Lookup reads s.items without the RWMutex, so concurrent Lookup, Reserve, or Export calls can race and trigger data races or a fatal concurrent map read/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 37,
+    "severity": "high",
+    "message": "Reserve unconditionally decrements stock without checking that the SKU exists or that sufficient quantity is available, allowing unknown reservations and negative inventory."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 38,
+    "severity": "medium",
+    "message": "Reserve panics when called on a zero-value Store because s.items is nil and the assignment writes to a nil map."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "Export ignores the os.Create error and can panic when fmt.Fprintf receives a nil file, while also reporting success for an invalid path."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 46,
+    "severity": "medium",
+    "message": "Export ignores write errors and never closes the file, so buffered or filesystem failures can be lost and file descriptors can leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "medium",
+    "message": "Export iterates over s.items without holding the mutex, so concurrent Reserve or Lookup operations can race with the map iteration and panic."
+  }
+]
+

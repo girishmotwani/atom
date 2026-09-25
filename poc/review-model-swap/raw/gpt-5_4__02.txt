@@ -1,0 +1,27 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "medium",
+    "message": "Lookup reads the map without taking the RWMutex, so concurrent calls with Reserve or Export can race and crash with concurrent map access."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 36,
+    "severity": "high",
+    "message": "Reserve never checks that the SKU exists, so reserving an unknown SKU silently creates a bogus entry with a negative quantity."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Export ignores the error from os.Create and still writes to the returned file handle, which can panic or falsely report success when the file cannot be created."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 46,
+    "severity": "medium",
+    "message": "Export iterates over the map without holding the RWMutex, so a concurrent Reserve can trigger a concurrent map iteration/write failure."
+  }
+]
+

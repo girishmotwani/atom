@@ -1,0 +1,8 @@
+[
+  {"file": "inventory/stock.go", "line": 24, "severity": "high", "message": "Lookup reads s.items without acquiring s.mu.RLock, causing a data race with concurrent Reserve calls."},
+  {"file": "inventory/stock.go", "line": 37, "severity": "high", "message": "Reserve does not check that the SKU exists or that count <= Quantity, so it silently creates zero-value entries and allows negative stock."},
+  {"file": "inventory/stock.go", "line": 44, "severity": "critical", "message": "The error from os.Create is discarded, so a failed create yields a nil *os.File that is written to and the error is never surfaced."},
+  {"file": "inventory/stock.go", "line": 45, "severity": "high", "message": "Export iterates s.items without holding s.mu.RLock, racing with concurrent Reserve mutations."},
+  {"file": "inventory/stock.go", "line": 48, "severity": "high", "message": "The file is never closed and Fprintf errors are ignored, leaking the descriptor and potentially losing data while still returning nil."}
+]
+

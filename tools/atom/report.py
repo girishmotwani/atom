@@ -11,9 +11,23 @@ from atom.invoke import RunOutcome
 from atom.review import ReviewOutcome
 from atom.spike import SpikeKind, SpikeResult, Stage, Verdict
 
-# Bump when the JSON shape changes incompatibly, so consumers can branch on it
-# instead of guessing from the presence of fields.
-SCHEMA_VERSION = 1
+# Each report is its own machine contract, so each carries its own version.
+# A single shared number cannot be true for all of them: narrowing one report's
+# semantics would either under-signal (leaving its consumers unable to detect
+# the change) or over-signal a change to four reports that did not move.
+#
+# Bump one of these when that report's JSON shape or the *meaning* of an
+# existing field changes incompatibly. Adding a field is not a bump; changing
+# what an existing field answers for the same input is.
+CHECK_SCHEMA_VERSION = 1
+SPIKE_SCHEMA_VERSION = 1
+SPIKE_LIST_SCHEMA_VERSION = 1
+STATUS_SCHEMA_VERSION = 1
+
+# 2: A21 narrowed `is_corroborated` from "several models in this group" to
+# "several models on this line", so the same input now yields a different
+# answer.
+REVIEW_SCHEMA_VERSION = 2
 
 _RESET = "\x1b[0m"
 _GREEN = "\x1b[32m"
@@ -88,7 +102,7 @@ def render_json(report: CheckReport) -> str:
     """Render a report as stable, versioned JSON for programmatic consumers."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": CHECK_SCHEMA_VERSION,
         "directory": str(report.directory),
         "passed": report.passed,
         "exit_code": report.exit_code,
@@ -238,7 +252,7 @@ def render_spike_json(result: SpikeResult) -> str:
     """Render a spike run as stable, versioned JSON."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SPIKE_SCHEMA_VERSION,
         "slug": result.slug,
         "kind": result.kind.value,
         "ran": result.ran,
@@ -288,7 +302,7 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
     """Render the spike index as stable, versioned JSON."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SPIKE_LIST_SCHEMA_VERSION,
         "spikes": [
             {
                 "slug": summary.slug,
@@ -307,12 +321,48 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
-    """Render the status report body for a person.
+# How a resolved phase is explained in the text rendering (B177). Naming the
+# source is not decoration: a typo'd branch reports as a pristine new phase
+# (B163) and a lexical fallback happens silently (B162), so a developer seeing an
+# unexpected answer needs to know which rule produced it.
+_SOURCE_PHRASES = {
+    "branch": "resolved from the git branch",
+    "lexical": "newest phase directory; resolved by fallback",
+}
 
-    Problems are deliberately **not** included here. They are rendered
-    separately by `render_status_problems` and written to stderr, so that
-    `atom status > phase.txt` captures the answer and lets the problems stay
+# ASCII only, on purpose. The text rendering is printed to a console that may be
+# code page 1252, where a Unicode tick would crash the whole command. `[x]` and
+# `[ ]` carry the same present/absent meaning without that risk -- and, just as
+# importantly, they never describe an artifact as "complete": the POC proved
+# completeness is not derivable (F6-1), so presence is all Atom is allowed to say.
+_PRESENT_MARK = "[x]"
+_ABSENT_MARK = "[ ]"
+
+
+def _present_over_required(artifacts) -> str:
+    """Return the ``present/required`` count for a phase (e.g. ``6/6``, ``4/7``).
+
+    A missing artifact is a phase in progress, not a failure (B166/B181), so this
+    is a plain count and never a pass/fail verdict. The denominator is the
+    *required* subset, which is six rather than seven for a phase whose POC was
+    skipped (B168) -- the one place the conditional-artifact rule reaches output.
+    """
+
+    present = sum(1 for name in artifacts.required if artifacts.present[name])
+    return f"{present}/{len(artifacts.required)}"
+
+
+def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
+    """Render the status report body for a person (B177/B178).
+
+    The current phase gets full detail -- how it was resolved, every required
+    artifact present or absent, and any approval recorded for it -- while every
+    other phase gets a single summary line. The detail belongs to the phase you
+    are working on; the rest is peripheral vision.
+
+    Problems are deliberately **not** included here. They are rendered separately
+    by ``render_status_problems`` and written to stderr, so that
+    ``atom status > phase.txt`` captures the answer and lets the problems stay
     visible in the terminal. Each problem is therefore printed exactly once.
     """
 
@@ -326,12 +376,49 @@ def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
     if report.module_path:
         lines.append(f"Module:  {report.module_path}")
 
-    if report.state is not None:
-        phase = report.state.phase.value
-        status = report.state.status.value.replace("_", " ")
-        lines.append(f"Phase:   {paint(phase, _GREEN)} ({status})")
+    current = report.derivation.current
+    if current is not None:
+        source_phrase = _SOURCE_PHRASES.get(
+            report.derivation.source, report.derivation.source
+        )
+        lines.append(f"Phase:   {paint(current.name, _GREEN)} ({source_phrase})")
+        if not current.started:
+            # B163: a branch can name a phase that has no directory yet. That is
+            # the ordinary first move of a new phase, not an error -- so it is
+            # stated plainly, in neutral styling, never as a failure.
+            lines.append("         (not started -- no directory yet)")
+
+        lines.append("Artifacts:")
+        for name in current.artifacts.required:
+            is_present = current.artifacts.present[name]
+            # Present is affirmed in green; absent is neutral grey, never red.
+            # A missing artifact is information, not a fault (B166/B181).
+            mark = paint(_PRESENT_MARK, _GREEN) if is_present else paint(_ABSENT_MARK, _GREY)
+            lines.append(f"  {mark} {name}")
+
+        for approval in report.approvals:
+            # Text shows only the current phase's approval (B177); JSON carries
+            # all of them for a program to filter (B179).
+            if approval.phase == current.name:
+                lines.append(f"Approval: {approval.gate} approved on {approval.date}")
     else:
-        lines.append(f"Phase:   {paint('unknown', _RED)}")
+        # B164: no phase directories and the branch names none. A legitimate
+        # state for a project that has not started a phase, not an error.
+        lines.append(f"Phase:   {paint('none', _GREY)} (no phase directories found)")
+
+    # B178: every *other* phase on one line -- name and present-of-required.
+    # derivation.phases is already lexically ordered, so this is too.
+    others = [
+        phase
+        for phase in report.derivation.phases
+        if current is None or phase.name != current.name
+    ]
+    if others:
+        lines.append("Other phases:")
+        width = max(len(phase.name) for phase in others)
+        for phase in others:
+            count = _present_over_required(phase.artifacts)
+            lines.append(f"  {phase.name.ljust(width)}  {count}")
 
     if report.last_event is not None:
         name = report.last_event.get("event", "?")
@@ -351,17 +438,24 @@ def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
 
 
 def render_status_problems(report: "StatusReport", use_colour: bool = True) -> str:
-    """Render just the problems, for stderr. Empty string when there are none."""
+    """Render just the problems, for stderr. Empty string when there are none (B180).
+
+    Every problem status reports is an advisory: the report was produced in
+    full, and the problem is recoverable (a swept temp file, unsaved work, a
+    corrupt state file whose loss did not stop derivation, a phase whose POC
+    report cannot be parsed). So there is one colour and one heading.
+
+    An earlier version reserved red for the case where Atom could not answer at
+    all. That case turned out to be unreachable -- status has no ``--root``, so
+    the root is the process's cwd, which necessarily exists -- and the red
+    branch was therefore decoration claiming to carry a signal it never carried
+    (F6-D6). Colour that never varies is not information.
+    """
 
     if not report.problems:
         return ""
 
-    # Amber for things still recoverable, red when status could not answer at
-    # all. Reserving red for the genuine failure keeps the colour meaningful.
-    colour = _RED if not report.could_answer else _YELLOW
-    heading = "Problems:" if not report.could_answer else "Warnings:"
-
-    lines = [f"{colour}{heading}{_RESET}" if use_colour else heading]
+    lines = [f"{_YELLOW}Advisories:{_RESET}" if use_colour else "Advisories:"]
     for problem in report.problems:
         # Problems are multi-line by design -- they carry recovery steps.
         for index, part in enumerate(str(problem).splitlines()):
@@ -371,13 +465,14 @@ def render_status_problems(report: "StatusReport", use_colour: bool = True) -> s
 
 
 def render_status_json(report: "StatusReport") -> str:
-    """Render a status report as JSON (B97).
+    """Render a status report as JSON (B179).
 
     Emitted even when the state could not be read, so a caller that asked for
-    JSON always gets something parseable to inspect.
+    JSON always gets something parseable to inspect. The documented keys are a
+    guaranteed subset of the object (see ``StatusReport.to_dict``).
     """
 
-    payload = {"schema_version": SCHEMA_VERSION, **report.to_dict()}
+    payload = {"schema_version": STATUS_SCHEMA_VERSION, **report.to_dict()}
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
@@ -448,7 +543,7 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
     invocation = outcome.invocation
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": REVIEW_SCHEMA_VERSION,
         "is_partial": outcome.is_partial,
         "has_no_usable_response": outcome.has_no_usable_response,
         "diff": {
@@ -461,6 +556,10 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
                 "model": model,
                 "runs_requested": invocation.requested_for(model),
                 "runs_completed": invocation.completed_for(model),
+                # Two different facts, both true, deliberately both present:
+                # the process finished, and the reply could be read. The
+                # agreement fractions are drawn against the second.
+                "runs_answered": outcome.runs_per_model[model],
             }
             for model in invocation.models
         ],
@@ -474,8 +573,16 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
                 "run_index": failure.run_index,
                 "reason": failure.reason,
                 "excerpt": failure.excerpt,
+                # False means Atom could not read the reply at all; true means
+                # it read it and the file guard declined the contents. Only the
+                # first counts against the review's completeness.
+                "reply_was_readable": failure.reply_was_readable,
             }
             for failure in outcome.extraction.failures
+        ],
+        "silent_runs": [
+            {"model": model, "run_index": run_index}
+            for model, run_index in outcome.silent_runs
         ],
         "findings": [_finding_payload(finding) for finding in outcome.findings],
     }
@@ -521,30 +628,76 @@ def _review_header_lines(outcome: "ReviewOutcome") -> list[str]:
         lines.append("")
 
     failures = outcome.extraction.failures
-    if failures:
-        # Named, not counted, and without the reason — same split as A14 above.
+    # Sectioned by what happened to the *run*, not to the individual failure.
+    # A run that contributed a good finding answered the question even if part
+    # of its reply was refused, and filing it under either heading below would
+    # report an answered run as a missing one.
+    unreadable = [
+        failure for failure in failures
+        if (failure.model, failure.run_index) in set(outcome.silent_runs)
+    ]
+    overruled = [
+        failure for failure in failures
+        if (failure.model, failure.run_index) in set(outcome.overruled_runs)
+    ]
+    if unreadable:
+        # Named, not counted, and without the reason - same split as A14 above.
         # A response nobody could parse is an opinion that went missing, so the
         # report must admit it; why it could not be parsed is a tool problem
         # belonging to stderr.
         lines.append("Responses that could not be read:")
         lines.append("")
-        for failure in failures:
+        for failure in unreadable:
             lines.append(
                 f"- `{failure.model}` run {failure.run_index} "
                 "(see stderr for the reason)"
             )
         lines.append("")
 
+    if overruled:
+        # A separate heading because this is a different event. The reply was
+        # read; the file guard declined what it named. Listing it as unreadable
+        # would blame the model for Atom's own scoping rule.
+        lines.append("Replies that named files outside this diff:")
+        lines.append("")
+        for failure in overruled:
+            lines.append(
+                f"- `{failure.model}` run {failure.run_index} "
+                "(read, but nothing it reported was in scope)"
+            )
+        lines.append("")
+
+    # A run can go silent without producing an extraction failure at all: an
+    # empty or whitespace-only reply is dropped before extraction ever sees it,
+    # so it appears in no list above while still counting against the totals
+    # below. Naming it here keeps the banner's promise honest.
+    named = {(failure.model, failure.run_index) for failure in failures}
+    unnamed_silence = [run for run in outcome.silent_runs if run not in named]
+    if unnamed_silence:
+        lines.append("Runs that returned nothing to read:")
+        lines.append("")
+        for model, run_index in unnamed_silence:
+            lines.append(f"- `{model}` run {run_index} (empty reply)")
+        lines.append("")
+
     if outcome.is_partial:
-        missing = sum(
-            invocation.requested_for(model) - invocation.completed_for(model)
-            for model in invocation.models
+        # Counted as runs that produced no readable reply -- not as runs that
+        # merely left the denominator. An overruled reply shrinks the fractions
+        # below without being missing, so including it here would overstate how
+        # much of the review failed to happen. Derived from the totals rather
+        # than from `silent_runs`, which only covers runs that completed: a run
+        # that timed out never completed and must still be counted here. The
+        # three categories are disjoint, so subtracting both is safe.
+        missing = (
+            len(invocation.models) * invocation.runs_requested
+            - sum(outcome.runs_per_model.values())
+            - len(outcome.overruled_runs)
         )
         lines.append(
             f"> **This review is partial.** {missing} of "
             f"{len(invocation.models) * invocation.runs_requested} runs did not "
             "answer, so the agreement fractions below are out of fewer runs than "
-            "were asked for. Details were written to stderr."
+            "were asked for. Every one of them is named above."
         )
         lines.append("")
 
@@ -607,6 +760,16 @@ def _single_finding_lines(finding) -> list[str]:
         )
         lines.append("")
 
+    if finding.has_nearby_multi_model_reports:
+        # A22. Several models landed in this group but never on the same line.
+        # That is not agreement and must not be shown as agreement, but it is
+        # also not nothing, so it is stated plainly instead of dropped.
+        lines.append(
+            "Several models reported problems in this group, but on different "
+            "lines, so this is not recorded as agreement."
+        )
+        lines.append("")
+
     agreement = ", ".join(
         f"`{entry.model}` {entry.fraction}" for entry in finding.agreement
     )
@@ -642,6 +805,7 @@ def _finding_payload(finding) -> dict:
         "highest_severity": finding.highest_severity,
         "severities": list(finding.severities),
         "is_corroborated": finding.is_corroborated,
+        "has_nearby_multi_model_reports": finding.has_nearby_multi_model_reports,
         "has_severity_disagreement": finding.has_severity_disagreement,
         "agreement": [
             {

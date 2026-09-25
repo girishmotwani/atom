@@ -1,0 +1,33 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 23,
+    "severity": "high",
+    "message": "Lookup reads s.items without holding s.mu, so concurrent Lookup, Reserve, or Export calls can race and potentially panic with concurrent map access."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 29,
+    "severity": "high",
+    "message": "Reserve accepts missing SKUs and negative or excessive counts, silently creating entries or allowing stock to become invalid instead of returning an error."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 38,
+    "severity": "high",
+    "message": "The error returned by os.Create is discarded, so Export can dereference a nil file and panic or report success despite failing to open the destination."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 39,
+    "severity": "high",
+    "message": "Export iterates over s.items without locking, causing a data race and possible concurrent map iteration panic when used alongside Reserve or Lookup."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 40,
+    "severity": "medium",
+    "message": "Export ignores errors from fmt.Fprintf and never closes the file, so disk or write failures can be reported as success and buffered data may not be flushed."
+  }
+]
+

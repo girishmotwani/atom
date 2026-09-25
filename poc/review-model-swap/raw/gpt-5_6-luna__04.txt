@@ -1,0 +1,33 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 18,
+    "severity": "high",
+    "message": "Lookup reads the map without holding the mutex, so concurrent Reserve calls can cause a data race or fatal concurrent map read/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 30,
+    "severity": "medium",
+    "message": "Reserve does not validate the SKU, count, or available quantity, allowing unknown items, negative counts that increase stock, and reservations that drive inventory below zero."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 38,
+    "severity": "high",
+    "message": "Export ignores os.Create errors and can dereference a nil file in Fprintf, while also returning nil instead of reporting the failure."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 39,
+    "severity": "high",
+    "message": "Export iterates over the map without holding the mutex, so concurrent Reserve calls can cause a data race or fatal concurrent map iteration/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 40,
+    "severity": "medium",
+    "message": "Export ignores Fprintf errors and never closes the file, so write or close failures can be lost and buffered data may not be flushed reliably."
+  }
+]
+

@@ -1,0 +1,29 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored with blank identifier, causing nil pointer dereference if file creation fails."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "File handle is never closed, causing a resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "high",
+    "message": "Reserve allows negative quantities and does not validate that the SKU exists or has sufficient stock."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "high",
+    "message": "Lookup accesses s.items without acquiring the read lock, creating a race condition with Reserve."
+  }
+]
+```
+

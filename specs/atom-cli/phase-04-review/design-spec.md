@@ -360,3 +360,81 @@ Two of these went beyond picking an offered option:
 
 Roughly 400 lines of production Python, larger than the plan's 350 because P4-2's
 repetition and B121's agreement tracking add a layer the plan did not anticipate.
+
+---
+
+## Amended after the Phase 4 gate review (A5 revised, A19, A20)
+
+These amendments replace the run-classification described above. See `decisions.md`
+A5 (revised) for the measurements that drove them.
+
+**B130 (amended).** "No usable response" means no run produced a reply Atom could *read*.
+A reply refused by the B117 file guard was read, so a review consisting only of overruled
+replies is reported as a review that happened and found nothing in scope — not as an
+infrastructure failure.
+
+**B131 (amended).** A review is partial when any run produced no readable reply. This
+covers a run that never completed *and* a run that completed with an empty or unparseable
+reply. It deliberately does not cover a reply the file guard overruled.
+
+**B131a (new).** Every run belongs to exactly one of three categories — answered,
+overruled, silent. They are disjoint by construction: a run that contributed any in-scope
+finding is answered, whatever else its reply contained.
+
+**B131b (new).** The agreement denominator for a model is its count of *answered* runs.
+Overruled and silent runs leave the denominator.
+
+**B131c (new).** Every run counted in the partial banner is named in a section above it.
+The banner does not refer the reader to stderr, because a silent run produces no stderr
+detail.
+
+---
+
+## Amended after the Phase 4 gate discussion
+
+**B122 (amended).** Corroboration is reported when two distinct models reported the **same
+line**, not merely the same merged group. Proximity grouping is intentionally loose
+(B118), so a group can hold unrelated defects a line apart; counting models across the
+group reports an agreement neither model expressed.
+
+`MergedFinding.is_corroborated` buckets `messages` by `line` and is true when any single
+line drew more than one distinct model.
+
+**B122a (new).** `model_count` and the per-model agreement fractions are unchanged: they
+continue to report every model that contributed to the entry. Narrowing corroboration must
+not hide who spoke.
+
+**B120 (unchanged, re-confirmed).** Every contributing message stays visible, so a reader
+of an over-merged entry still sees both problems described even though the entry is no
+longer marked corroborated.
+
+**B122b (new, A22).** `has_nearby_multi_model_reports` is true when more than one distinct
+model contributed to a merged entry but no single line drew two models. It is disjoint from
+`is_corroborated` by construction: it returns false whenever corroboration is claimed.
+
+Rendered as a plain statement rather than a verdict, because the data cannot distinguish
+one defect described a line apart from two unrelated defects a line apart:
+
+    Several models reported problems in this group, but on different lines,
+    so this is not recorded as agreement.
+
+Carried in the JSON payload as `has_nearby_multi_model_reports`. This field's addition is
+additive on its own, but it ships alongside A21's narrowing of `is_corroborated`, so the
+review contract does move — see B126 and `REVIEW_SCHEMA_VERSION` = 2.
+
+**B126 (amended, A23).** Each report kind carries its own schema version constant rather
+than sharing one. `REVIEW_SCHEMA_VERSION` is **2**, recording A21's narrowing of
+`is_corroborated`; check, spike, spike-list and status remain at 1.
+
+**Corrects** the B122b note above, which originally read "the addition is additive, so
+`SCHEMA_VERSION` is unchanged". That sentence has been fixed in place rather than only
+superseded here: a false statement left standing with a correction forty lines later still
+reads as current to anyone who stops at the first one. The original wording and how it
+happened are recorded in Finding 26.
+
+That assessment covered
+only the new field and missed that A21, in the same change, altered an existing field's
+meaning.
+
+**The rule.** Adding a field is not a bump. Changing what an existing field answers for the
+same input is.

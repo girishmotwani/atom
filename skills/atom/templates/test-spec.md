@@ -9,6 +9,32 @@ date: "{yyyy-mm-dd}"
 
 <!-- GUIDANCE: Write this at the start of atom-tdd. It maps design behaviours to concrete Go tests before implementation. The test spec is complete only when every numbered behaviour in the design spec is represented. -->
 
+## Toolchain Redundancy Audit
+
+<!-- GUIDANCE: Fill this in BEFORE the Coverage Map. Every proposed case must survive one question: could this test ever fail, given the code compiles and `go vet` passes? If not, it is not a weak test -- it is not a test. See references/what-the-toolchain-proves.md. Replace the example rows. A removed case is a decision: repeat it in decisions.md. -->
+
+Cases removed as unfailable:
+
+| Proposed case | Bucket | Evidence | Replaced by |
+|---|---|---|---|
+| _example — replace_ `TestParse_NilInput_ReturnsError` | rejected-by-compiler | `input` is a `string`; `var s string = nil` does not compile | `TestParse_EmptyInput_ReturnsError` |
+| _example — replace_ `TestLog_BadFormatVerb_Reports` | flagged-by-vet | `go vet` printf check, already run by `atom check` | none needed |
+| {removed_case} | {rejected-by-compiler-or-flagged-by-vet} | {why_it_can_never_fail} | {replacement_or_none} |
+
+If no cases were removed, write exactly: "None — no proposed case was unfailable."
+
+Silent-failure coverage — the properties the toolchain accepts **without any
+diagnostic**, where only a test can catch a wrong answer:
+
+| Property | Applies here? | Test name or why not |
+|---|---|---|
+| Empty string where a value is required | {yes_or_not_applicable} | {test_name_or_reason} |
+| Ignored `error` return | {yes_or_not_applicable} | {test_name_or_reason} |
+| Typed nil stored in an interface (`err != nil` is true) | {yes_or_not_applicable} | {test_name_or_reason} |
+| Non-exhaustive switch over an enum-like const block | {yes_or_not_applicable} | {test_name_or_reason} |
+| Integer overflow wrapping silently at runtime | {yes_or_not_applicable} | {test_name_or_reason} |
+| Nil map write / nil pointer deref / variable index or divisor | {yes_or_not_applicable} | {test_name_or_reason} |
+
 ## Coverage Map
 
 <!-- GUIDANCE: Every numbered behaviour from the design spec appears here at least once. An unmapped behaviour is either unimplemented or underspecified. Priority: P0 must, P1 should, P2 nice. Status starts as ☐ red and becomes ☑ green after the test passes. Replace the example row. -->
@@ -121,6 +147,10 @@ Rationale: {coverage_rationale}
 
 - [ ] Every numbered design behaviour appears in the Coverage Map.
 - [ ] Each P0 behaviour has at least one named test.
+- [ ] Every proposed case survives "could this ever fail, given it compiles and vets clean?"
+- [ ] No case asserts a `nil` string, a type mismatch, or anything else the compiler refuses.
+- [ ] Removed cases are recorded in the Redundancy Audit with their bucket and evidence.
+- [ ] The silent-failure table is filled in for every row, with a test name or a reason.
 - [ ] Test names follow `TestThing_Condition_ExpectedOutcome`.
 - [ ] Arrange / Act / Assert is specified for every test case.
 - [ ] Fakes are limited to I/O, time, randomness, or other nondeterministic boundaries.
