@@ -1,0 +1,33 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 18,
+    "severity": "high",
+    "message": "Lookup reads the map without acquiring the read lock, so concurrent Lookup and Reserve calls can race and trigger a fatal concurrent map read/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 32,
+    "severity": "high",
+    "message": "Reserve assigns to s.items without ensuring the map is initialized, so calling it on a zero-value Store panics with an assignment to an entry in a nil map."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 38,
+    "severity": "high",
+    "message": "Export ignores os.Create errors and returns nil regardless, causing a nil-file panic during writing and masking filesystem failures."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 39,
+    "severity": "high",
+    "message": "Export iterates over the ledger without acquiring the read lock, so concurrent Reserve calls can race and trigger a fatal concurrent map iteration/write panic."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 40,
+    "severity": "medium",
+    "message": "Export ignores Fprintf errors and never closes the file, so disk-full, write, and close failures are silently reported as successful exports."
+  }
+]
+

@@ -11,9 +11,23 @@ from atom.invoke import RunOutcome
 from atom.review import ReviewOutcome
 from atom.spike import SpikeKind, SpikeResult, Stage, Verdict
 
-# Bump when the JSON shape changes incompatibly, so consumers can branch on it
-# instead of guessing from the presence of fields.
-SCHEMA_VERSION = 1
+# Each report is its own machine contract, so each carries its own version.
+# A single shared number cannot be true for all of them: narrowing one report's
+# semantics would either under-signal (leaving its consumers unable to detect
+# the change) or over-signal a change to four reports that did not move.
+#
+# Bump one of these when that report's JSON shape or the *meaning* of an
+# existing field changes incompatibly. Adding a field is not a bump; changing
+# what an existing field answers for the same input is.
+CHECK_SCHEMA_VERSION = 1
+SPIKE_SCHEMA_VERSION = 1
+SPIKE_LIST_SCHEMA_VERSION = 1
+STATUS_SCHEMA_VERSION = 1
+
+# 2: A21 narrowed `is_corroborated` from "several models in this group" to
+# "several models on this line", so the same input now yields a different
+# answer.
+REVIEW_SCHEMA_VERSION = 2
 
 _RESET = "\x1b[0m"
 _GREEN = "\x1b[32m"
@@ -88,7 +102,7 @@ def render_json(report: CheckReport) -> str:
     """Render a report as stable, versioned JSON for programmatic consumers."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": CHECK_SCHEMA_VERSION,
         "directory": str(report.directory),
         "passed": report.passed,
         "exit_code": report.exit_code,
@@ -238,7 +252,7 @@ def render_spike_json(result: SpikeResult) -> str:
     """Render a spike run as stable, versioned JSON."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SPIKE_SCHEMA_VERSION,
         "slug": result.slug,
         "kind": result.kind.value,
         "ran": result.ran,
@@ -288,7 +302,7 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
     """Render the spike index as stable, versioned JSON."""
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SPIKE_LIST_SCHEMA_VERSION,
         "spikes": [
             {
                 "slug": summary.slug,
@@ -458,7 +472,7 @@ def render_status_json(report: "StatusReport") -> str:
     guaranteed subset of the object (see ``StatusReport.to_dict``).
     """
 
-    payload = {"schema_version": SCHEMA_VERSION, **report.to_dict()}
+    payload = {"schema_version": STATUS_SCHEMA_VERSION, **report.to_dict()}
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
@@ -529,7 +543,7 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
     invocation = outcome.invocation
 
     payload = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": REVIEW_SCHEMA_VERSION,
         "is_partial": outcome.is_partial,
         "has_no_usable_response": outcome.has_no_usable_response,
         "diff": {
@@ -542,6 +556,10 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
                 "model": model,
                 "runs_requested": invocation.requested_for(model),
                 "runs_completed": invocation.completed_for(model),
+                # Two different facts, both true, deliberately both present:
+                # the process finished, and the reply could be read. The
+                # agreement fractions are drawn against the second.
+                "runs_answered": outcome.runs_per_model[model],
             }
             for model in invocation.models
         ],
@@ -555,8 +573,16 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
                 "run_index": failure.run_index,
                 "reason": failure.reason,
                 "excerpt": failure.excerpt,
+                # False means Atom could not read the reply at all; true means
+                # it read it and the file guard declined the contents. Only the
+                # first counts against the review's completeness.
+                "reply_was_readable": failure.reply_was_readable,
             }
             for failure in outcome.extraction.failures
+        ],
+        "silent_runs": [
+            {"model": model, "run_index": run_index}
+            for model, run_index in outcome.silent_runs
         ],
         "findings": [_finding_payload(finding) for finding in outcome.findings],
     }
@@ -602,30 +628,76 @@ def _review_header_lines(outcome: "ReviewOutcome") -> list[str]:
         lines.append("")
 
     failures = outcome.extraction.failures
-    if failures:
-        # Named, not counted, and without the reason — same split as A14 above.
+    # Sectioned by what happened to the *run*, not to the individual failure.
+    # A run that contributed a good finding answered the question even if part
+    # of its reply was refused, and filing it under either heading below would
+    # report an answered run as a missing one.
+    unreadable = [
+        failure for failure in failures
+        if (failure.model, failure.run_index) in set(outcome.silent_runs)
+    ]
+    overruled = [
+        failure for failure in failures
+        if (failure.model, failure.run_index) in set(outcome.overruled_runs)
+    ]
+    if unreadable:
+        # Named, not counted, and without the reason - same split as A14 above.
         # A response nobody could parse is an opinion that went missing, so the
         # report must admit it; why it could not be parsed is a tool problem
         # belonging to stderr.
         lines.append("Responses that could not be read:")
         lines.append("")
-        for failure in failures:
+        for failure in unreadable:
             lines.append(
                 f"- `{failure.model}` run {failure.run_index} "
                 "(see stderr for the reason)"
             )
         lines.append("")
 
+    if overruled:
+        # A separate heading because this is a different event. The reply was
+        # read; the file guard declined what it named. Listing it as unreadable
+        # would blame the model for Atom's own scoping rule.
+        lines.append("Replies that named files outside this diff:")
+        lines.append("")
+        for failure in overruled:
+            lines.append(
+                f"- `{failure.model}` run {failure.run_index} "
+                "(read, but nothing it reported was in scope)"
+            )
+        lines.append("")
+
+    # A run can go silent without producing an extraction failure at all: an
+    # empty or whitespace-only reply is dropped before extraction ever sees it,
+    # so it appears in no list above while still counting against the totals
+    # below. Naming it here keeps the banner's promise honest.
+    named = {(failure.model, failure.run_index) for failure in failures}
+    unnamed_silence = [run for run in outcome.silent_runs if run not in named]
+    if unnamed_silence:
+        lines.append("Runs that returned nothing to read:")
+        lines.append("")
+        for model, run_index in unnamed_silence:
+            lines.append(f"- `{model}` run {run_index} (empty reply)")
+        lines.append("")
+
     if outcome.is_partial:
-        missing = sum(
-            invocation.requested_for(model) - invocation.completed_for(model)
-            for model in invocation.models
+        # Counted as runs that produced no readable reply -- not as runs that
+        # merely left the denominator. An overruled reply shrinks the fractions
+        # below without being missing, so including it here would overstate how
+        # much of the review failed to happen. Derived from the totals rather
+        # than from `silent_runs`, which only covers runs that completed: a run
+        # that timed out never completed and must still be counted here. The
+        # three categories are disjoint, so subtracting both is safe.
+        missing = (
+            len(invocation.models) * invocation.runs_requested
+            - sum(outcome.runs_per_model.values())
+            - len(outcome.overruled_runs)
         )
         lines.append(
             f"> **This review is partial.** {missing} of "
             f"{len(invocation.models) * invocation.runs_requested} runs did not "
             "answer, so the agreement fractions below are out of fewer runs than "
-            "were asked for. Details were written to stderr."
+            "were asked for. Every one of them is named above."
         )
         lines.append("")
 
@@ -688,6 +760,16 @@ def _single_finding_lines(finding) -> list[str]:
         )
         lines.append("")
 
+    if finding.has_nearby_multi_model_reports:
+        # A22. Several models landed in this group but never on the same line.
+        # That is not agreement and must not be shown as agreement, but it is
+        # also not nothing, so it is stated plainly instead of dropped.
+        lines.append(
+            "Several models reported problems in this group, but on different "
+            "lines, so this is not recorded as agreement."
+        )
+        lines.append("")
+
     agreement = ", ".join(
         f"`{entry.model}` {entry.fraction}" for entry in finding.agreement
     )
@@ -723,6 +805,7 @@ def _finding_payload(finding) -> dict:
         "highest_severity": finding.highest_severity,
         "severities": list(finding.severities),
         "is_corroborated": finding.is_corroborated,
+        "has_nearby_multi_model_reports": finding.has_nearby_multi_model_reports,
         "has_severity_disagreement": finding.has_severity_disagreement,
         "agreement": [
             {

@@ -14,10 +14,15 @@ import json
 import pytest
 
 from atom.diff import CapturedDiff, DiffRequest, DiffSource
-from atom.extract import ExtractionFailure, ExtractionReport, Finding
+from atom.extract import ExtractionFailure, ExtractionReport, Finding, extract_all
 from atom.invoke import InvocationReport, ModelAvailability, ModelRun, RunOutcome
 from atom.merge import merge_findings
 from atom.report import (
+    CHECK_SCHEMA_VERSION,
+    REVIEW_SCHEMA_VERSION,
+    SPIKE_LIST_SCHEMA_VERSION,
+    SPIKE_SCHEMA_VERSION,
+    STATUS_SCHEMA_VERSION,
     render_review_json,
     render_review_markdown,
     render_review_problems,
@@ -105,12 +110,20 @@ def outcome(
     diff: CapturedDiff | None = None,
 ) -> ReviewOutcome:
     inv = inv or invocation()
-    runs_per_model = {model: inv.completed_for(model) for model in inv.models}
-    return ReviewOutcome(
+    # Built in two steps for the same reason `run_review` does: the merge needs
+    # the denominators, and the denominators are a property of the outcome. A
+    # helper that computed its own would stop testing the real rule.
+    base = ReviewOutcome(
         diff=diff or captured_diff(),
         invocation=inv,
         extraction=ExtractionReport(findings=findings, failures=failures),
-        findings=merge_findings(findings, runs_per_model) if findings else (),
+        findings=(),
+    )
+    return ReviewOutcome(
+        diff=base.diff,
+        invocation=inv,
+        extraction=base.extraction,
+        findings=merge_findings(findings, base.runs_per_model) if findings else (),
     )
 
 
@@ -316,6 +329,25 @@ class TestJsonContract:
 
         assert payload["schema_version"] >= 1
 
+    def test_the_review_schema_version_records_the_corroboration_narrowing(self):
+        # A23. A21 narrowed what `is_corroborated` means for the same input,
+        # which is a breaking change to this contract even though the new
+        # `has_nearby_multi_model_reports` field beside it is additive. A
+        # consumer pinned to version 1 has to be able to see that.
+        payload = json.loads(render_review_json(outcome((finding(41),))))
+
+        assert payload["schema_version"] == REVIEW_SCHEMA_VERSION
+        assert REVIEW_SCHEMA_VERSION == 2
+
+    def test_the_other_reports_did_not_change_and_keep_their_version(self):
+        # Guard against over-correction: only the review contract moved, so
+        # bumping the four unaffected reports would signal a change that never
+        # happened.
+        assert CHECK_SCHEMA_VERSION == 1
+        assert SPIKE_SCHEMA_VERSION == 1
+        assert SPIKE_LIST_SCHEMA_VERSION == 1
+        assert STATUS_SCHEMA_VERSION == 1
+
     def test_the_json_reports_findings_with_their_line_span(self):
         spanning = (
             finding(42, "gpt-5.4", 1, message="os.Create error ignored."),
@@ -476,8 +508,380 @@ class TestAnUnreadableReplyIsNotACleanReview:
         assert exit_code != 0
 
 
+class TestTheDenominatorCountsRunsThatAnswered:
+    """A5, revised at the Phase 4 gate after two real reviews.
 
+    A5 originally made a *missing* run partial, reasoning that run count is the
+    denominator of every agreement fraction. Twelve real calls later that
+    reasoning still holds and the classification does not: zero runs went
+    missing, while two completed runs returned replies nobody could read. Those
+    runs were counted in the denominator anyway, so a finding seen by both
+    readable `gpt-5.4` replies printed "2 of 3" -- one dissenting model that
+    never existed. The denominator must count runs that answered, and a run
+    that completed without answering degrades the review exactly as a missing
+    one does.
+    """
 
+    def _invocation_of_three(self, model: str = "gpt-5.4") -> InvocationReport:
+        return InvocationReport(
+            models=(model,),
+            runs_requested=3,
+            runs=tuple(run(model, index) for index in (1, 2, 3)),
+            availability=(ModelAvailability(model=model, available=True, detail=""),),
+        )
+
+    def _unreadable(self, index: int, model: str = "gpt-5.4") -> ExtractionFailure:
+        return ExtractionFailure(
+            model=model, run_index=index, reason="reply is not valid json"
+        )
+
+    def test_an_unreadable_reply_is_left_out_of_the_denominator(self):
+        # The exact shape of both real reviews: three runs, run 2 unreadable.
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert result.runs_per_model == {"gpt-5.4": 2}
+
+    def test_a_finding_both_readable_runs_reported_is_not_shown_as_a_dissent(self):
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        agreement = result.findings[0].agreement[0]
+        assert (agreement.runs_reporting, agreement.runs_total) == (2, 2)
+
+    def test_a_run_that_completed_without_answering_makes_the_review_partial(self):
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert result.is_partial
+
+    def test_the_partial_notice_counts_the_run_that_could_not_be_read(self):
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert "1 of 3 runs did not answer" in render_review_markdown(result)
+
+    def test_the_payload_reports_answered_runs_alongside_completed_ones(self):
+        # Both numbers are true and they are not the same fact: the process
+        # finished, and the reply was readable. Replacing one with the other
+        # would trade a lie for a different lie.
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        entry = json.loads(render_review_json(result))["models"][0]
+        assert (entry["runs_completed"], entry["runs_answered"]) == (3, 2)
+
+    # --- guards against over-correcting ------------------------------------
+    # Each of these passed before the change. They are here because the fix
+    # narrows a denominator, and a narrowing is one step from a discount.
+
+    def test_a_reply_that_partly_parsed_still_counts_as_an_answer(self):
+        # A reply holding one good finding and one malformed element is
+        # recorded as a failure yet plainly contributed an opinion. Dropping it
+        # would punish a run that answered.
+        result = outcome(
+            (finding(41, index=2),),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert result.runs_per_model == {"gpt-5.4": 3}
+        assert not result.is_partial
+
+    def test_a_clean_review_still_counts_every_run_and_is_not_partial(self):
+        result = outcome((finding(41),), inv=self._invocation_of_three())
+
+        assert result.runs_per_model == {"gpt-5.4": 3}
+        assert not result.is_partial
+
+    def test_a_model_whose_every_reply_was_unreadable_renders_without_crashing(self):
+        result = outcome(
+            inv=self._invocation_of_three(),
+            failures=tuple(self._unreadable(index) for index in (1, 2, 3)),
+        )
+
+        assert result.runs_per_model == {"gpt-5.4": 0}
+        assert result.has_no_usable_response
+        render_review_markdown(result)
+
+    def test_a_missing_run_is_still_partial(self):
+        # A5's original case, pinned so that re-pointing the rule at unreadable
+        # replies does not quietly stop catching runs that never happened.
+        runs = (run("gpt-5.4", 1), run("gpt-5.4", 2, RunOutcome.TIMED_OUT, "timed out"))
+        inv = InvocationReport(
+            models=("gpt-5.4",), runs_requested=2, runs=runs,
+            availability=(ModelAvailability(model="gpt-5.4", available=True, detail=""),),
+        )
+
+        assert outcome((finding(41),), inv=inv).is_partial
+
+    @pytest.mark.parametrize("reply", ["", "   \n\t ", "I reviewed it and found nothing."])
+    def test_a_reply_with_no_findings_in_it_counts_as_silence(self, reply):
+        # Raised by the review gate against this very change: a run that exits
+        # zero having said nothing might slip through as "answered". Measured
+        # rather than argued -- extraction already records all three of these
+        # as failures, so the hole does not exist.
+        #
+        # Pinned anyway, because the guarantee lives in `extract.py` while the
+        # behaviour that depends on it lives here. Nothing else fails if that
+        # coupling is broken, which is the definition of a test worth having.
+        model_run = ModelRun(
+            model="gpt-5.4", run_index=1, outcome=RunOutcome.COMPLETED,
+            response_text=reply, duration_seconds=0.1, detail="",
+        )
+        inv = InvocationReport(
+            models=("gpt-5.4",), runs_requested=1, runs=(model_run,),
+            availability=(ModelAvailability(model="gpt-5.4", available=True, detail=""),),
+        )
+        extraction = extract_all(inv.usable_runs, allowed_files=("store/cache.go",))
+        result = ReviewOutcome(
+            diff=captured_diff(), invocation=inv, extraction=extraction, findings=(),
+        )
+
+        assert result.runs_per_model == {"gpt-5.4": 0}
+        assert result.is_partial
+
+    def test_a_run_that_returned_nothing_is_named_in_the_report(self):
+        # Raised by the review gate against this change, and confirmed: a blank
+        # reply is dropped before extraction, so it produces no failure record
+        # and appeared in no list -- while still counting in the "did not
+        # answer" total. The banner would cite stderr detail that was never
+        # written for it.
+        model_run = ModelRun(
+            model="gpt-5.4", run_index=2, outcome=RunOutcome.COMPLETED,
+            response_text="", duration_seconds=0.1, detail="",
+        )
+        inv = InvocationReport(
+            models=("gpt-5.4",), runs_requested=1, runs=(model_run,),
+            availability=(ModelAvailability(model="gpt-5.4", available=True, detail=""),),
+        )
+        result = ReviewOutcome(
+            diff=captured_diff(), invocation=inv,
+            extraction=ExtractionReport(findings=(), failures=()), findings=(),
+        )
+
+        report = render_review_markdown(result)
+        assert "`gpt-5.4` run 2 (empty reply)" in report
+
+    @pytest.mark.parametrize(
+        "reply, expected_partial",
+        [
+            ('[{"file":"x/o.go","line":5,"severity":"high","message":"m"}]', False),
+            ('[{"file":"store/cache.go","line":5,"severity":"bogus","message":"m"}]', True),
+            (
+                '[{"file":"x/o.go","line":5,"severity":"high","message":"m"},'
+                '{"file":"store/cache.go","line":0,"severity":"high","message":"m"}]',
+                True,
+            ),
+        ],
+        ids=["file-guard only", "schema-invalid", "mixed"],
+    )
+    def test_only_a_pure_file_guard_rejection_counts_as_an_answer(
+        self, reply, expected_partial
+    ):
+        # Raised by the review gate: marking every rejected element "readable"
+        # let a reply full of malformed findings pass as answered-but-overruled.
+        # The decision was about the file guard specifically, so one structural
+        # objection anywhere in the reply drops it back to silence.
+        model_run = ModelRun(
+            model="gpt-5.4", run_index=1, outcome=RunOutcome.COMPLETED,
+            response_text=reply, duration_seconds=0.1, detail="",
+        )
+        inv = InvocationReport(
+            models=("gpt-5.4",), runs_requested=1, runs=(model_run,),
+            availability=(ModelAvailability(model="gpt-5.4", available=True, detail=""),),
+        )
+        extraction = extract_all(inv.usable_runs, allowed_files=("store/cache.go",))
+        result = ReviewOutcome(
+            diff=captured_diff(), invocation=inv, extraction=extraction, findings=(),
+        )
+
+        assert result.is_partial is expected_partial
+
+    def test_an_unreadable_reply_is_not_named_twice(self):
+        # It is already listed as a response that could not be read; repeating
+        # it under a second heading would double-report one missing opinion.
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert render_review_markdown(result).count("run 2") == 1
+
+    def _overruled(self, index: int = 2) -> ExtractionFailure:
+        return ExtractionFailure(
+            model="gpt-5.4", run_index=index,
+            reason="finding 1: file 'other/x.go' is not in the reviewed diff",
+            reply_was_readable=True,
+        )
+
+    def test_a_run_that_answered_is_never_also_counted_as_overruled(self):
+        # Raised by the review gate: a reply holding one in-scope finding and
+        # one out-of-scope one produced both a finding and a file-guard
+        # failure, landing in two sets at once. That made the partial total
+        # subtract it twice and filed an answered run under a heading about
+        # replies that produced nothing. The three categories are disjoint.
+        result = outcome(
+            (finding(41, index=2),),
+            inv=self._invocation_of_three(),
+            failures=(self._overruled(2),),
+        )
+
+        assert result.overruled_runs == ()
+        assert result.silent_runs == ()
+        assert result.runs_per_model == {"gpt-5.4": 3}
+        assert "Replies that named files outside this diff:" not in render_review_markdown(result)
+
+    def test_a_run_that_answered_despite_a_malformed_element_is_not_called_unreadable(self):
+        # The mirror case: valid findings plus one malformed element. The run
+        # answered; only its surplus was refused.
+        partly_bad = ExtractionFailure(
+            model="gpt-5.4", run_index=2,
+            reason="finding 2: line 0 is not a real line number",
+        )
+        result = outcome(
+            (finding(41, index=2),),
+            inv=self._invocation_of_three(),
+            failures=(partly_bad,),
+        )
+
+        assert "Responses that could not be read:" not in render_review_markdown(result)
+        assert not result.is_partial
+
+    def test_an_overruled_reply_is_not_called_a_review_that_produced_nothing(self):
+        # B130 asks whether Atom got a reply it could read. It did; the file
+        # guard declined the contents. Reporting "no model produced anything
+        # usable" would misdescribe a review in which everything worked.
+        inv = InvocationReport(
+            models=("gpt-5.4",), runs_requested=1,
+            runs=(run("gpt-5.4", 1),),
+            availability=(ModelAvailability(model="gpt-5.4", available=True, detail=""),),
+        )
+        result = ReviewOutcome(
+            diff=captured_diff(), invocation=inv,
+            extraction=ExtractionReport(findings=(), failures=(self._overruled(1),)),
+            findings=(),
+        )
+
+        assert not result.has_no_usable_response
+
+    def test_an_overruled_reply_gets_its_own_heading(self):
+        report = render_review_markdown(
+            outcome(
+                (finding(41, index=1), finding(41, index=3)),
+                inv=self._invocation_of_three(),
+                failures=(self._overruled(),),
+            )
+        )
+
+        assert "Replies that named files outside this diff:" in report
+        assert "Responses that could not be read:" not in report
+
+    def test_the_partial_total_excludes_an_overruled_reply(self):
+        # It shrinks the denominator without being missing, so counting it as
+        # a run that "did not answer" would overstate the damage.
+        runs = (
+            run("gpt-5.4", 1),
+            run("gpt-5.4", 2),
+            run("gpt-5.4", 3, RunOutcome.TIMED_OUT, "timed out"),
+        )
+        inv = InvocationReport(
+            models=("gpt-5.4",), runs_requested=3, runs=runs,
+            availability=(ModelAvailability(model="gpt-5.4", available=True, detail=""),),
+        )
+        result = outcome((finding(41, index=1),), inv=inv, failures=(self._overruled(),))
+
+        # One run timed out; run 2 was overruled, not missing.
+        assert "1 of 3 runs did not answer" in render_review_markdown(result)
+
+    def test_the_banner_does_not_promise_stderr_detail(self):
+        # A silent run produces no extraction failure and therefore no stderr
+        # line. The banner used to cite stderr regardless.
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert "Details were written to stderr" not in render_review_markdown(result)
+
+    def test_the_payload_distinguishes_an_overruled_reply_from_an_unreadable_one(self):
+        result = outcome(
+            (finding(41, index=1),),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2), self._overruled(3)),
+        )
+
+        payload = json.loads(render_review_json(result))
+        readable = {
+            entry["run_index"]: entry["reply_was_readable"]
+            for entry in payload["unparsed_responses"]
+        }
+        assert readable == {2: False, 3: True}
+        assert payload["silent_runs"] == [{"model": "gpt-5.4", "run_index": 2}]
+
+    def test_a_reply_overruled_by_the_file_guard_does_not_make_the_review_partial(self):
+        # Decided at the Phase 4 gate. A model that replied with valid JSON
+        # naming files outside the diff answered the question; B117 declined
+        # the answer. Partial means "no answer arrived", not "the answer was
+        # refused" -- a working guard must not redden CI.
+        overruled = ExtractionFailure(
+            model="gpt-5.4", run_index=2,
+            reason="finding 1: file 'other/x.go' is not in the reviewed diff",
+            reply_was_readable=True,
+        )
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(overruled,),
+        )
+
+        assert not result.is_partial
+
+    def test_an_overruled_reply_still_leaves_the_denominator(self):
+        # The other half of the same decision: it offered no opinion about
+        # this diff, so counting it would invent a dissent exactly as an
+        # unreadable reply did. Shrinking a fraction and failing a build are
+        # different penalties for different faults.
+        overruled = ExtractionFailure(
+            model="gpt-5.4", run_index=2,
+            reason="finding 1: file 'other/x.go' is not in the reviewed diff",
+            reply_was_readable=True,
+        )
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(overruled,),
+        )
+
+        assert result.runs_per_model == {"gpt-5.4": 2}
+
+    def test_an_unparseable_reply_is_still_silence(self):
+        # Pinned beside the case above, because the two now differ by a single
+        # flag and nothing else would notice if that flag were set everywhere.
+        result = outcome(
+            (finding(41, index=1), finding(41, index=3)),
+            inv=self._invocation_of_three(),
+            failures=(self._unreadable(2),),
+        )
+
+        assert result.is_partial
 
 
 class TestTheReportSurvivesEveryConsoleEncoding:

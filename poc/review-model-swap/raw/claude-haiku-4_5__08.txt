@@ -1,0 +1,35 @@
+```json
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "critical",
+    "message": "Error from os.Create is ignored, causing nil dereference panic on line 46 if file creation fails."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "File handle f is never closed, causing resource leak."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "high",
+    "message": "Map iteration in Export reads s.items without holding the read lock, causing race condition with concurrent Reserve calls."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 37,
+    "severity": "high",
+    "message": "Reserve does not validate that item exists or that count is non-negative, allowing negative stock quantities."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 24,
+    "severity": "medium",
+    "message": "Lookup reads from s.items without holding the read lock, causing race condition with concurrent Reserve calls."
+  }
+]
+```
+

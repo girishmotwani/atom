@@ -16,6 +16,11 @@ class FakeRunner:
     def __init__(self, scripted_results: dict[tuple[str, ...], CommandResult] | None = None) -> None:
         self.scripted_results = scripted_results or {}
         self.calls: list[tuple[tuple[str, ...], Path, float]] = []
+        # Recorded separately rather than added to `calls`, whose tuple shape is
+        # asserted on exactly by existing tests. A scripted value may also be a
+        # callable taking the stdin text, for commands whose answer depends on
+        # what was piped in (gofmt reading source on stdin).
+        self.stdin_texts: list[str | None] = []
 
     def run(
         self,
@@ -26,9 +31,13 @@ class FakeRunner:
     ) -> CommandResult:
         command_tuple = tuple(command)
         self.calls.append((command_tuple, working_directory, timeout_seconds))
+        self.stdin_texts.append(stdin_text)
         if command_tuple not in self.scripted_results:
             return command_result(command_tuple, working_directory, CommandOutcome.TOOL_MISSING, None, "", f"missing: {command_tuple[0]}")
-        return self.scripted_results[command_tuple]
+        scripted = self.scripted_results[command_tuple]
+        if callable(scripted):
+            return scripted(stdin_text)
+        return scripted
 
 
 def command_result(

@@ -1,0 +1,1215 @@
+[
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 1,
+    "seconds": 37.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      43,
+      43,
+      44
+    ],
+    "hits": [
+      44
+    ],
+    "false_positives": [
+      43,
+      43
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 2,
+    "seconds": 38.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      25,
+      43,
+      44,
+      46
+    ],
+    "hits": [
+      44
+    ],
+    "false_positives": [
+      25,
+      43,
+      46
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 3,
+    "seconds": 36.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      23,
+      43,
+      44,
+      45
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      23,
+      43
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 4,
+    "seconds": 44.3,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      43,
+      43,
+      35,
+      24
+    ],
+    "hits": [
+      24
+    ],
+    "false_positives": [
+      43,
+      43,
+      35
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 5,
+    "seconds": 45.9,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      43,
+      43,
+      34
+    ],
+    "hits": [],
+    "false_positives": [
+      43,
+      43,
+      34
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 6,
+    "seconds": 50.3,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      43,
+      43,
+      23,
+      35
+    ],
+    "hits": [],
+    "false_positives": [
+      43,
+      43,
+      23,
+      35
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 7,
+    "seconds": 31.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      43,
+      47,
+      35
+    ],
+    "hits": [],
+    "false_positives": [
+      43,
+      47,
+      35
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 8,
+    "seconds": 40.7,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      44,
+      44,
+      45,
+      37,
+      24
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 9,
+    "seconds": 36.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      44,
+      45,
+      35
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      35
+    ]
+  },
+  {
+    "model": "claude-haiku-4.5",
+    "trial": 10,
+    "seconds": 39.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      43,
+      43,
+      36,
+      44
+    ],
+    "hits": [
+      36,
+      44
+    ],
+    "false_positives": [
+      43,
+      43
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 1,
+    "seconds": 44.6,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      27,
+      39,
+      40,
+      47,
+      47,
+      49,
+      48,
+      51,
+      49,
+      21
+    ],
+    "hits": [],
+    "false_positives": [
+      27,
+      39,
+      40,
+      47,
+      47,
+      49,
+      48,
+      51,
+      49,
+      21
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 2,
+    "seconds": 37.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      37,
+      44,
+      44,
+      45,
+      46,
+      38,
+      32
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      46,
+      38,
+      32
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 3,
+    "seconds": 37.9,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      37,
+      38,
+      44,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      38,
+      46
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 4,
+    "seconds": 31.7,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      26,
+      38,
+      39,
+      46,
+      46,
+      47,
+      48,
+      50,
+      22
+    ],
+    "hits": [],
+    "false_positives": [
+      26,
+      38,
+      39,
+      46,
+      46,
+      47,
+      48,
+      50,
+      22
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 5,
+    "seconds": 39.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      37,
+      38,
+      44,
+      45,
+      46,
+      48
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      38,
+      46,
+      48
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 6,
+    "seconds": 32.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      27,
+      39,
+      46,
+      46,
+      47,
+      48,
+      50,
+      22
+    ],
+    "hits": [],
+    "false_positives": [
+      27,
+      39,
+      46,
+      46,
+      47,
+      48,
+      50,
+      22
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 7,
+    "seconds": 34.6,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      37,
+      44,
+      44,
+      45,
+      48
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      48
+    ]
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 8,
+    "seconds": 3900.9,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": false,
+    "note": "run did not complete (timed_out)",
+    "lines_reported": [],
+    "hits": [],
+    "false_positives": []
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 9,
+    "seconds": 3896.6,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": false,
+    "note": "run did not complete (timed_out)",
+    "lines_reported": [],
+    "hits": [],
+    "false_positives": []
+  },
+  {
+    "model": "claude-opus-5",
+    "trial": 10,
+    "seconds": 3885.1,
+    "exit_code": -1,
+    "timed_out": true,
+    "readable": false,
+    "note": "run did not complete (timed_out)",
+    "lines_reported": [],
+    "hits": [],
+    "false_positives": []
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 1,
+    "seconds": 25.3,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      27,
+      38,
+      44,
+      45,
+      47
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      27,
+      38,
+      47
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 2,
+    "seconds": 31.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      33,
+      34,
+      42,
+      43,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      33,
+      34,
+      42,
+      43
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 3,
+    "seconds": 30.9,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      27,
+      38,
+      45,
+      44,
+      46,
+      15
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      27,
+      38,
+      46,
+      15
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 4,
+    "seconds": 40.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      33,
+      43,
+      47,
+      44,
+      11
+    ],
+    "hits": [
+      44
+    ],
+    "false_positives": [
+      22,
+      33,
+      43,
+      47,
+      11
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 5,
+    "seconds": 42.3,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      33,
+      35,
+      33,
+      44,
+      45,
+      44
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      33,
+      35,
+      33
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 6,
+    "seconds": 31.6,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      27,
+      35,
+      37,
+      44,
+      45,
+      47,
+      45
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      27,
+      35,
+      37,
+      47
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 7,
+    "seconds": 28.7,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      21,
+      33,
+      41,
+      42,
+      45,
+      16
+    ],
+    "hits": [
+      45
+    ],
+    "false_positives": [
+      21,
+      33,
+      41,
+      42,
+      16
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 8,
+    "seconds": 35.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      25,
+      37,
+      38,
+      45,
+      45,
+      46
+    ],
+    "hits": [
+      45
+    ],
+    "false_positives": [
+      25,
+      37,
+      38,
+      46
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 9,
+    "seconds": 33.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      30,
+      34,
+      43,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      22,
+      30,
+      34,
+      43,
+      46
+    ]
+  },
+  {
+    "model": "claude-sonnet-5",
+    "trial": 10,
+    "seconds": 42.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      33,
+      42,
+      43,
+      44,
+      45
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      22,
+      33,
+      42,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 1,
+    "seconds": 33.2,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 2,
+    "seconds": 40.6,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      45
+    ],
+    "false_positives": [
+      46
+    ]
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 3,
+    "seconds": 37.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 4,
+    "seconds": 40.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45,
+      46
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": [
+      46
+    ]
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 5,
+    "seconds": 87.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 6,
+    "seconds": 86.7,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 7,
+    "seconds": 86.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 8,
+    "seconds": 90.7,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 9,
+    "seconds": 50.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.4",
+    "trial": 10,
+    "seconds": 44.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "hits": [
+      24,
+      36,
+      44,
+      45
+    ],
+    "false_positives": []
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 1,
+    "seconds": 100.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      18,
+      32,
+      38,
+      39,
+      40
+    ],
+    "hits": [],
+    "false_positives": [
+      18,
+      32,
+      38,
+      39,
+      40
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 2,
+    "seconds": 90.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      30,
+      39
+    ],
+    "hits": [],
+    "false_positives": [
+      22,
+      30,
+      39
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 3,
+    "seconds": 95.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      34,
+      41,
+      42,
+      43
+    ],
+    "hits": [],
+    "false_positives": [
+      22,
+      34,
+      41,
+      42,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 4,
+    "seconds": 99.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      18,
+      30,
+      38,
+      39,
+      40
+    ],
+    "hits": [],
+    "false_positives": [
+      18,
+      30,
+      38,
+      39,
+      40
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 5,
+    "seconds": 52.1,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      23,
+      35,
+      43,
+      44,
+      45
+    ],
+    "hits": [
+      44,
+      45
+    ],
+    "false_positives": [
+      23,
+      35,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 6,
+    "seconds": 46.8,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      35,
+      35,
+      42,
+      43,
+      43
+    ],
+    "hits": [
+      24
+    ],
+    "false_positives": [
+      35,
+      35,
+      42,
+      43,
+      43
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 7,
+    "seconds": 42.5,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      22,
+      40,
+      41,
+      42,
+      32
+    ],
+    "hits": [],
+    "false_positives": [
+      22,
+      40,
+      41,
+      42,
+      32
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 8,
+    "seconds": 40.2,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      23,
+      29,
+      38,
+      39,
+      40
+    ],
+    "hits": [],
+    "false_positives": [
+      23,
+      29,
+      38,
+      39,
+      40
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 9,
+    "seconds": 97.4,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      19,
+      31,
+      38,
+      39,
+      40,
+      42
+    ],
+    "hits": [],
+    "false_positives": [
+      19,
+      31,
+      38,
+      39,
+      40,
+      42
+    ]
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "trial": 10,
+    "seconds": 96.0,
+    "exit_code": 0,
+    "timed_out": false,
+    "readable": true,
+    "note": "",
+    "lines_reported": [
+      24,
+      37,
+      38,
+      44,
+      46,
+      45
+    ],
+    "hits": [
+      24,
+      44,
+      45
+    ],
+    "false_positives": [
+      37,
+      38,
+      46
+    ]
+  }
+]

@@ -60,3 +60,125 @@ was raised at the Phase 1 gate and the chosen interpretation was confirmed.
 - [x] Reusable learnings captured, with promotion candidates named
 - [x] No fixed issue is listed as deferred (finding 1 states plainly that it was fixed)
 - [x] No finding contradicts the POC verdict or design spec
+
+## The Phase 1 review gate, run late
+
+Phase 1 shipped before `atom review` existed, so its diff was never reviewed --
+a bootstrap debt carried openly since. It was paid once the Copilot CLI was
+working again: `atom review --branch 2083fe5` over the 23 files and 2,514 lines
+of `4d8dee1..7aae972`, from a detached worktree at Phase 1's tip so the reviewed
+range was exactly Phase 1.
+
+Result: 6/6 runs, one unparseable reply, five findings -- **all from `gpt-5.4`,
+all raised in 1 of 3 runs**, with `claude-haiku-4.5` finding nothing in 3/3. The
+same distribution as Phase 6, and the same conclusion: agreement is not
+confidence. Every finding was checked against source.
+
+| # | Finding | Verdict |
+|---|---|---|
+| 1 | `gofmt -l .` recurses into nested modules | **Real** |
+| 2 | stderr chatter defeats the `[no test files]` scan | **Real** |
+| 3 | `text=True` decodes with the host locale | **Real -- already fixed in Phase 4** (`341b28a`) |
+| 4 | CI POC job pinned to Ubuntu | Real, low, a judgement call |
+| 5 | `check_links.py` strips `#anchor` before checking | **Real**, low |
+
+Finding 3 deserves its own note: the model named the exact line and the exact
+mechanism, and the defect had already been found and fixed independently in
+Phase 4 by running the program. *Two different instruments found the same
+defect, one of them three phases late.* The review gate is not a substitute for
+running the thing, and running the thing is not a substitute for the review
+gate.
+
+### Two defects the review did not find
+
+Both came out of refusing to explain away a measurement artifact. While checking
+finding 1, `gofmt -l .` also flagged a file I believed was clean. The tempting
+reading was "my fixture is sloppy". Building the minimal case instead:
+
+- **CRLF alone fails the fmt gate.** A byte-for-byte correctly formatted file is
+  reported unformatted purely for its line endings. `core.autocrlf=true` is
+  Git's default on Windows *and is set in this repository*, so every Windows
+  developer would see `FAIL fmt` on every file, with a message -- "1 file(s)
+  need gofmt: main.go" -- that never mentions line endings. Proven end to end
+  through the real `atom check`: exit 1 on a one-file project containing no
+  formatting error at all. This is the most severe finding of the set and
+  neither model raised it.
+- **`race` reported PASSED on zero tests while `test` reported SKIPPED.** Seen
+  in the same run, printed on adjacent lines: twenty seconds spent proving
+  nothing, reported green.
+
+### What the four fixed defects have in common
+
+Every one is the same failure wearing different clothes: **the gate reported a
+verdict that was not true.** Three said green where nothing had been checked;
+one said red where nothing was wrong. A quality gate's only product is a true
+verdict, so each of these was a total failure of the gate's purpose, not a
+rough edge on it.
+
+**Learnings.**
+
+- *A measurement artifact is a finding you have not read yet.* The CRLF defect
+  arrived disguised as a sloppy fixture, and "my test setup is wrong" is the
+  most comfortable available explanation for an inconvenient result.
+- *A gate whose verdict depends on the environment is not measuring the code.*
+  Platform-dependent green is worse than consistent red, because it is the
+  disagreement between developer and CI that nobody can reproduce.
+- *Consistency between gates is itself a testable property.* `test` and `race`
+  run the same suite over the same packages; that they could disagree was
+  discoverable without knowing which one was wrong.
+- *Bootstrap debt keeps earning interest.* Phase 1 built the gates every later
+  phase relied on, and was the one phase never reviewed. The tooling a project
+  builds first is the tooling its own process cannot yet check.
+
+
+## The deadline that was not a deadline
+
+Found while measuring something else entirely. A model-comparison run showed
+three `claude-opus-5` calls recording **3,890 seconds against a 300-second
+timeout**, and a 40-call experiment that should have taken twenty minutes took
+seventy-one.
+
+**The mechanism.** `subprocess.run(timeout=N)` is `communicate(timeout=N)`, then
+on `TimeoutExpired` it calls `process.kill()` followed by `communicate()` again
+-- this time **with no timeout**. That second call waits for EOF on the pipes,
+and a pipe reaches EOF only when the *last* handle to its write end closes. Any
+process the command spawned inherited that handle. Killing the direct child
+closes exactly one of them. So the real bound was not the deadline; it was the
+lifetime of the longest-lived grandchild.
+
+**Blast radius.** The defect was in `SubprocessRunner.run`, which is the single
+path through which all eleven `CommandRunner` consumers reach a subprocess. It
+was never a review problem. `go test` on a wedged test binary, `go build` on a
+stuck toolchain and `gofmt` on a pathological file were all equally exposed; the
+review path merely happened to be the one pointed at a process that routinely
+spawns children and routinely hangs.
+
+**Why 796 passing tests did not find it.** The existing guard, B2, asserted the
+right property -- returns `TIMED_OUT`, does not raise -- against the one input
+that could not expose the bug: a child with no children of its own. Such a child
+dies when killed, its pipes close immediately, and the unbounded second wait
+returns at once. The test passed for the entire life of the defect and would
+have kept passing forever.
+
+> *A test that cannot fail is not a guard.* The property under test was correct
+> and the assertion was correct; the **input** was the part that made the test
+> vacuous. When adding a guard for a fix, the question is not "does this assert
+> the right thing" but "would this input have failed before the change".
+
+**Why a green suite could not have found it.** Nothing here is visible in a
+unit test that does not deliberately spawn a survivor, and nothing is visible in
+code review either -- `subprocess.run(..., timeout=300)` reads as correct, and is
+the form every reference recommends. It took a *measurement* of real wall-clock
+time on a real workload to make the gap observable. The POC that found it ran
+for 71 minutes; the reproduction distilled from it runs in 45 seconds.
+
+**Learnings.**
+
+- *A deadline is a promise about when you return, not about who you signal.*
+  The old code kept the second promise perfectly and never made the first.
+- *An anomaly in a measurement is a finding about the measurer.* The 3,890-second
+  rows looked like a slow model. Treating them as data about opus rather than
+  about the harness would have produced a published latency figure that was
+  simply false.
+- *The most exposed consumer is not the only consumer.* The defect was found
+  through `atom review` and fixed in `runner.py`, where every gate benefits.

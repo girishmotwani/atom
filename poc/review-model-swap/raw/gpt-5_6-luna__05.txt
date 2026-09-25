@@ -1,0 +1,33 @@
+[
+  {
+    "file": "inventory/stock.go",
+    "line": 23,
+    "severity": "high",
+    "message": "Lookup reads s.items without acquiring the read lock, so concurrent Lookup and Reserve calls can race or panic with concurrent map read and map write."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 35,
+    "severity": "high",
+    "message": "Reserve does not verify that the SKU exists or that count is positive and no greater than available stock, allowing missing items to be created, negative quantities, and overselling."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 43,
+    "severity": "high",
+    "message": "The error returned by os.Create is ignored, so Export can dereference a nil file and panic instead of reporting path or permission failures."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 44,
+    "severity": "high",
+    "message": "Export iterates over s.items without holding the mutex, so concurrent Reserve calls can race or panic during map iteration."
+  },
+  {
+    "file": "inventory/stock.go",
+    "line": 45,
+    "severity": "medium",
+    "message": "Export ignores errors from Fprintf and never closes the file, so write failures and close/flush failures are silently reported as successful."
+  }
+]
+

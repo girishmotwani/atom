@@ -198,6 +198,216 @@ def test_gate_fails_and_names_tool_when_executable_missing(tmp_path):
     assert "go" in result.summary
 
 
+# ---------------------------------------------------------------------------
+# Defects found by the Phase 1 review gate, run late (see phase-01-check/review.md).
+# Every one is the same failure wearing different clothes: the gate reported a
+# verdict that was not true -- green when nothing was checked, red when nothing
+# was wrong.
+# ---------------------------------------------------------------------------
+
+
+def _go_file(directory, relative_path, body, line_ending="\n"):
+    """Write a Go source file with explicit line endings, returning its path.
+
+    Line endings are a parameter because they are the subject of some of these
+    tests: `core.autocrlf=true` is Git's default on Windows, so a checkout there
+    holds CRLF even when the committed bytes are LF.
+    """
+    path = directory / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(body.replace("\n", line_ending).encode("utf-8"))
+    return path
+
+
+CLEAN_SOURCE = "package main\n\nfunc main() {}\n"
+ROUGH_SOURCE = "package main\nfunc  main( ) {\n}\n"
+
+
+def test_test_gate_skips_when_download_chatter_accompanies_no_test_files(tmp_path):
+    """Measured: `go: downloading` goes to stderr while `[no test files]` goes to stdout.
+
+    Scanning the two streams merged means one line of chatter makes the
+    all-packages-lack-tests check false, and the gate reports PASSED for a run
+    in which nothing was tested. A cold module cache is the normal state of CI,
+    so this is the common case, not the exotic one.
+    """
+    command = ("go", "test", "./...")
+    runner = FakeRunner({
+        command: command_result(
+            command, tmp_path, exit_code=0,
+            stdout="?   \texample.com/m/pkg\t[no test files]\n",
+            stderr="go: downloading github.com/google/uuid v1.6.0\n",
+        )
+    })
+
+    result = TestGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.SKIPPED
+
+
+def test_race_gate_skips_when_no_packages_have_tests(tmp_path):
+    """The race gate must not claim PASSED for a tree the test gate calls SKIPPED.
+
+    Both run the same suite over the same packages; reporting opposite verdicts
+    for one tree means at least one of them is wrong. Observed in a real run:
+    `SKIP test` printed directly above `PASS race`, twenty seconds spent
+    proving nothing.
+    """
+    command = ("go", "test", "-race", "./...")
+    runner = FakeRunner({
+        command: command_result(
+            command, tmp_path, exit_code=0,
+            stdout="?   \texample.com/m/pkg\t[no test files]\n",
+        )
+    })
+
+    result = RaceGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.SKIPPED
+
+
+def test_race_gate_still_passes_when_tests_actually_ran(tmp_path):
+    """Guard: teaching race to skip must not stop it reporting a genuine pass."""
+    command = ("go", "test", "-race", "./...")
+    runner = FakeRunner({
+        command: command_result(
+            command, tmp_path, exit_code=0, stdout="ok  \texample.com/m/pkg\t0.2s\n",
+        )
+    })
+
+    assert RaceGate().evaluate(runner, tmp_path).status is GateStatus.PASSED
+
+
+def test_format_gate_ignores_files_belonging_to_a_nested_module(tmp_path):
+    """Measured: `gofmt -l .` crosses module boundaries; `go vet ./...` does not.
+
+    Atom's own method puts throwaway spikes under `poc/`, each its own module.
+    Left alone, the fmt gate is the one gate in the set whose scope is the
+    directory tree rather than the module, so a deliberately rough spike fails
+    the whole repository.
+    """
+    _go_file(tmp_path, "main.go", CLEAN_SOURCE)
+    (tmp_path / "poc" / "spike").mkdir(parents=True)
+    (tmp_path / "poc" / "spike" / "go.mod").write_text("module example.com/spike\n")
+    _go_file(tmp_path, "poc/spike/rough.go", ROUGH_SOURCE)
+
+    command = ("gofmt", "-l", ".")
+    runner = FakeRunner({
+        command: command_result(command, tmp_path, exit_code=0, stdout="poc/spike/rough.go\n"),
+    })
+
+    result = FormatGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.PASSED
+
+
+def test_format_gate_still_reports_unformatted_files_in_the_root_module(tmp_path):
+    """Guard: excluding nested modules must not excuse ordinary subdirectories."""
+    _go_file(tmp_path, "internal/thing/rough.go", ROUGH_SOURCE)
+
+    command = ("gofmt", "-l", ".")
+    runner = FakeRunner({
+        command: command_result(
+            command, tmp_path, exit_code=0, stdout="internal/thing/rough.go\n",
+        ),
+    })
+
+    result = FormatGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.FAILED
+    assert "internal/thing/rough.go" in result.summary
+
+
+def test_format_gate_does_not_fail_for_line_ending_only_differences(tmp_path):
+    """Measured: gofmt flags a correctly formatted file purely for CRLF endings.
+
+    `core.autocrlf=true` is Git's default on Windows, so the identical commit
+    fails on Windows and passes on Linux. A gate whose verdict depends on the
+    checkout's line-ending policy is not measuring the code.
+    """
+    _go_file(tmp_path, "main.go", CLEAN_SOURCE, line_ending="\r\n")
+
+    listing = ("gofmt", "-l", ".")
+    runner = FakeRunner({
+        listing: command_result(listing, tmp_path, exit_code=0, stdout="main.go\n"),
+        # gofmt reading stdin echoes the formatted source: handed the same file
+        # with its endings normalised, it has nothing to change.
+        ("gofmt",): lambda piped: command_result(("gofmt",), tmp_path, exit_code=0, stdout=piped),
+    })
+
+    result = FormatGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.PASSED
+
+
+def test_format_gate_names_line_endings_as_the_cause(tmp_path):
+    """Passing silently would hide it; the developer must be told what was ignored.
+
+    "1 file(s) need gofmt: main.go" sends someone hunting for spacing errors
+    that do not exist.
+    """
+    _go_file(tmp_path, "main.go", CLEAN_SOURCE, line_ending="\r\n")
+
+    listing = ("gofmt", "-l", ".")
+    runner = FakeRunner({
+        listing: command_result(listing, tmp_path, exit_code=0, stdout="main.go\n"),
+        ("gofmt",): lambda piped: command_result(("gofmt",), tmp_path, exit_code=0, stdout=piped),
+    })
+
+    summary = FormatGate().evaluate(runner, tmp_path).summary.lower()
+
+    assert "line ending" in summary
+    assert "main.go" in summary
+
+
+def test_format_gate_still_fails_when_a_crlf_file_is_also_badly_formatted(tmp_path):
+    """Guard against over-correction: CRLF must not become an amnesty.
+
+    The question is never "does this file have CRLF" but "is that the *only*
+    thing gofmt objects to".
+    """
+    _go_file(tmp_path, "main.go", ROUGH_SOURCE, line_ending="\r\n")
+
+    listing = ("gofmt", "-l", ".")
+    runner = FakeRunner({
+        listing: command_result(listing, tmp_path, exit_code=0, stdout="main.go\n"),
+        # Normalising the endings leaves real formatting work, so gofmt returns
+        # something other than what it was given.
+        ("gofmt",): lambda piped: command_result(
+            ("gofmt",), tmp_path, exit_code=0, stdout=CLEAN_SOURCE,
+        ),
+    })
+
+    result = FormatGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.FAILED
+    assert "main.go" in result.summary
+
+
+def test_format_gate_reports_a_genuine_problem_even_beside_a_line_ending_one(tmp_path):
+    """A real failure is never softened by a file that only had CRLF."""
+    _go_file(tmp_path, "clean.go", CLEAN_SOURCE, line_ending="\r\n")
+    _go_file(tmp_path, "rough.go", ROUGH_SOURCE)
+
+    listing = ("gofmt", "-l", ".")
+
+    def piped_gofmt(piped):
+        # Echo the input back only when it is already formatted, which is what
+        # the real gofmt does; the rough file therefore comes back changed.
+        formatted = CLEAN_SOURCE if piped != CLEAN_SOURCE else piped
+        return command_result(("gofmt",), tmp_path, exit_code=0, stdout=formatted)
+
+    runner = FakeRunner({
+        listing: command_result(listing, tmp_path, exit_code=0, stdout="clean.go\nrough.go\n"),
+        ("gofmt",): piped_gofmt,
+    })
+
+    result = FormatGate().evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.FAILED
+    assert "rough.go" in result.summary
+
+
 def test_default_gates_covers_all_five_signals_in_order(tmp_path):
     """Design overview: build -> vet -> fmt -> test -> race."""
     assert [gate.name for gate in default_gates()] == ["build", "vet", "fmt", "test", "race"]

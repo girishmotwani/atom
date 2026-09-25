@@ -145,3 +145,59 @@ covered at all. Each is recorded here rather than quietly omitted:
 | Cost per review (D11) | Tests cannot measure token or credit spend, and P4-2 deliberately triples call count. | Tracked as pending in [decisions.md](decisions.md). |
 | Triple backticks inside a finding message (D12) | A greedy recovery path would be an unobserved heuristic. | `test_a_backtick_inside_a_message_fails_loudly_rather_than_quietly` pins the loud failure so any future fix is deliberate. |
 | Posting review comments | Posting to GitHub is outside Phase 4. | Left to Phase 5 by [design-spec.md](design-spec.md). |
+
+## Cycle 8 (late) — run classification (B130 amended, B131 amended, B131a-c)
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| B131b-1 | Unreadable reply leaves the denominator | `test_an_unreadable_reply_is_left_out_of_the_denominator` | High |
+| B131b-2 | Both readable runs agreeing is not shown as a dissent | `test_a_finding_both_readable_runs_reported_is_not_shown_as_a_dissent` | High |
+| B131-1 | Completed run that did not answer makes the review partial | `test_a_run_that_completed_without_answering_makes_the_review_partial` | High |
+| B131c-1 | Partial notice counts the unreadable run | `test_the_partial_notice_counts_the_run_that_could_not_be_read` | Medium |
+| B131b-3 | Payload reports answered runs alongside completed ones | `test_the_payload_reports_answered_runs_alongside_completed_ones` | Medium |
+| B131-2 | A partly-parsed reply still counts as an answer | `test_a_reply_that_partly_parsed_still_counts_as_an_answer` | High |
+| B131-3 | A clean review counts every run and is not partial | `test_a_clean_review_still_counts_every_run_and_is_not_partial` | High |
+| B131-4 | A model with every reply unreadable renders without crashing | `test_a_model_whose_every_reply_was_unreadable_renders_without_crashing` | Medium |
+| B131-5 | A missing run is still partial | `test_a_missing_run_is_still_partial` | High |
+| B131-6 | Empty, whitespace and prose replies all count as silence | `test_a_reply_with_no_findings_in_it_counts_as_silence` | High |
+| B131c-2 | A run that returned nothing is named in the report | `test_a_run_that_returned_nothing_is_named_in_the_report` | Medium |
+| B131c-3 | An unreadable reply is not named twice | `test_an_unreadable_reply_is_not_named_twice` | Low |
+| A19-1 | Only a pure file-guard rejection counts as an answer | `test_only_a_pure_file_guard_rejection_counts_as_an_answer` | High |
+| A5-1 | An overruled reply does not make the review partial | `test_a_reply_overruled_by_the_file_guard_does_not_make_the_review_partial` | High |
+| A5-2 | An overruled reply still leaves the denominator | `test_an_overruled_reply_still_leaves_the_denominator` | High |
+| A5-3 | An unparseable reply is still silence | `test_an_unparseable_reply_is_still_silence` | High |
+| B130-1 | An overruled reply is not "no usable response" | `test_an_overruled_reply_is_not_called_a_review_that_produced_nothing` | High |
+| A20-1 | An overruled reply gets its own heading | `test_an_overruled_reply_gets_its_own_heading` | Medium |
+| A20-2 | Partial total excludes an overruled reply | `test_the_partial_total_excludes_an_overruled_reply` | High |
+| B131c-4 | The banner does not promise stderr detail | `test_the_banner_does_not_promise_stderr_detail` | Medium |
+| A19-2 | Payload distinguishes overruled from unreadable | `test_the_payload_distinguishes_an_overruled_reply_from_an_unreadable_one` | Medium |
+| B131a-1 | A run that answered is never also counted as overruled | `test_a_run_that_answered_is_never_also_counted_as_overruled` | High |
+| B131a-2 | A run answering despite a malformed element is not called unreadable | `test_a_run_that_answered_despite_a_malformed_element_is_not_called_unreadable` | High |
+
+## A21 — corroboration is a same-line claim
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| A21-1 | Two models on different lines of one group is not corroboration | `test_two_models_on_different_lines_of_one_group_is_not_corroboration` | High |
+| A21-2 | Two models on the same line is still corroboration | `test_two_models_on_the_same_line_is_still_corroboration` | High |
+| A21-3 | Real agreement survives an unrelated line joining the group | `test_agreement_on_one_line_survives_an_unrelated_line_joining_the_group` | High |
+| A21-4 | One model reporting twice is not corroboration | `test_one_model_reporting_twice_on_a_line_is_not_corroboration` | Medium |
+| A21-5 | `model_count` still reports every model in the group | `test_model_count_still_reports_every_model_in_the_group` | High |
+| A21-6 | A single-line group from two models is unaffected | `test_a_single_line_group_from_two_models_is_unaffected` | Medium |
+
+## A22 — nearby multi-model reports
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| A22-1 | The same defect at adjacent lines is reported as nearby | `test_the_same_defect_at_adjacent_lines_is_reported_as_nearby` | High |
+| A22-2 | Same-line agreement is not also reported as nearby | `test_same_line_agreement_is_not_also_reported_as_nearby` | High |
+| A22-3 | Agreement on one line wins over a nearby report | `test_agreement_on_one_line_wins_over_a_nearby_report` | High |
+| A22-4 | One model across several lines is neither signal | `test_one_model_across_several_lines_is_neither_signal` | Medium |
+| A22-5 | A lone finding is neither signal | `test_a_lone_finding_is_neither_signal` | Medium |
+
+## A23 — per-report schema versions
+
+| ID | Behaviour | Test | Priority |
+| --- | --- | --- | --- |
+| A23-1 | The review payload carries the bumped review version | `test_the_review_schema_version_records_the_corroboration_narrowing` | High |
+| A23-2 | The four unaffected reports keep version 1 | `test_the_other_reports_did_not_change_and_keep_their_version` | High |

@@ -117,14 +117,50 @@ class MergedFinding:
 
     @property
     def is_corroborated(self) -> bool:
-        """Return true when more than one model reported this finding.
+        """Return true when two models reported the same *line* (A21).
 
-        On the measured data this alone separated the four real defects from
-        the eight noise findings. It is a signal to display, never a filter —
-        see B122.
+        On the measured data cross-model agreement separated the four real
+        defects from the eight noise findings. It is a signal to display,
+        never a filter — see B122.
+
+        The line, not the group, is the unit. Proximity grouping is loose by
+        design, so one entry can hold two unrelated defects a line apart;
+        counting distinct models across the group would then report an
+        agreement neither model expressed.
         """
 
+        return any(len(models) > 1 for models in self._models_by_line().values())
+
+    @property
+    def has_nearby_multi_model_reports(self) -> bool:
+        """Return true when several models reported *near* each other (A22).
+
+        This is the weaker companion to `is_corroborated`, and the two are
+        deliberately disjoint: a group where several models landed on
+        different lines is reported here instead of being either claimed as
+        agreement or silently dropped.
+
+        Why it cannot be folded into `is_corroborated`: two models a line
+        apart may be describing one defect (the shape the original analysis
+        observed most often) or two unrelated ones. Line numbers cannot tell
+        those apart, so a single boolean must be wrong in one direction. This
+        reports what was actually measured — several models, nearby lines —
+        and leaves the judgement to the reader.
+        """
+
+        if self.is_corroborated:
+            return False
+
         return self.model_count > 1
+
+    def _models_by_line(self) -> dict[int, set[str]]:
+        """Group the contributing models by the line each one cited."""
+
+        models_by_line: dict[int, set[str]] = {}
+        for message in self.messages:
+            models_by_line.setdefault(message.line, set()).add(message.model)
+
+        return models_by_line
 
 
 def merge_findings(
