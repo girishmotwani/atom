@@ -156,8 +156,38 @@ developer's). They exist so that judgement can be audited.
 
 ## Getting started
 
+### Install
+
+A virtual environment keeps Atom off your system Python and puts the `atom` command on
+your PATH for as long as the environment is active.
+
 ```bash
-pip install -e ./tools        # the atom CLI
+python -m venv .venv
+
+source .venv/bin/activate     # macOS / Linux
+.venv\Scripts\Activate.ps1    # Windows
+
+pip install -e ./tools
+atom --help
+```
+
+Activate it in each new terminal. That is the whole setup, and deleting `.venv` undoes
+it.
+
+> **Installing without a virtual environment?** `pip install --user` puts `atom` in a
+> directory Windows does not search, so the command installs successfully and is then
+> reported as not found. Either add that directory to your **user** PATH and open a new
+> terminal — an already-open shell copied its environment at launch and cannot pick up
+> the change — or skip PATH entirely and run `python -m atom.cli`, which is equivalent.
+>
+> Do not reach for `setx PATH "%PATH%;..."`. `%PATH%` expands to the *merged* machine
+> and user value, and `setx` truncates at 1024 characters. On a typical workstation the
+> merged value is already longer than that, so the command silently destroys part of the
+> PATH it was asked to extend.
+
+### Run it
+
+```bash
 cd your-go-project
 atom init                     # scaffold, check toolchain, capture a green baseline
 ```
