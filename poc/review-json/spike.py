@@ -81,8 +81,24 @@ def build_command(model: str, contract: str, prompt: str) -> list[str]:
 
     The flags that are not about the contract are about reproducibility. Without
     `--no-custom-instructions` the CLI would read Atom's own AGENTS.md and this spike
-    would measure something specific to this repository. Disabling the MCP servers
+    would measure something specific to this repository. `--disable-builtin-mcps`
     removes both a latency cost and a source of machine-to-machine variation.
+
+    This deliberately names no individual MCP server. The authoring machine had
+    vendor-specific servers configured, and an earlier revision disabled them by
+    name -- which put one environment's private names into a tool meant to be
+    read by anyone. A7 removed them from the shipped code for that reason, and
+    the same reasoning applies to a spike that is committed as evidence.
+
+    That removal is not free, and the cost is recorded rather than hidden: the
+    committed replies under `raw/` were produced by a command that DID name two
+    servers, so they show those servers disabled. Re-running this spike on a
+    machine with third-party servers configured will load them, which is a
+    condition the recorded run did not have. The contract question this spike
+    answers -- does the envelope carry parseable JSON -- does not depend on
+    which servers are loaded, so the finding stands; a rerun measuring LATENCY
+    should pass its own `--disable-mcp-server` flags rather than reintroducing
+    someone else's names here.
     """
     command = [
         "copilot",
@@ -92,10 +108,6 @@ def build_command(model: str, contract: str, prompt: str) -> list[str]:
         model,
         "--no-custom-instructions",
         "--disable-builtin-mcps",
-        "--disable-mcp-server",
-        "azure-mcp",
-        "--disable-mcp-server",
-        "azure-devops",
         "--no-color",
     ]
     if contract == "envelope":

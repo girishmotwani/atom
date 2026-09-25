@@ -365,7 +365,7 @@ worth installing.
 | Item | Reason |
 |---|---|
 | `go work` workspace support | Would invalidate the isolation POC's finding; needs its own spike first |
-| Non-Go languages | Atom is deliberately Go-scoped; generality was Helios's weakness |
+| Non-Go languages | Atom is deliberately Go-scoped; generality is what dilutes a framework |
 | A daemon or server mode | No evidence anyone needs it |
 | Editor integration | The CLI is the contract; integrations can come later |
 

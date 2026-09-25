@@ -235,13 +235,17 @@ class TestCommandsIssued:
         model_calls = [c for c in scripted.commands if c[0] != "git"]
         assert all("--no-custom-instructions" in c for c in model_calls)
 
-    def test_no_vendor_specific_mcp_server_is_disabled_by_default(self, scripted):
+    def test_no_named_mcp_server_is_disabled_by_default(self, scripted):
         # A7. The spike's speed-up command named servers that existed on one
         # machine; shipping them would have put private names in an open tool.
+        # Asserting the flag itself is absent is stronger than asserting one
+        # vendor's name is absent -- it cannot be satisfied by a different
+        # vendor's name, and it does not require this test to carry the very
+        # names the decision exists to keep out of the repository.
         review("--working", "--runs", "1")
 
-        joined = " ".join(" ".join(c) for c in scripted.commands)
-        assert "azure" not in joined.lower()
+        model_calls = [c for c in scripted.commands if c[0] != "git"]
+        assert all("--disable-mcp-server" not in c for c in model_calls)
 
     def test_the_prompt_carries_the_whole_diff_in_one_call(self, scripted):
         # P4-4. Phases keep diffs small, so chunking is unnecessary complexity

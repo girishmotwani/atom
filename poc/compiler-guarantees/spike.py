@@ -2,10 +2,11 @@
 
 The question
 ------------
-Helios-style test specs mandate cases like "null and empty-string tests for
-every mandatory string parameter". That rule comes from C#, where a string is a
-reference type and can be null. In Go a `string` cannot be nil, so half of that
-rule asks for a test that *cannot be written*. Atom should not inherit it.
+Test specs inherited from managed-language frameworks mandate cases like "null
+and empty-string tests for every mandatory string parameter". That rule comes
+from languages where a string is a reference type and can be null. In Go a
+`string` cannot be nil, so half of that rule asks for a test that *cannot be
+written*. Atom should not inherit it.
 
 But the useful version of this rule is much narrower than "skip obvious tests",
 and getting it wrong is expensive in both directions:

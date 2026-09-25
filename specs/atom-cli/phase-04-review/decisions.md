@@ -196,12 +196,11 @@ plausible reason, without the tool pretending to know where the cliff is.
 ### A7 — No vendor-specific MCP server names ship in the code
 
 **Decision.** `review_command` always passes `--disable-builtin-mcps` (B109), but the
-*named* servers the spike also disabled — `azure-mcp` and `azure-devops` — are **not**
-hard-coded. They become an optional `disable_mcp_servers` argument that defaults to
-empty.
+*named* servers the spike also disabled are **not** hard-coded. They become an optional
+`disable_mcp_servers` argument that defaults to empty.
 
 **Why.** The 84s → 30s measurement behind B109 was taken inside one company's
-environment, where those two servers happened to be ambient. B109's wording ("and
+environment, where two third-party servers happened to be ambient. B109's wording ("and
 disables ambient MCP servers") reads as though the names are part of the behaviour. They
 are not: they are a property of the machine the spike ran on. Hard-coding them would put
 one organisation's internal tooling names inside an open-source tool, which is the exact

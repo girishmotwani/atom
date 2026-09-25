@@ -167,8 +167,8 @@ lives.
 
 B109 is backed by a real measurement — disabling MCP servers took a call from
 84 seconds to about 30. But the spike achieved it with three flags, and two of
-them named specific servers that happened to be ambient on the machine it ran
-on: `azure-mcp` and `azure-devops`.
+them named specific third-party servers that happened to be ambient on the
+machine it ran on.
 
 Only `--disable-builtin-mcps` is a property of the CLI. The other two are a
 property of that environment. Copying all three into the implementation — which
@@ -900,3 +900,50 @@ a reader to discount a value is a repair deferred, not a repair made.
 rather than copied, so the next repair has one site and not two. Verified live: a
 call with a 5-second limit now returns in 5.6 seconds where this shape previously
 produced 22,434.
+---
+
+## 33. Removing a name from the code does not remove it from the evidence
+
+A7 (Phase 4) kept two third-party MCP server names out of the shipped tool, and a
+test enforced it. That test asserted that one vendor's name was absent from the
+issued commands. The decision was honoured in `tools/atom/` -- which contained no
+such name anywhere -- and the work was treated as done.
+
+It was not done. The names survived in three other places the decision never
+looked at:
+
+- **The spike that produced the measurement.** `poc/review-json/spike.py` still
+  passed two `--disable-mcp-server` flags naming those servers. It is committed,
+  so it is published.
+- **Twenty recorded replies.** Each raw envelope carries a `session.mcp_servers_loaded`
+  event naming every server the CLI saw. The evidence recorded the environment.
+- **The guard itself.** The test could only forbid the name by containing it, and
+  the two documents explaining the removal both quoted what was removed.
+
+The last one is the interesting one: **a check written as "this specific string is
+absent" has to carry the string, so it reintroduces exactly what it exists to
+exclude, and it fails to catch the next vendor's name.** Rewritten to assert that
+no `--disable-mcp-server` flag is passed at all -- name-free, and strictly
+stronger, because it cannot be satisfied by substituting a different vendor.
+
+**Rule.** A decision to exclude something is scoped to wherever the excluded thing
+can appear, not to the file the decision was written about. Shipped code, spikes,
+recorded evidence, tests, and the decision record are all publication surfaces.
+
+**Fixed.** Spike flags dropped; `envelope-sample.txt` deleted (nothing referenced
+it, and it carried a full captured server-instruction blob); the twenty raw
+envelopes redacted to `third-party-server-a` / `-b`; both documents reworded to
+describe the servers without naming them.
+
+**The redaction was verified inert before it was believed.** These files are a
+re-score input (`spike.py --analyse`), so editing them could have silently moved a
+published number. The analysis was run before and after: output byte-identical,
+and the diff touches exactly one line in each of the twenty files. Finding 31 was
+caused by trusting a derived value without re-deriving it; the same mistake was
+available here and was refused.
+
+**Known limit.** Redaction changes the files from a verbatim capture to an edited
+one. Git history still holds the originals, so this scrub is a repository-hygiene
+measure and not a security one -- anything genuinely sensitive would need the
+history rewritten, which is why the credential scan run alongside this mattered
+more than the name scrub. It found nothing.
