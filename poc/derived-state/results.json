@@ -1,0 +1,337 @@
+{
+  "q1": {
+    "R1 exists": {
+      "complete": [
+        "phase-02-poc",
+        "phase-03-state",
+        "phase-04-review",
+        "phase-05-ship"
+      ],
+      "detail": {
+        "phase-01-check": [
+          "poc-brief.md"
+        ],
+        "phase-02-poc": [],
+        "phase-03-state": [],
+        "phase-04-review": [],
+        "phase-05-ship": [],
+        "phase-06-state": [
+          "design-spec.md",
+          "test-spec.md",
+          "tdd-log.md",
+          "findings.md",
+          "decisions.md"
+        ]
+      }
+    },
+    "R2 non-empty": {
+      "complete": [
+        "phase-02-poc",
+        "phase-03-state",
+        "phase-04-review",
+        "phase-05-ship"
+      ],
+      "detail": {
+        "phase-01-check": [
+          "poc-brief.md"
+        ],
+        "phase-02-poc": [],
+        "phase-03-state": [],
+        "phase-04-review": [],
+        "phase-05-ship": [],
+        "phase-06-state": [
+          "design-spec.md",
+          "test-spec.md",
+          "tdd-log.md",
+          "findings.md",
+          "decisions.md"
+        ]
+      }
+    },
+    "R3 >=1KB": {
+      "complete": [
+        "phase-02-poc",
+        "phase-03-state",
+        "phase-04-review",
+        "phase-05-ship"
+      ],
+      "detail": {
+        "phase-01-check": [
+          "poc-brief.md"
+        ],
+        "phase-02-poc": [],
+        "phase-03-state": [],
+        "phase-04-review": [],
+        "phase-05-ship": [],
+        "phase-06-state": [
+          "design-spec.md",
+          "test-spec.md",
+          "tdd-log.md",
+          "findings.md",
+          "decisions.md"
+        ]
+      }
+    },
+    "R4 >=3 sections": {
+      "complete": [
+        "phase-02-poc",
+        "phase-03-state",
+        "phase-04-review",
+        "phase-05-ship"
+      ],
+      "detail": {
+        "phase-01-check": [
+          "poc-brief.md",
+          "tdd-log.md"
+        ],
+        "phase-02-poc": [],
+        "phase-03-state": [],
+        "phase-04-review": [],
+        "phase-05-ship": [],
+        "phase-06-state": [
+          "design-spec.md",
+          "test-spec.md",
+          "tdd-log.md",
+          "findings.md",
+          "decisions.md"
+        ]
+      }
+    },
+    "R5 sect+no TODO": {
+      "complete": [
+        "phase-02-poc",
+        "phase-03-state",
+        "phase-04-review",
+        "phase-05-ship"
+      ],
+      "detail": {
+        "phase-01-check": [
+          "poc-brief.md",
+          "tdd-log.md"
+        ],
+        "phase-02-poc": [],
+        "phase-03-state": [],
+        "phase-04-review": [],
+        "phase-05-ship": [],
+        "phase-06-state": [
+          "poc-brief.md",
+          "poc-report.md",
+          "design-spec.md",
+          "test-spec.md",
+          "tdd-log.md",
+          "findings.md",
+          "decisions.md"
+        ]
+      }
+    }
+  },
+  "q2": {
+    "table": {
+      "V0 untouched (control)": {
+        "R1 exists": true,
+        "R2 non-empty": true,
+        "R3 >=1KB": true,
+        "R4 >=3 sections": true,
+        "R5 sect+no TODO": true
+      },
+      "V1 first 4 sections": {
+        "R1 exists": true,
+        "R2 non-empty": true,
+        "R3 >=1KB": true,
+        "R4 >=3 sections": true,
+        "R5 sect+no TODO": true
+      },
+      "V2 first 1 section": {
+        "R1 exists": true,
+        "R2 non-empty": true,
+        "R3 >=1KB": false,
+        "R4 >=3 sections": false,
+        "R5 sect+no TODO": false
+      },
+      "V3 headings only": {
+        "R1 exists": true,
+        "R2 non-empty": true,
+        "R3 >=1KB": false,
+        "R4 >=3 sections": true,
+        "R5 sect+no TODO": true
+      },
+      "V4 heading + TODO": {
+        "R1 exists": true,
+        "R2 non-empty": true,
+        "R3 >=1KB": false,
+        "R4 >=3 sections": false,
+        "R5 sect+no TODO": false
+      }
+    },
+    "verdicts": {
+      "R1 exists": [
+        "V1 first 4 sections",
+        "V2 first 1 section",
+        "V3 headings only",
+        "V4 heading + TODO"
+      ],
+      "R2 non-empty": [
+        "V1 first 4 sections",
+        "V2 first 1 section",
+        "V3 headings only",
+        "V4 heading + TODO"
+      ],
+      "R3 >=1KB": [
+        "V1 first 4 sections"
+      ],
+      "R4 >=3 sections": [
+        "V1 first 4 sections",
+        "V3 headings only"
+      ],
+      "R5 sect+no TODO": [
+        "V1 first 4 sections",
+        "V3 headings only"
+      ]
+    }
+  },
+  "q3": {
+    "lexical_here": [
+      "phase-01-check",
+      "phase-02-poc",
+      "phase-03-state",
+      "phase-04-review",
+      "phase-05-ship",
+      "phase-06-state"
+    ],
+    "mtime_here": [
+      "phase-02-poc",
+      "phase-03-state",
+      "phase-04-review",
+      "phase-06-state",
+      "phase-05-ship",
+      "phase-01-check"
+    ],
+    "lexical_clone": [
+      "phase-01-check",
+      "phase-02-poc",
+      "phase-03-state",
+      "phase-04-review",
+      "phase-05-ship",
+      "phase-06-state"
+    ],
+    "mtime_clone": [
+      "phase-01-check",
+      "phase-02-poc",
+      "phase-03-state",
+      "phase-04-review",
+      "phase-05-ship",
+      "phase-06-state"
+    ],
+    "distinct_mtimes": 6,
+    "total": 6,
+    "clone_stamps": {
+      "phase-01-check": 1790155034.0516944,
+      "phase-02-poc": 1790155034.0577338,
+      "phase-03-state": 1790155034.0675428,
+      "phase-04-review": 1790155034.07016,
+      "phase-05-ship": 1790155034.1049871,
+      "phase-06-state": 1790155034.1462252
+    }
+  },
+  "q4": {
+    "phase-01-check": [
+      "Purpose",
+      "Evidence Base",
+      "Design Overview",
+      "Public API",
+      "Types And Responsibilities",
+      "Behaviour",
+      "Error Handling",
+      "Concurrency",
+      "Extension Points",
+      "Trade-offs Considered",
+      "Out Of Scope",
+      "Completeness Checklist"
+    ],
+    "phase-02-poc": [
+      "Purpose",
+      "Evidence Base",
+      "Design Overview",
+      "Public API",
+      "Behaviour",
+      "Error Handling",
+      "Trade-offs Considered",
+      "Out Of Scope",
+      "Resolved In Developer Review",
+      "Completeness Checklist"
+    ],
+    "phase-03-state": [
+      "Purpose",
+      "Evidence Base",
+      "Scope",
+      "The Storage Model",
+      "The Phase State Machine",
+      "Public Surface",
+      "Concurrency Model",
+      "Resolved In Developer Review",
+      "What This Phase Does Not Settle",
+      "Size"
+    ],
+    "phase-04-review": [
+      "Purpose",
+      "Evidence Base",
+      "Scope",
+      "The Pipeline",
+      "Diff Acquisition",
+      "Model Invocation",
+      "Extraction and Validation",
+      "The Merge Model",
+      "Output",
+      "Failure Handling",
+      "Resolved At The Developer Gate",
+      "What This Phase Does Not Settle",
+      "Size"
+    ],
+    "phase-05-ship": [
+      "Purpose",
+      "Evidence Base",
+      "Scope",
+      "The Pipeline",
+      "Preconditions",
+      "Resolving The Phase",
+      "Evidence",
+      "The Body",
+      "Creating And Updating",
+      "Failure Handling",
+      "Resolved At The Developer Gate",
+      "What This Phase Does Not Settle",
+      "Size"
+    ],
+    "phase-06-state": null,
+    "_common": [
+      "Evidence Base",
+      "Purpose"
+    ]
+  },
+  "q5": {
+    "phase-05-ship": {
+      "resolved": "phase-05-ship",
+      "why": "branch name (directory exists)"
+    },
+    "main": {
+      "resolved": "phase-06-state",
+      "why": "fallback: newest phase directory (lexical)"
+    },
+    "phase-06-state": {
+      "resolved": "phase-06-state",
+      "why": "branch name (directory exists)"
+    },
+    "phase-09-ghost": {
+      "resolved": "phase-09-ghost",
+      "why": "branch name (NO matching directory)"
+    },
+    "scratch/experiment": {
+      "resolved": "phase-06-state",
+      "why": "fallback: newest phase directory (lexical)"
+    },
+    "None": {
+      "resolved": "phase-06-state",
+      "why": "fallback: newest phase directory (lexical)"
+    }
+  }
+}

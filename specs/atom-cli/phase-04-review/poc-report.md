@@ -1,3 +1,11 @@
+---
+project: "atom-cli"
+phase: "phase-04-review"
+date: "2026-09-16"
+status: "ran"
+spike: "../../../poc/review-json/spike.py"
+---
+
 # POC Report — Phase 4: getting structured review findings out of a model
 
 **Ran.** 2026-09-16. 40 calls, all completed, none timed out.

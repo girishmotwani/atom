@@ -307,12 +307,48 @@ def render_spike_list_json(summaries: list[SpikeSummary]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
-    """Render the status report body for a person.
+# How a resolved phase is explained in the text rendering (B177). Naming the
+# source is not decoration: a typo'd branch reports as a pristine new phase
+# (B163) and a lexical fallback happens silently (B162), so a developer seeing an
+# unexpected answer needs to know which rule produced it.
+_SOURCE_PHRASES = {
+    "branch": "resolved from the git branch",
+    "lexical": "newest phase directory; resolved by fallback",
+}
 
-    Problems are deliberately **not** included here. They are rendered
-    separately by `render_status_problems` and written to stderr, so that
-    `atom status > phase.txt` captures the answer and lets the problems stay
+# ASCII only, on purpose. The text rendering is printed to a console that may be
+# code page 1252, where a Unicode tick would crash the whole command. `[x]` and
+# `[ ]` carry the same present/absent meaning without that risk -- and, just as
+# importantly, they never describe an artifact as "complete": the POC proved
+# completeness is not derivable (F6-1), so presence is all Atom is allowed to say.
+_PRESENT_MARK = "[x]"
+_ABSENT_MARK = "[ ]"
+
+
+def _present_over_required(artifacts) -> str:
+    """Return the ``present/required`` count for a phase (e.g. ``6/6``, ``4/7``).
+
+    A missing artifact is a phase in progress, not a failure (B166/B181), so this
+    is a plain count and never a pass/fail verdict. The denominator is the
+    *required* subset, which is six rather than seven for a phase whose POC was
+    skipped (B168) -- the one place the conditional-artifact rule reaches output.
+    """
+
+    present = sum(1 for name in artifacts.required if artifacts.present[name])
+    return f"{present}/{len(artifacts.required)}"
+
+
+def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
+    """Render the status report body for a person (B177/B178).
+
+    The current phase gets full detail -- how it was resolved, every required
+    artifact present or absent, and any approval recorded for it -- while every
+    other phase gets a single summary line. The detail belongs to the phase you
+    are working on; the rest is peripheral vision.
+
+    Problems are deliberately **not** included here. They are rendered separately
+    by ``render_status_problems`` and written to stderr, so that
+    ``atom status > phase.txt`` captures the answer and lets the problems stay
     visible in the terminal. Each problem is therefore printed exactly once.
     """
 
@@ -326,12 +362,49 @@ def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
     if report.module_path:
         lines.append(f"Module:  {report.module_path}")
 
-    if report.state is not None:
-        phase = report.state.phase.value
-        status = report.state.status.value.replace("_", " ")
-        lines.append(f"Phase:   {paint(phase, _GREEN)} ({status})")
+    current = report.derivation.current
+    if current is not None:
+        source_phrase = _SOURCE_PHRASES.get(
+            report.derivation.source, report.derivation.source
+        )
+        lines.append(f"Phase:   {paint(current.name, _GREEN)} ({source_phrase})")
+        if not current.started:
+            # B163: a branch can name a phase that has no directory yet. That is
+            # the ordinary first move of a new phase, not an error -- so it is
+            # stated plainly, in neutral styling, never as a failure.
+            lines.append("         (not started -- no directory yet)")
+
+        lines.append("Artifacts:")
+        for name in current.artifacts.required:
+            is_present = current.artifacts.present[name]
+            # Present is affirmed in green; absent is neutral grey, never red.
+            # A missing artifact is information, not a fault (B166/B181).
+            mark = paint(_PRESENT_MARK, _GREEN) if is_present else paint(_ABSENT_MARK, _GREY)
+            lines.append(f"  {mark} {name}")
+
+        for approval in report.approvals:
+            # Text shows only the current phase's approval (B177); JSON carries
+            # all of them for a program to filter (B179).
+            if approval.phase == current.name:
+                lines.append(f"Approval: {approval.gate} approved on {approval.date}")
     else:
-        lines.append(f"Phase:   {paint('unknown', _RED)}")
+        # B164: no phase directories and the branch names none. A legitimate
+        # state for a project that has not started a phase, not an error.
+        lines.append(f"Phase:   {paint('none', _GREY)} (no phase directories found)")
+
+    # B178: every *other* phase on one line -- name and present-of-required.
+    # derivation.phases is already lexically ordered, so this is too.
+    others = [
+        phase
+        for phase in report.derivation.phases
+        if current is None or phase.name != current.name
+    ]
+    if others:
+        lines.append("Other phases:")
+        width = max(len(phase.name) for phase in others)
+        for phase in others:
+            count = _present_over_required(phase.artifacts)
+            lines.append(f"  {phase.name.ljust(width)}  {count}")
 
     if report.last_event is not None:
         name = report.last_event.get("event", "?")
@@ -351,17 +424,24 @@ def render_status_text(report: "StatusReport", use_colour: bool = True) -> str:
 
 
 def render_status_problems(report: "StatusReport", use_colour: bool = True) -> str:
-    """Render just the problems, for stderr. Empty string when there are none."""
+    """Render just the problems, for stderr. Empty string when there are none (B180).
+
+    Every problem status reports is an advisory: the report was produced in
+    full, and the problem is recoverable (a swept temp file, unsaved work, a
+    corrupt state file whose loss did not stop derivation, a phase whose POC
+    report cannot be parsed). So there is one colour and one heading.
+
+    An earlier version reserved red for the case where Atom could not answer at
+    all. That case turned out to be unreachable -- status has no ``--root``, so
+    the root is the process's cwd, which necessarily exists -- and the red
+    branch was therefore decoration claiming to carry a signal it never carried
+    (F6-D6). Colour that never varies is not information.
+    """
 
     if not report.problems:
         return ""
 
-    # Amber for things still recoverable, red when status could not answer at
-    # all. Reserving red for the genuine failure keeps the colour meaningful.
-    colour = _RED if not report.could_answer else _YELLOW
-    heading = "Problems:" if not report.could_answer else "Warnings:"
-
-    lines = [f"{colour}{heading}{_RESET}" if use_colour else heading]
+    lines = [f"{_YELLOW}Advisories:{_RESET}" if use_colour else "Advisories:"]
     for problem in report.problems:
         # Problems are multi-line by design -- they carry recovery steps.
         for index, part in enumerate(str(problem).splitlines()):
@@ -371,10 +451,11 @@ def render_status_problems(report: "StatusReport", use_colour: bool = True) -> s
 
 
 def render_status_json(report: "StatusReport") -> str:
-    """Render a status report as JSON (B97).
+    """Render a status report as JSON (B179).
 
     Emitted even when the state could not be read, so a caller that asked for
-    JSON always gets something parseable to inspect.
+    JSON always gets something parseable to inspect. The documented keys are a
+    guaranteed subset of the object (see ``StatusReport.to_dict``).
     """
 
     payload = {"schema_version": SCHEMA_VERSION, **report.to_dict()}

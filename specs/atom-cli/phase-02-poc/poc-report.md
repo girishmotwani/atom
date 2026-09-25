@@ -1,3 +1,11 @@
+---
+project: "atom-cli"
+phase: "phase-02-poc"
+date: "2026-09-15"
+status: "ran"
+spike: "../../../poc/go-run-failure-modes/spike.py"
+---
+
 # POC Report — Go run failure modes
 
 | | |
