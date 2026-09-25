@@ -1,0 +1,47 @@
+{
+  "F1_body_storage": {
+    "last_body_written": 70000,
+    "stored_body_length": 71228,
+    "truncated": false,
+    "raw": {
+      "argv_bytes": 81,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout": "{\"body\":\"This line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line pads the pull request body to a measured size.\\r\\nThis line p",
+      "stderr": "",
+      "duration_seconds": 1.03
+    }
+  },
+  "F2_inherited_stdin_repeats": {
+    "branch": "spike/gh-stdin-1789751669",
+    "attempts": [
+      {
+        "attempt": 1,
+        "argv_bytes": 119,
+        "timed_out": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "aborted: you must first push the current branch to a remote, or use the --head flag",
+        "duration_seconds": 1.5
+      },
+      {
+        "attempt": 2,
+        "argv_bytes": 119,
+        "timed_out": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "aborted: you must first push the current branch to a remote, or use the --head flag",
+        "duration_seconds": 1.48
+      },
+      {
+        "attempt": 3,
+        "argv_bytes": 119,
+        "timed_out": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "aborted: you must first push the current branch to a remote, or use the --head flag",
+        "duration_seconds": 1.35
+      }
+    ]
+  }
+}

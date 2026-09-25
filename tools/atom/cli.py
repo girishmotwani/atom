@@ -39,6 +39,7 @@ from atom.report import (
 from atom.review import DEFAULT_REVIEW_MODELS, run_review
 from atom.runner import SubprocessRunner
 from atom.scaffold import ScaffoldError, SlugError, scaffold_spike
+from atom.ship import DEFAULT_BASE_BRANCH, PrAction, ShipRefused, run_ship
 from atom.spike import NotASpikeError, run_spike
 from atom.state import Project
 from atom.status import collect_status
@@ -76,6 +77,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if arguments.command == "review":
         return _run_review_command(arguments)
+
+    if arguments.command == "ship":
+        return _run_ship_command(arguments)
 
     parser.print_help()
     return EXIT_USAGE_ERROR
@@ -118,6 +122,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_poc_parser(subparsers)
     _add_state_parsers(subparsers)
     _add_review_parser(subparsers)
+    _add_ship_parser(subparsers)
 
     return parser
 
@@ -493,6 +498,92 @@ def _exit_code_for_spike(result) -> int:
     """
 
     return EXIT_PASSED if result.answered else EXIT_CHECK_FAILED
+
+
+def _add_ship_parser(subparsers: argparse._SubParsersAction) -> None:
+    ship_parser = subparsers.add_parser(
+        "ship",
+        help="Turn the current branch's finished phase into a pull request.",
+    )
+    ship_parser.add_argument(
+        "--base", dest="base_branch", default=DEFAULT_BASE_BRANCH, metavar="REF",
+        help="Branch the pull request merges into (default: %(default)s).",
+    )
+    ship_parser.add_argument(
+        "--phase", metavar="NAME",
+        help=(
+            "Phase directory name, when it cannot be read from the branch "
+            "(for example phase-05-ship)."
+        ),
+    )
+    ship_parser.add_argument(
+        "--title", metavar="TEXT",
+        help="Pull request title (default: taken from the design spec heading).",
+    )
+    ship_parser.add_argument(
+        "--push", action="store_true",
+        help=(
+            "Push the branch and set its upstream first. Required when the "
+            "branch has no upstream, because gh will not push for you."
+        ),
+    )
+    # B147a. The override is a flag rather than a prompt because ship must be
+    # runnable from CI, where there is nobody to answer a prompt. It does not
+    # change a word of the body: the failure is stated either way.
+    ship_parser.add_argument(
+        "--allow-failing-checks", action="store_true",
+        help=(
+            "Open the pull request even though atom check failed. The failure "
+            "is recorded in the body and the command still exits non-zero."
+        ),
+    )
+    ship_parser.add_argument(
+        "--no-race", action="store_true",
+        help="Skip the race detector in the fresh check, which requires cgo.",
+    )
+
+
+def _run_ship_command(arguments: argparse.Namespace) -> int:
+    """Assemble the pull request for the current branch's phase."""
+
+    runner = SubprocessRunner()
+    gates = default_gates(enable_race=not arguments.no_race)
+
+    try:
+        outcome = run_ship(
+            runner,
+            Path.cwd(),
+            base_branch=arguments.base_branch,
+            phase=arguments.phase,
+            title=arguments.title,
+            push=arguments.push,
+            allow_failing_checks=arguments.allow_failing_checks,
+            gates=gates,
+        )
+    except ShipRefused as refusal:
+        # B156. Every refusal -- missing gh, dirty tree, failing check -- leaves
+        # by this one route, because ship reuses the existing exit scheme rather
+        # than inventing a "precondition" code nobody else in the CLI speaks.
+        print(f"atom ship refused: {refusal}", file=sys.stderr)
+        return EXIT_CHECK_FAILED
+
+    verb = "Opened" if outcome.pr_action is PrAction.CREATED else "Updated"
+    print(f"{verb} {outcome.pr_url}")
+    print(f"  phase    {outcome.phase_directory.name}")
+    print(f"  commit   {outcome.commit_sha[:12]}")
+    print(f"  body     {outcome.body_char_count} characters")
+
+    if outcome.check_overridden:
+        # B147b. Said plainly on stderr, and the exit code agrees with it. A run
+        # that shipped over a failing gate has not passed, and neither the text
+        # nor the status should let anyone believe otherwise.
+        print(
+            "\natom check failed and --allow-failing-checks was given. The pull "
+            "request is open and states the failure; this run did not pass.",
+            file=sys.stderr,
+        )
+
+    return EXIT_PASSED if outcome.succeeded else EXIT_CHECK_FAILED
 
 
 # Must stay last in the module. Anything defined below this line does not exist
