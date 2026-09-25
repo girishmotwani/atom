@@ -117,18 +117,36 @@ class TestFileNotFoundErrorIsDiagnosed:
         on PATH produced a working binary that was never reached. Advising a
         reinstall here would send the developer round the same loop again.
         """
-        broken_first = r"C:\WindowsApps\tool.exe"
-        working_second = r"C:\npm\tool.cmd"
+        # The directories are built under tmp_path rather than hard-coded as
+        # "C:\...". On POSIX os.pathsep is ":", which is also the Windows
+        # drive-letter separator, so a hard-coded PATH would shred into
+        # ['C', '\WindowsApps', 'C', ...], match no directory, and leave the
+        # diagnostic advising a reinstall -- the exact wrong answer this test
+        # exists to catch. The folder names keep the original Windows story.
+        broken_directory = tmp_path / "WindowsApps"
+        shadowed_directory = tmp_path / "npm"
+        unrelated_directory = tmp_path / "other"
+        broken_first = str(broken_directory / "tool.exe")
+        working_second = str(shadowed_directory / "tool.cmd")
 
         def fake_which(name, path=None):
             if name != "tool":
                 return None
             if path is None:
                 return broken_first
-            return {r"C:\WindowsApps": broken_first, r"C:\npm": working_second}.get(path)
+            return {
+                str(broken_directory): broken_first,
+                str(shadowed_directory): working_second,
+            }.get(path)
 
         monkeypatch.setattr("atom.runner.shutil.which", fake_which)
-        monkeypatch.setenv("PATH", os.pathsep.join([r"C:\WindowsApps", r"C:\other", r"C:\npm"]))
+        monkeypatch.setenv(
+            "PATH",
+            os.pathsep.join(
+                str(directory)
+                for directory in (broken_directory, unrelated_directory, shadowed_directory)
+            ),
+        )
 
         result = SubprocessRunner().run(["tool"], tmp_path, timeout_seconds=5.0)
 
