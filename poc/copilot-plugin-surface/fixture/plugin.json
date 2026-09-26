@@ -1,0 +1,8 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "atom-probe",
+  "description": "Throwaway fixture proving Atom can ship as a Copilot CLI plugin.",
+  "version": "0.0.1",
+  "license": "MIT",
+  "keywords": ["go", "tdd", "poc"]
+}
