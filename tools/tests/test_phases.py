@@ -661,11 +661,11 @@ def test_the_real_phase_one_tdd_log_is_present():
 # Tier 1 -- the real repository
 # ===========================================================================
 
-def test_the_real_repository_resolves_six_phases():
-    assert len(discover_phases(REAL_SPECS)) == 6
+def test_the_real_repository_resolves_eight_phases():
+    assert len(discover_phases(REAL_SPECS)) == 8
 
 
-def test_the_real_repository_orders_phases_one_through_six():
+def test_the_real_repository_orders_phases_one_through_eight():
     assert [p.name for p in discover_phases(REAL_SPECS)] == [
         "phase-01-check",
         "phase-02-poc",
@@ -673,6 +673,8 @@ def test_the_real_repository_orders_phases_one_through_six():
         "phase-04-review",
         "phase-05-ship",
         "phase-06-state",
+        "phase-07-discover",
+        "phase-08-plugin",
     ]
 
 

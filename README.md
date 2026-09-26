@@ -156,10 +156,45 @@ developer's). They exist so that judgement can be audited.
 
 ## Getting started
 
-### Install
+### 1. Install the plugin
 
-A virtual environment keeps Atom off your system Python and puts the `atom` command on
-your PATH for as long as the environment is active.
+Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into
+**every** repository you work in — there is nothing to copy or symlink into a project.
+
+```bash
+copilot plugin marketplace add girishmotwani/atom
+copilot plugin install atom-go@atom
+```
+
+Check it landed:
+
+```bash
+copilot skill list       # expect atom-poc, atom-spec, atom-tdd, ...
+```
+
+You now have these inside Copilot CLI, alongside built-ins like `/model`:
+
+| Command | Beat |
+|---|---|
+| `/atom` | Describe what you want to build; Atom picks the right beat |
+| `/atom-discover` | Turn a vague goal into one falsifiable question |
+| `/atom-poc` | Build a disposable Go spike that answers it |
+| `/atom-spec` | Turn the POC's verdict into a design spec |
+| `/atom-tdd` | Derive the test spec, then red-green |
+| `/atom-review` | Multi-model review of the diff |
+| `/atom-ship` | Commit, branch, pull request |
+| `/atom-plan` | Break work too large for one pass into phases |
+| `/atom-init` | Scaffold project state in a Go repo |
+| `/atom-build` | Run the whole loop end to end |
+
+> Install from the marketplace, not directly from the repository URL. Copilot CLI has
+> deprecated direct repo, URL and local-path installs, and will only support
+> `plugin@marketplace` in a future release.
+
+### 2. Install the `atom` command
+
+The skills shell out to an `atom` binary for project state and checks, so install the
+Python package too. A virtual environment keeps it off your system Python.
 
 ```bash
 python -m venv .venv
@@ -171,8 +206,7 @@ pip install -e ./tools
 atom --help
 ```
 
-Activate it in each new terminal. That is the whole setup, and deleting `.venv` undoes
-it.
+Activate it in each new terminal. Deleting `.venv` undoes it.
 
 > **Installing without a virtual environment?** `pip install --user` puts `atom` in a
 > directory Windows does not search, so the command installs successfully and is then
@@ -192,14 +226,18 @@ cd your-go-project
 atom init                     # scaffold, check toolchain, capture a green baseline
 ```
 
-Then point your agent at a problem:
+Then start from a plain description of what you want:
 
 ```
-Build a feature: add topic-based routing to the event bus
+/atom add topic-based routing to the event bus
 ```
 
-The agent reads [AGENTS.md](AGENTS.md), picks up `atom-build`, and starts by asking you
-what the riskiest part is.
+Atom works out where you are, picks the earliest beat whose output is missing, and
+tells you the next command to run. It opens by asking what the riskiest part is —
+because the first thing Atom builds is a spike that could prove the idea wrong.
+
+Agents working in the repository also read [AGENTS.md](AGENTS.md), so the same rules
+apply whether you drive Atom through a slash command or just describe what you want.
 
 ### Recommended model
 
