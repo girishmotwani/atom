@@ -185,6 +185,8 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 | `/atom-ship` | Commit, branch, pull request |
 | `/atom-plan` | Break work too large for one pass into phases |
 | `/atom-init` | Scaffold project state in a Go repo |
+| `/atom-status` | Show the current phase, what exists, what is missing |
+| `/atom-check` | Run every Go quality gate and explain failures |
 | `/atom-build` | Run the whole loop end to end |
 
 > Install from the marketplace, not directly from the repository URL. Copilot CLI has

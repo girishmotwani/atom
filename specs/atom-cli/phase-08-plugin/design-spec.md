@@ -48,10 +48,14 @@ This is global. There is no per-repository step.
 | `/atom-ship` | `skills/atom-ship/` | Commit, branch, PR |
 | `/atom-plan` | `skills/atom-plan/` | Break into phases |
 | `/atom-init` | `skills/atom-init/` | Scaffold project state |
+| `/atom-status` | `com.github.copilot/commands/atom-status.md` | Report phase and missing artifacts |
+| `/atom-check` | `com.github.copilot/commands/atom-check.md` | Run the Go quality gates |
 | `/atom-build` | `skills/atom-build/` | The whole loop |
 
-Only `/atom` required a new file. Every other row already existed as a skill and
-became a command by virtue of the plugin manifest.
+Only `/atom`, `/atom-status` and `/atom-check` required new files. Every other
+row already existed as a skill and became a command by virtue of the plugin
+manifest. `atom status` and `atom check` are CLI subcommands rather than beats,
+so they have no skill to inherit from and needed command files of their own.
 
 ## Artifacts added
 
@@ -60,6 +64,8 @@ became a command by virtue of the plugin manifest.
 | `plugin.json` | Agent Plugins 1.0 manifest. Name `atom-go`. |
 | `.github/plugin/marketplace.json` | Marketplace `atom`, listing `atom-go` with `source: "."`. |
 | `com.github.copilot/commands/atom.md` | The `/atom` router. |
+| `com.github.copilot/commands/atom-status.md` | `/atom-status`, wrapping `atom status`. |
+| `com.github.copilot/commands/atom-check.md` | `/atom-check`, wrapping `atom check`. |
 | `tools/tests/test_plugin.py` | Guards the silent-collision failure mode. |
 
 ## Behaviours
@@ -99,5 +105,13 @@ short name `atom`, so the install line reads `atom-go@atom`.
 
 - The Python `atom` package is still a **separate** install. A plugin cannot
   carry a pip dependency, so `pip install -e ./tools` remains a second step.
-- Beat-selection accuracy from free text is unmeasured. See the POC report.
+- **Free-text routing reaches a beat only about a third of the time.** Measured
+  at 33.3% over 24 scored trials, with 100% precision and zero mis-routes — when
+  a skill loads it is always the right one, but usually no skill loads at all.
+  Slash commands are therefore the supported interface, and prose is a
+  convenience. See [the routing POC](../../../poc/atom-routing-rules/results.md).
+- **`com.github.copilot/rules/` does nothing in CLI 1.0.89-4**, despite being a
+  documented component location. It was the obvious fix for the gap above and
+  was refuted under five conditions against a working control. No rules file is
+  shipped.
 - The marketplace has only been exercised from a local path, never from GitHub.
