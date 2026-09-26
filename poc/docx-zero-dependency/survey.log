@@ -1,0 +1,22 @@
+Question: can zipfile + ElementTree read a real .docx?
+
+files named .docx   : 55
+actually .docx      : 42
+mislabelled         : 13  (13 x legacy-doc)
+                      no .docx reader can open these; the extension lies.
+extracted non-empty : 42/42  (100% of genuine)
+
+containing tables   : 24
+tracked changes     : 2
+with header parts   : 9
+
+comparable to Word's count : 23
+median deviation           : 11.3%
+within 15% tolerance          : 17/23
+
+deleted-text exclusion tested on : 1 documents
+deleted text correctly excluded  : 1/1
+
+pre-registered: success >= 95%, median deviation <= 15%
+
+Verdict: Confirmed -- the standard library alone reads these documents.

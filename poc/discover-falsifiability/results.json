@@ -1,0 +1,351 @@
+{
+  "records": [
+    {
+      "document": "batch-importer",
+      "run_index": 1,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 19.9,
+      "reply": "{\"question\":\"Can a single Go process stream-import a 5 GB CSV file into the system within 30 minutes without exceeding 1 GB of RAM?\",\"refuted_when\":\"The program either fails to complete the import of the 5 GB file within 30 minutes, exceeds 1 GB peak RAM, or crashes during the run.\",\"program_sketch\":\"The program generates or reads a representative 5 GB CSV file, streams rows through the intended import path, and records completion time, peak memory usage, and any failures.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "batch-importer",
+      "run_index": 2,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 23.9,
+      "reply": "{\"question\":\"Can a streaming Go CSV importer process a 5 GB input file end-to-end on production-like hardware without crashing, timing out, or exceeding 512 MB peak memory?\",\"refuted_when\":\"The program fails to finish the 5 GB file, exits with an error, exceeds the timeout budget, or uses more than 512 MB peak memory during the run.\",\"program_sketch\":\"The throwaway program generates or reads a 5 GB CSV, parses it row by row without loading the whole file into memory, simulates the import path, and records completion status, elapsed time, and peak memory use.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "batch-importer",
+      "run_index": 3,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 22.5,
+      "reply": "{\"question\":\"Can a streaming Go importer parse and write a 10 GB CSV to a sink on our target host in under 30 minutes while keeping peak memory below 1 GB?\",\"refuted_when\":\"The run takes 30 minutes or longer, peak memory reaches 1 GB or more, or the imported row count differs from the CSV row count.\",\"program_sketch\":\"The program streams a representative 10 GB CSV row by row, batches writes to a test sink, and records total duration, peak memory, and input-versus-output row counts.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "cache-layer",
+      "run_index": 1,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 24.9,
+      "reply": "{\"question\":\"Can a cache that invalidates on every successful write and refuses entries older than 250 ms prevent any post-commit read from returning a pre-write version under a peak-like concurrent workload?\",\"refuted_when\":\"It is refuted if the program observes even one read, after the writer has confirmed commit success, that returns a version lower than the latest committed version for that key.\",\"program_sketch\":\"The program repeatedly writes monotonically increasing version numbers to a set of keys, drives concurrent reads for those keys through the cache at peak-like rates, and records whether any read after commit sees an older version.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "cache-layer",
+      "run_index": 2,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 29.4,
+      "reply": "{\"question\":\"Can a read-through cache with per-key invalidation preserve read-after-write consistency for a single key while reducing database reads by at least 80% on a replay of peak traffic?\",\"refuted_when\":\"The answer is no if the replay records any read that returns an older committed version for a key after a later write to that same key has completed, or if total database reads fall by less than 80% versus the no-cache run.\",\"program_sketch\":\"The program replays a captured peak-like mix of reads and writes against an in-memory database model with and without the cache, stamps each committed write with a monotonically increasing version, and compares stale-read counts and total database reads between the two runs.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "cache-layer",
+      "run_index": 3,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 22.7,
+      "reply": "{\"question\":\"Can a write-through cache with immediate key invalidation preserve read-your-writes behavior for our hottest keys while reducing database reads by at least 80% under peak-like concurrent load?\",\"refuted_when\":\"The program observes any read that occurs after a write has completed returning an older version for that same key, or it measures less than an 80% reduction in database reads versus the no-cache baseline.\",\"program_sketch\":\"The Go program replays a peak-like mixed read/write workload against a baseline path and then against a write-through cache in front of the same store, counting database reads and checking each post-write read for stale versions by comparing per-key version numbers.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "config-reload",
+      "run_index": 1,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 20.6,
+      "reply": "{\"question\":\"Can a Go HTTP server reload a modified config file and start serving the new value within 1 second without any failed or aborted in-flight requests during a sustained request stream?\",\"refuted_when\":\"The question is answered no if, after changing the config file, the server does not serve the new value within 1 second or any request in the continuous load run returns a connection error, timeout, or non-2xx response attributable to the reload.\",\"program_sketch\":\"The program runs an HTTP server that reads a value from a config file, watches the file for changes, continuously sends concurrent requests through the server while rewriting the file mid-run, and records reload latency plus any request failures.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "config-reload",
+      "run_index": 2,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 18.8,
+      "reply": "{\"question\":\"Can a Go service reload a changed local config file and begin using the new request timeout for subsequent requests within 2 seconds without terminating any requests already in flight?\",\"refuted_when\":\"After updating the config file, requests started more than 2 seconds later still use the old timeout or any request that was already in flight is terminated during the reload.\",\"program_sketch\":\"Run an HTTP server that watches a config file for timeout changes, continuously serves long and short requests, rewrites the file during load, and logs whether new requests adopt the new timeout while existing ones complete normally.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "config-reload",
+      "run_index": 3,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 23.9,
+      "reply": "{\"question\":\"Can a single Go HTTP server process detect a config-file change and begin serving new config values on subsequent requests without terminating or resetting any in-flight request connections?\",\"refuted_when\":\"It is refuted when, after editing the config file during a deliberately long-running request, the server either drops that in-flight request or continues returning the old config value on later requests without a process restart.\",\"program_sketch\":\"The program serves one endpoint that reports a config value and another that sleeps before responding, rewrites the config file while the sleep is in progress, and records whether the long request finishes normally and later requests return the updated value from the same PID.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "echo-service",
+      "run_index": 1,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 18.3,
+      "reply": "{\"question\":\"Can a single Go HTTP echo handler that copies the request body directly to the response stream echo a 1 GiB POST body while keeping peak heap growth below 32 MiB?\",\"refuted_when\":\"It is refuted if, during a 1 GiB echo request, the program completes the echo only after peak heap growth exceeds 32 MiB or the request fails before the full body is returned.\",\"program_sketch\":\"The program starts a minimal Go HTTP server whose handler streams each request body straight to the response with io.Copy, then a client sends a 1 GiB body and records whether the full echo succeeds and what peak heap usage was.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "echo-service",
+      "run_index": 2,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 20.6,
+      "reply": "{\"question\":\"Can a Go HTTP echo service stream a 1 GiB request body back to the client without buffering the whole payload in memory?\",\"refuted_when\":\"The proof of concept answers no if, for either a chunked upload or a Content-Length upload, the process peak RSS exceeds 100 MiB, the echoed body is not byte-for-byte identical, or the connection fails before the full 1 GiB is returned.\",\"program_sketch\":\"Run a tiny Go server that io.Copys each request body to the response as bytes arrive, then hit it with 1 GiB chunked and fixed-length requests while recording peak RSS and checking that the echoed bytes match exactly.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "echo-service",
+      "run_index": 3,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 20.1,
+      "reply": "{\"question\":\"Can a Go HTTP echo server stream request bodies back to clients while keeping peak RSS below 50 MiB during 100 concurrent 100 MiB uploads from a 50/50 mix of chunked streaming and Content-Length clients?\",\"refuted_when\":\"The run shows peak RSS above 50 MiB, any request fails or times out, or any echoed response differs byte-for-byte from its request body.\",\"program_sketch\":\"The throwaway program starts an echo server that copies each request body straight to the response and a load generator that sends 100 concurrent 100 MiB requests, half streamed and half pre-sized, while measuring memory use and validating echoed bytes.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "event-bus",
+      "run_index": 1,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 18.7,
+      "reply": "{\"question\":\"Can a single Go process route 50000 1 KB messages per second across 100 topics to 1000 subscribers while keeping end-to-end publish-to-delivery latency below 20 ms at p99 for 10 minutes?\",\"refuted_when\":\"The run sustains less than 50000 messages per second, drops any message, or records p99 publish-to-delivery latency of 20 ms or higher during the 10-minute test.\",\"program_sketch\":\"The program creates in-memory topic publishers and subscribers, drives the target traffic mix for 10 minutes, and records throughput, drops, and p99 end-to-end latency.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "event-bus",
+      "run_index": 2,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 20.3,
+      "reply": "{\"question\":\"Can a single Go process perform topic-based publish/subscribe routing for 50,000 1 KB events per second across 100 topics and 200 subscribers while keeping p99 end-to-end delivery latency under 20 ms on our target hardware?\",\"refuted_when\":\"It is refuted if the benchmark delivers fewer than 50,000 1 KB events per second or observes p99 end-to-end delivery latency above 20 ms under that load.\",\"program_sketch\":\"The program generates synthetic events into an in-memory Go topic router, delivers each event only to subscribers registered for its topic, and reports achieved throughput plus p99 end-to-end delivery latency.\"}\n\n",
+      "detail": ""
+    },
+    {
+      "document": "event-bus",
+      "run_index": 3,
+      "outcome": "COMPLETED",
+      "exit_code": 0,
+      "duration_seconds": 21.1,
+      "reply": "{\"question\":\"Can a Go prototype of a topic-routed event bus deliver our representative peak traffic to matching subscribers with p99 end-to-end latency under 50 ms and zero dropped messages?\",\"refuted_when\":\"It is refuted if a replay of representative peak traffic produces any dropped message or a p99 end-to-end latency above 50 ms for matching subscribers.\",\"program_sketch\":\"The program starts a publisher and topic-filtered subscribers, replays representative peak traffic through the prototype bus, and records delivered-message counts and end-to-end latency.\"}\n\n",
+      "detail": ""
+    }
+  ],
+  "summary": {
+    "model": "gpt-5.4",
+    "requested": 15,
+    "usable": 15,
+    "unusable": 0,
+    "passed": 14,
+    "pass_rate": 0.9333333333333333,
+    "stability": {
+      "batch-importer": 0.14,
+      "cache-layer": 0.24,
+      "config-reload": 0.32,
+      "echo-service": 0.23,
+      "event-bus": 0.26
+    },
+    "graded": [
+      {
+        "document": "batch-importer",
+        "run_index": 1,
+        "question": "Can a single Go process stream-import a 5 GB CSV file into the system within 30 minutes without exceeding 1 GB of RAM?",
+        "refuted_when": "The program either fails to complete the import of the 5 GB file within 30 minutes, exceeds 1 GB peak RAM, or crashes during the run.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "batch-importer",
+        "run_index": 2,
+        "question": "Can a streaming Go CSV importer process a 5 GB input file end-to-end on production-like hardware without crashing, timing out, or exceeding 512 MB peak memory?",
+        "refuted_when": "The program fails to finish the 5 GB file, exits with an error, exceeds the timeout budget, or uses more than 512 MB peak memory during the run.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "batch-importer",
+        "run_index": 3,
+        "question": "Can a streaming Go importer parse and write a 10 GB CSV to a sink on our target host in under 30 minutes while keeping peak memory below 1 GB?",
+        "refuted_when": "The run takes 30 minutes or longer, peak memory reaches 1 GB or more, or the imported row count differs from the CSV row count.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "cache-layer",
+        "run_index": 1,
+        "question": "Can a cache that invalidates on every successful write and refuses entries older than 250 ms prevent any post-commit read from returning a pre-write version under a peak-like concurrent workload?",
+        "refuted_when": "It is refuted if the program observes even one read, after the writer has confirmed commit success, that returns a version lower than the latest committed version for that key.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "cache-layer",
+        "run_index": 2,
+        "question": "Can a read-through cache with per-key invalidation preserve read-after-write consistency for a single key while reducing database reads by at least 80% on a replay of peak traffic?",
+        "refuted_when": "The answer is no if the replay records any read that returns an older committed version for a key after a later write to that same key has completed, or if total database reads fall by less than 80% versus the no-cache run.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "cache-layer",
+        "run_index": 3,
+        "question": "Can a write-through cache with immediate key invalidation preserve read-your-writes behavior for our hottest keys while reducing database reads by at least 80% under peak-like concurrent load?",
+        "refuted_when": "The program observes any read that occurs after a write has completed returning an older version for that same key, or it measures less than an 80% reduction in database reads versus the no-cache baseline.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "config-reload",
+        "run_index": 1,
+        "question": "Can a Go HTTP server reload a modified config file and start serving the new value within 1 second without any failed or aborted in-flight requests during a sustained request stream?",
+        "refuted_when": "The question is answered no if, after changing the config file, the server does not serve the new value within 1 second or any request in the continuous load run returns a connection error, timeout, or non-2xx response attributable to the reload.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "config-reload",
+        "run_index": 2,
+        "question": "Can a Go service reload a changed local config file and begin using the new request timeout for subsequent requests within 2 seconds without terminating any requests already in flight?",
+        "refuted_when": "After updating the config file, requests started more than 2 seconds later still use the old timeout or any request that was already in flight is terminated during the reload.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "config-reload",
+        "run_index": 3,
+        "question": "Can a single Go HTTP server process detect a config-file change and begin serving new config values on subsequent requests without terminating or resetting any in-flight request connections?",
+        "refuted_when": "It is refuted when, after editing the config file during a deliberately long-running request, the server either drops that in-flight request or continues returning the old config value on later requests without a process restart.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": false
+        },
+        "passed": false
+      },
+      {
+        "document": "echo-service",
+        "run_index": 1,
+        "question": "Can a single Go HTTP echo handler that copies the request body directly to the response stream echo a 1 GiB POST body while keeping peak heap growth below 32 MiB?",
+        "refuted_when": "It is refuted if, during a 1 GiB echo request, the program completes the echo only after peak heap growth exceeds 32 MiB or the request fails before the full body is returned.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "echo-service",
+        "run_index": 2,
+        "question": "Can a Go HTTP echo service stream a 1 GiB request body back to the client without buffering the whole payload in memory?",
+        "refuted_when": "The proof of concept answers no if, for either a chunked upload or a Content-Length upload, the process peak RSS exceeds 100 MiB, the echoed body is not byte-for-byte identical, or the connection fails before the full 1 GiB is returned.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "echo-service",
+        "run_index": 3,
+        "question": "Can a Go HTTP echo server stream request bodies back to clients while keeping peak RSS below 50 MiB during 100 concurrent 100 MiB uploads from a 50/50 mix of chunked streaming and Content-Length clients?",
+        "refuted_when": "The run shows peak RSS above 50 MiB, any request fails or times out, or any echoed response differs byte-for-byte from its request body.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "event-bus",
+        "run_index": 1,
+        "question": "Can a single Go process route 50000 1 KB messages per second across 100 topics to 1000 subscribers while keeping end-to-end publish-to-delivery latency below 20 ms at p99 for 10 minutes?",
+        "refuted_when": "The run sustains less than 50000 messages per second, drops any message, or records p99 publish-to-delivery latency of 20 ms or higher during the 10-minute test.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "event-bus",
+        "run_index": 2,
+        "question": "Can a single Go process perform topic-based publish/subscribe routing for 50,000 1 KB events per second across 100 topics and 200 subscribers while keeping p99 end-to-end delivery latency under 20 ms on our target hardware?",
+        "refuted_when": "It is refuted if the benchmark delivers fewer than 50,000 1 KB events per second or observes p99 end-to-end delivery latency above 20 ms under that load.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      },
+      {
+        "document": "event-bus",
+        "run_index": 3,
+        "question": "Can a Go prototype of a topic-routed event bus deliver our representative peak traffic to matching subscribers with p99 end-to-end latency under 50 ms and zero dropped messages?",
+        "refuted_when": "It is refuted if a replay of representative peak traffic produces any dropped message or a p99 end-to-end latency above 50 ms for matching subscribers.",
+        "checks": {
+          "single_subject": true,
+          "refuting_observation": true,
+          "not_a_preference": true,
+          "mechanically_checkable": true
+        },
+        "passed": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+{"question":"Can a streaming Go importer parse and write a 10 GB CSV to a sink on our target host in under 30 minutes while keeping peak memory below 1 GB?","refuted_when":"The run takes 30 minutes or longer, peak memory reaches 1 GB or more, or the imported row count differs from the CSV row count.","program_sketch":"The program streams a representative 10 GB CSV row by row, batches writes to a test sink, and records total duration, peak memory, and input-versus-output row counts."}
+

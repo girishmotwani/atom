@@ -1,0 +1,2 @@
+{"question":"Can a Go prototype of a topic-routed event bus deliver our representative peak traffic to matching subscribers with p99 end-to-end latency under 50 ms and zero dropped messages?","refuted_when":"It is refuted if a replay of representative peak traffic produces any dropped message or a p99 end-to-end latency above 50 ms for matching subscribers.","program_sketch":"The program starts a publisher and topic-filtered subscribers, replays representative peak traffic through the prototype bus, and records delivered-message counts and end-to-end latency."}
+

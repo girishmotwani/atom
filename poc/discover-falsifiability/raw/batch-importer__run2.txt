@@ -1,0 +1,2 @@
+{"question":"Can a streaming Go CSV importer process a 5 GB input file end-to-end on production-like hardware without crashing, timing out, or exceeding 512 MB peak memory?","refuted_when":"The program fails to finish the 5 GB file, exits with an error, exceeds the timeout budget, or uses more than 512 MB peak memory during the run.","program_sketch":"The throwaway program generates or reads a 5 GB CSV, parses it row by row without loading the whole file into memory, simulates the import path, and records completion status, elapsed time, and peak memory use."}
+

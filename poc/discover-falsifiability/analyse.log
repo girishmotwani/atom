@@ -1,0 +1,77 @@
+model            : gpt-5.4
+runs requested   : 15
+replies usable   : 15  (unparseable: 0)
+
+  [PASS] batch-importer run 1
+         Q: Can a single Go process stream-import a 5 GB CSV file into the system within 30 minutes without exceeding 1 GB of RAM?
+         R: The program either fails to complete the import of the 5 GB file within 30 minutes, exceeds 1 GB peak RAM, or crashes during the run.
+
+  [PASS] batch-importer run 2
+         Q: Can a streaming Go CSV importer process a 5 GB input file end-to-end on production-like hardware without crashing, timing out, or exceeding 512 MB peak memory?
+         R: The program fails to finish the 5 GB file, exits with an error, exceeds the timeout budget, or uses more than 512 MB peak memory during the run.
+
+  [PASS] batch-importer run 3
+         Q: Can a streaming Go importer parse and write a 10 GB CSV to a sink on our target host in under 30 minutes while keeping peak memory below 1 GB?
+         R: The run takes 30 minutes or longer, peak memory reaches 1 GB or more, or the imported row count differs from the CSV row count.
+
+  [PASS] cache-layer run 1
+         Q: Can a cache that invalidates on every successful write and refuses entries older than 250 ms prevent any post-commit read from returning a pre-write version under a peak-like concurrent workload?
+         R: It is refuted if the program observes even one read, after the writer has confirmed commit success, that returns a version lower than the latest committed version for that key.
+
+  [PASS] cache-layer run 2
+         Q: Can a read-through cache with per-key invalidation preserve read-after-write consistency for a single key while reducing database reads by at least 80% on a replay of peak traffic?
+         R: The answer is no if the replay records any read that returns an older committed version for a key after a later write to that same key has completed, or if total database reads fall by less than 80% versus the no-cache run.
+
+  [PASS] cache-layer run 3
+         Q: Can a write-through cache with immediate key invalidation preserve read-your-writes behavior for our hottest keys while reducing database reads by at least 80% under peak-like concurrent load?
+         R: The program observes any read that occurs after a write has completed returning an older version for that same key, or it measures less than an 80% reduction in database reads versus the no-cache baseline.
+
+  [PASS] config-reload run 1
+         Q: Can a Go HTTP server reload a modified config file and start serving the new value within 1 second without any failed or aborted in-flight requests during a sustained request stream?
+         R: The question is answered no if, after changing the config file, the server does not serve the new value within 1 second or any request in the continuous load run returns a connection error, timeout, or non-2xx response attributable to the reload.
+
+  [PASS] config-reload run 2
+         Q: Can a Go service reload a changed local config file and begin using the new request timeout for subsequent requests within 2 seconds without terminating any requests already in flight?
+         R: After updating the config file, requests started more than 2 seconds later still use the old timeout or any request that was already in flight is terminated during the reload.
+
+  [FAIL] config-reload run 3
+         Q: Can a single Go HTTP server process detect a config-file change and begin serving new config values on subsequent requests without terminating or resetting any in-flight request connections?
+         R: It is refuted when, after editing the config file during a deliberately long-running request, the server either drops that in-flight request or continues returning the old config value on later requests without a process restart.
+         failed checks: mechanically_checkable
+
+  [PASS] echo-service run 1
+         Q: Can a single Go HTTP echo handler that copies the request body directly to the response stream echo a 1 GiB POST body while keeping peak heap growth below 32 MiB?
+         R: It is refuted if, during a 1 GiB echo request, the program completes the echo only after peak heap growth exceeds 32 MiB or the request fails before the full body is returned.
+
+  [PASS] echo-service run 2
+         Q: Can a Go HTTP echo service stream a 1 GiB request body back to the client without buffering the whole payload in memory?
+         R: The proof of concept answers no if, for either a chunked upload or a Content-Length upload, the process peak RSS exceeds 100 MiB, the echoed body is not byte-for-byte identical, or the connection fails before the full 1 GiB is returned.
+
+  [PASS] echo-service run 3
+         Q: Can a Go HTTP echo server stream request bodies back to clients while keeping peak RSS below 50 MiB during 100 concurrent 100 MiB uploads from a 50/50 mix of chunked streaming and Content-Length clients?
+         R: The run shows peak RSS above 50 MiB, any request fails or times out, or any echoed response differs byte-for-byte from its request body.
+
+  [PASS] event-bus run 1
+         Q: Can a single Go process route 50000 1 KB messages per second across 100 topics to 1000 subscribers while keeping end-to-end publish-to-delivery latency below 20 ms at p99 for 10 minutes?
+         R: The run sustains less than 50000 messages per second, drops any message, or records p99 publish-to-delivery latency of 20 ms or higher during the 10-minute test.
+
+  [PASS] event-bus run 2
+         Q: Can a single Go process perform topic-based publish/subscribe routing for 50,000 1 KB events per second across 100 topics and 200 subscribers while keeping p99 end-to-end delivery latency under 20 ms on our target hardware?
+         R: It is refuted if the benchmark delivers fewer than 50,000 1 KB events per second or observes p99 end-to-end delivery latency above 20 ms under that load.
+
+  [PASS] event-bus run 3
+         Q: Can a Go prototype of a topic-routed event bus deliver our representative peak traffic to matching subscribers with p99 end-to-end latency under 50 ms and zero dropped messages?
+         R: It is refuted if a replay of representative peak traffic produces any dropped message or a p99 end-to-end latency above 50 ms for matching subscribers.
+
+stability (word overlap across runs, per document):
+  batch-importer   0.14
+  cache-layer      0.24
+  config-reload    0.32
+  echo-service     0.23
+  event-bus        0.26
+
+pass rate        : 14/15 = 93%
+confirmed at     : >= 80%
+refuted below    : 50%
+
+Verdict: Confirmed -- questions met the pre-registered bar.

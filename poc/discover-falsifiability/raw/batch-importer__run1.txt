@@ -1,0 +1,2 @@
+{"question":"Can a single Go process stream-import a 5 GB CSV file into the system within 30 minutes without exceeding 1 GB of RAM?","refuted_when":"The program either fails to complete the import of the 5 GB file within 30 minutes, exceeds 1 GB peak RAM, or crashes during the run.","program_sketch":"The program generates or reads a representative 5 GB CSV file, streams rows through the intended import path, and records completion time, peak memory usage, and any failures."}
+

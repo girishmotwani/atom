@@ -1,0 +1,2 @@
+{"question":"Can a single Go process route 50000 1 KB messages per second across 100 topics to 1000 subscribers while keeping end-to-end publish-to-delivery latency below 20 ms at p99 for 10 minutes?","refuted_when":"The run sustains less than 50000 messages per second, drops any message, or records p99 publish-to-delivery latency of 20 ms or higher during the 10-minute test.","program_sketch":"The program creates in-memory topic publishers and subscribers, drives the target traffic mix for 10 minutes, and records throughput, drops, and p99 end-to-end latency."}
+
