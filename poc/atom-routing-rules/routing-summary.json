@@ -1,0 +1,12 @@
+{
+  "trials": 27,
+  "timeouts_excluded": 3,
+  "scored": 24,
+  "skill_loaded": 8,
+  "load_rate_pct": 33.3,
+  "correct": 8,
+  "accuracy_pct": 33.3,
+  "precision_when_loaded_pct": 100.0,
+  "mis_routed": 0,
+  "elapsed_seconds": 10363
+}

@@ -78,3 +78,57 @@ are ordered by numeric prefix, contiguous from 01, and that discovery finds
 every directory matching the phase pattern. That keeps the real-repo check and
 removes the churn. Not done here because weakening a Tier-1 test is the
 developer's call, not the agent's.
+
+## F8 — Free-text routing usually loads no skill at all, and it is invisible
+
+Measured over 24 scored trials from a neutral directory: a skill loaded 33.3% of
+the time. Precision was perfect — zero prompts reached the wrong beat — so the
+description keywords do discriminate correctly. The problem is that two thirds
+of the time nothing is invoked.
+
+The failure is silent by construction. Skill *descriptions* sit in the model's
+tool list permanently, so the model can paraphrase a beat convincingly without
+ever loading the SKILL.md behind it. One trial produced fluent TDD advice while
+its log recorded `tool_counts: {"session_store_sql":1}` and no skill call. The
+developer receives description-shaped advice instead of the workflow and has no
+way to tell the difference.
+
+**Suggested:** document slash commands as the supported interface and stop
+implying prose is equivalent. Re-run
+`poc/atom-routing-rules/measure_routing.py` against future CLI builds and
+against other models before claiming any improvement.
+
+## F9 — A documented plugin component does nothing
+
+`com.github.copilot/rules/` appears in the official Agent Plugins 1.0 component
+table beside agents, commands, hooks and LSP servers. In CLI 1.0.89-4 a rules
+file has no observable effect, tested under five conditions including with
+`applyTo: '**'`, after an explicit plugin update, and inside the plugin's own
+repository. A control in the same conditions confirmed the plugin itself was
+loading, because a skill from it was invoked by name.
+
+This matters beyond Atom: the documentation gives no way to tell that the
+component is inert, and a plugin author would reasonably ship a rules file and
+assume it worked.
+
+**Suggested:** report it upstream. Re-test on each CLI upgrade — if rules start
+working they are the natural fix for F8.
+
+## F10 — Measuring agent behaviour needs an instrument outside the agent
+
+The first routing harness asked each skill to emit a sentinel token naming
+itself, and reported 22.2%. That number was wrong twice over: 11 of 27 calls had
+timed out and were being scored as routing failures, and the model did not
+reliably obey the planted instruction, so genuinely on-beat replies were counted
+as misses.
+
+The fix was to stop asking the agent to report on itself and read
+`--log-level debug` output instead, which records the actual `skill` tool call.
+The detector was then validated in both directions — positive on a run known to
+have invoked a skill, negative on a run whose log showed none — before any
+number was trusted, and the sentinel was reverted so the measurement ran against
+unmodified skills.
+
+**Suggested:** treat self-reported agent behaviour as unreliable evidence
+throughout Atom. Where a measurement matters, find an observation point outside
+the model, and validate the detector both ways before reporting a result.
