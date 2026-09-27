@@ -166,10 +166,11 @@ copilot plugin marketplace add girishmotwani/atom
 copilot plugin install atom-go@atom
 ```
 
-Check it landed:
+Check it landed. Expect twelve `atom` entries — the nine beats plus `/atom`,
+`/atom-status` and `/atom-check`:
 
 ```bash
-copilot skill list       # expect atom-poc, atom-spec, atom-tdd, ...
+copilot skill list
 ```
 
 You now have these inside Copilot CLI, alongside built-ins like `/model`:
@@ -223,12 +224,15 @@ Activate it in each new terminal. Deleting `.venv` undoes it.
 
 ### Run it
 
+Scaffold project state once per repository, either from the shell or from inside
+Copilot with `/atom-init`:
+
 ```bash
 cd your-go-project
 atom init                     # scaffold, check toolchain, capture a green baseline
 ```
 
-Then start from a plain description of what you want:
+Then start from a plain description of what you want to build:
 
 ```
 /atom add topic-based routing to the event bus
@@ -238,8 +242,40 @@ Atom works out where you are, picks the earliest beat whose output is missing, a
 tells you the next command to run. It opens by asking what the riskiest part is —
 because the first thing Atom builds is a spike that could prove the idea wrong.
 
-Agents working in the repository also read [AGENTS.md](AGENTS.md), so the same rules
-apply whether you drive Atom through a slash command or just describe what you want.
+A session then walks the beats, and you can check in at any point:
+
+```
+/atom-discover        scope one falsifiable question
+/atom-poc             build the spike, grade it against the thresholds
+/atom-plan            break proven work into phases
+/atom-spec            design spec for this phase
+/atom-tdd             test spec, then red-green
+/atom-check           are the Go gates green?
+/atom-review          second opinion on the diff
+/atom-ship            commit, branch, pull request
+
+/atom-status          where am I, and what is missing?
+```
+
+`/atom-status` and `/atom-check` are safe to run at any time — they report and never
+change your code.
+
+### Type the slash command
+
+Atom's skills carry routing keywords, so Copilot will *sometimes* pick the right beat
+from a bare description. Do not rely on it.
+
+Measured over 24 trials from a clean directory, a plain-English prompt loaded a skill
+**33% of the time**. It never chose the *wrong* beat — precision was 100% — but two
+times in three it loaded nothing at all and answered from the skill's one-line
+description instead. That reply reads perfectly plausibly and gives no sign the actual
+workflow was skipped, which is what makes it worth knowing about.
+
+So: **prose is a convenience, the slash command is the contract.** Full numbers and
+method in [the routing POC](poc/atom-routing-rules/results.md).
+
+If you are extending Atom itself rather than using it, [AGENTS.md](AGENTS.md) documents
+the same rules for agents working inside this repository.
 
 ### Recommended model
 
