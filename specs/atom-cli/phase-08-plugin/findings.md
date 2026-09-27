@@ -179,3 +179,30 @@ public again.
 unauthenticated clone and the documented install from an environment with no
 credentials. Passing either check while authenticated proves nothing about a
 new user, which is exactly the trap this finding started as.
+
+## F12 — The two install steps assumed different worlds
+
+Step 1 of the README installed the plugin from the marketplace, which clones into
+Copilot's own storage and leaves the user without a checkout. Step 2 then told
+that same user to run `pip install -e ./tools`. There is no `./tools` in their
+working directory, so the `atom` CLI could not be installed at all — and the
+beats depend on it in 25 places (`atom check`, `atom status --start`,
+`atom phase add`), so the plugin on its own is inert.
+
+The defect survived because the instructions were only ever exercised by someone
+standing inside a clone, where `./tools` happens to resolve. This is the same
+root cause as F11: an instruction validated from a position no real user
+occupies.
+
+**Resolved.** The install now uses
+`pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"`,
+verified end to end in a throwaway virtualenv against the private repository: it
+builds `atom-cli` and the `atom` entry point runs. It needs the same repository
+access as the plugin, which is the correct coupling — both halves come from the
+same place by the same credentials. The editable install is kept, but labelled
+as the contributor path rather than the default.
+
+**Suggested:** whenever an install instruction changes, run it the way a user
+would — from a directory that is *not* a clone of this repository. Every
+instruction that assumes a clone will pass when tested by a contributor and fail
+for everyone else.

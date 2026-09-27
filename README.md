@@ -204,20 +204,27 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 
 ### 2. Install the `atom` command
 
-The skills shell out to an `atom` binary for project state and checks, so install the
-Python package too. A virtual environment keeps it off your system Python.
+The plugin alone is not enough. The beats shell out to an `atom` binary — `atom check`
+runs the Go gates, `atom status` reports where you are, `atom phase` tracks the plan —
+so install the Python package as well. No clone is needed:
+
+```bash
+pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
+atom --help
+```
+
+That fetches over your git credentials exactly as the plugin install does, so it needs
+the same access.
+
+To keep `atom` off your system Python, create a virtual environment first and activate
+it in each new terminal. Deleting `.venv` undoes it.
 
 ```bash
 python -m venv .venv
 
 source .venv/bin/activate     # macOS / Linux
 .venv\Scripts\Activate.ps1    # Windows
-
-pip install -e ./tools
-atom --help
 ```
-
-Activate it in each new terminal. Deleting `.venv` undoes it.
 
 > **Installing without a virtual environment?** `pip install --user` puts `atom` in a
 > directory Windows does not search, so the command installs successfully and is then
@@ -230,17 +237,26 @@ Activate it in each new terminal. Deleting `.venv` undoes it.
 > merged value is already longer than that, so the command silently destroys part of the
 > PATH it was asked to extend.
 
-### Run it
+If you are working on Atom itself, install from your clone instead so edits take effect
+without reinstalling: `pip install -e ./tools`.
 
-Scaffold project state once per repository, either from the shell or from inside
-Copilot with `/atom-init`:
+### 3. Scaffold a project
+
+Atom keeps its state inside the repository it is working on, so each project needs
+scaffolding once. Do it from the shell, or from inside Copilot with `/atom-init`:
 
 ```bash
 cd your-go-project
 atom init                     # scaffold, check toolchain, capture a green baseline
 ```
 
-Then start from a plain description of what you want to build:
+**That is the last setup step.** From here on everything happens inside Copilot — a
+plain description or an `/atom` command. You will not need the shell again except to
+activate the virtual environment in a new terminal.
+
+### Run it
+
+Start from a plain description of what you want to build:
 
 ```
 /atom add topic-based routing to the event bus
@@ -310,9 +326,10 @@ Fallbacks and role guidance in
 
 | Tool | Version | For |
 |---|---|---|
+| Copilot CLI | ≥ 1.0.89 | the plugin and the `/atom` commands |
 | Go | ≥ 1.21 | everything |
 | Python | ≥ 3.10 | the `atom` CLI |
-| git | any | `atom-ship` |
+| git | any | installing Atom, and `atom-ship` |
 | gh | any | pull requests (optional) |
 
 Go is the **target** language. Python is the **tooling** language. Atom never asks you
