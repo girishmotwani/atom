@@ -161,6 +161,14 @@ developer's). They exist so that judgement can be audited.
 Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into
 **every** repository you work in — there is nothing to copy or symlink into a project.
 
+> **Atom is in private testing, so the repository is not public yet.** The command below
+> clones it using your own git credentials, so it works only if you have been granted
+> access. Without it the command fails with `Repository not found` — that is a
+> permissions error, despite reading like a typo in the repository name. Ask for access,
+> or, if you already have a clone, point the marketplace at it directly with
+> `copilot plugin marketplace add /absolute/path/to/atom` (the path must be absolute; a
+> relative one is parsed as `owner/repo`).
+
 ```bash
 copilot plugin marketplace add girishmotwani/atom
 copilot plugin install atom-go@atom
