@@ -132,3 +132,50 @@ unmodified skills.
 **Suggested:** treat self-reported agent behaviour as unreliable evidence
 throughout Atom. Where a measurement matters, find an observation point outside
 the model, and validate the detector both ways before reporting a result.
+
+## F11 — The documented install works, but only for the author
+
+Until now every install had been from the local path, so the instructions the
+README actually gives a new user had never been run. Testing them end to end,
+`copilot plugin marketplace add girishmotwani/atom` followed by
+`copilot plugin install atom-go@atom` does work: the marketplace resolves,
+`"source": "."` is interpreted correctly against a GitHub clone, 9 skills
+install and `copilot skill list` reports the expected 12 entries.
+
+That result is misleading on its own, because the repository is private. The
+marketplace command shells out to `git clone`, which uses whatever git
+credentials are in the environment. The first attempt failed with
+`Repository not found` because this shell carries an injected token for a
+different account; with that cleared, the author's own credentials made the
+identical command succeed. So the install is really being tested by someone who
+already has access.
+
+Two consequences. For anyone outside that set — which is the entire intended
+open-source audience — the first command in the README fails, and it fails with
+`Repository not found`, which reads as a typo in the repo name rather than a
+permissions problem. And because the outcome depends on ambient credentials,
+this is a genuine "works on my machine" hazard.
+
+**Suggested:** the repository has to be public before the README's install
+instructions are true for anyone but the author; until it is, say so in the
+README rather than leaving instructions that cannot work. Re-run this check
+from an unauthenticated environment as a release gate, since passing it while
+authenticated proves nothing about a new user.
+
+**Status.** The install path itself is verified. To prove it, the repository was
+made public briefly and the check was re-run the way it should be run: an
+anonymous clone with the credential helper disabled and `GIT_TERMINAL_PROMPT=0`
+succeeded, so the packaging is genuinely fetchable by a stranger, and the full
+documented flow then installed 9 skills for 12 listed entries.
+
+The repository has since been set back to private, deliberately, until the
+author has finished testing. That re-breaks the README's install instructions
+for everyone else, which is the correct trade while there is no audience — but
+it means the instructions are currently aspirational rather than true, and the
+README should not be treated as verified-for-users until the repository is
+public again.
+
+**Release gate:** at the moment the repository goes public, re-run the
+unauthenticated clone and the documented install from an environment with no
+credentials. Passing either check while authenticated proves nothing about a
+new user, which is exactly the trap this finding started as.
