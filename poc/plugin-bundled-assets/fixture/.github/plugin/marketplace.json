@@ -1,0 +1,16 @@
+{
+  "name": "atombundle",
+  "owner": { "name": "Atom spike" },
+  "metadata": {
+    "description": "Throwaway marketplace for the bundled-assets spike.",
+    "version": "0.0.1"
+  },
+  "plugins": [
+    {
+      "name": "atom-bundle-probe",
+      "description": "Probe plugin carrying a script beside its skill.",
+      "version": "0.0.1",
+      "source": "."
+    }
+  ]
+}

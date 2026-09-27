@@ -206,3 +206,48 @@ as the contributor path rather than the default.
 would — from a directory that is *not* a clone of this repository. Every
 instruction that assumes a clone will pass when tested by a contributor and fail
 for everyone else.
+
+## F13 — Bundling the CLI works, and still loses to `pip install`
+
+The `atom` CLI already ships with the plugin: `marketplace.json` uses
+`"source": "."`, so `marketplace add` clones the whole repository, `tools/`
+included. The open question was whether a skill could find and run it.
+
+It can. A loaded skill reports its own absolute `SKILL.md` path correctly, and
+resolves a sibling script from it. The script then executes and leaves proof on
+disk — verified by a sentinel file, not by the agent's account of itself.
+
+It still loses, for a reason unrelated to the mechanism. The plugin sits outside
+the user's project, so executing anything inside it needs a path grant
+(`--add-dir <plugin root>`), and that root is not a stable path — it differs
+between a live local plugin and a marketplace clone under `%LOCALAPPDATA%`. The
+instruction would become "locate the plugin, then pass it on every launch",
+against `pip install` once. Bundling would also cost the standalone `atom`
+binary that a terminal and CI need on PATH.
+
+**Suggested:** keep `pip install`. Revisit only if Copilot CLI begins trusting a
+plugin's own directory by default — that single change flips the decision. The
+interactive case is untested and could soften it: every trial used `-p`, where
+the refusal is literally "could not request permission from user", and approvals
+persist per working directory in `permissions-config.json`.
+
+## F14 — Plugin skills are not reliably available, which may invalidate F8
+
+Across 8 sessions that asked for a skill **by name**, with the plugin installed
+and enabled the whole time, it loaded 3 times and returned
+`Skill not found` 5 times. `copilot skill list` showed it registered and
+`copilot plugin list` showed it enabled during the failing window, and the files
+were on disk throughout. The same prompt failed and then later succeeded,
+unchanged.
+
+This is availability, not routing — and it casts doubt on F8. That finding
+measured a 33% skill-load rate from free-text prompts and attributed the missing
+67% to the model declining to load a skill. These trials removed routing from
+the question entirely by naming the skill, and still failed around 60% of the
+time. A shared upstream cause is the simpler explanation for both numbers.
+
+**Suggested:** treat F8's interpretation as unsafe until this is separated. The
+next measurement should hold routing constant and vary only session count, so
+availability and routing stop being confounded. If availability is the real
+cause, better keywords cannot fix anything, and the honest README guidance —
+type the slash command — is right for a different reason than stated.

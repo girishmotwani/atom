@@ -1,0 +1,8 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "atom-bundle-probe",
+  "description": "Throwaway fixture testing whether a skill can locate and run a script bundled beside it.",
+  "version": "0.0.1",
+  "license": "MIT",
+  "keywords": ["probe", "bundled", "assets"]
+}
