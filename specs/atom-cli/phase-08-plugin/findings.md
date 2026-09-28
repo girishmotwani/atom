@@ -251,3 +251,45 @@ next measurement should hold routing constant and vary only session count, so
 availability and routing stop being confounded. If availability is the real
 cause, better keywords cannot fix anything, and the honest README guidance —
 type the slash command — is right for a different reason than stated.
+
+## F15 — The flake is live-loading, and the documented install avoids it
+
+F14's "skill not found" has a cause. It is not routing, not keywords, and not
+the model. In a failing session the CLI logs `Plugins loaded: []` and reports
+only the two built-in skills. No error is logged anywhere — the plugin is
+dropped silently.
+
+The discriminator is a single startup step. A live plugin — one loaded from a
+local marketplace directory, "never copied", which is how the repo is wired for
+development — is resolved through a separate live tier that emits
+`plugin_live_tier_resolved`. Every successful session emits it twice. The
+failing session emits it zero times and loads nothing.
+
+That step does not exist on the installed path. Twelve sessions with the plugin
+installed from the marketplace emitted the event **zero** times and loaded the
+plugin **12 out of 12**; twelve sessions live-loaded emitted it 22 times and
+lost the plugin once. So this is not a rate comparison between two paths — the
+failing step is absent from the installed one.
+
+The fix needs no code. `copilot plugin marketplace add girishmotwani/atom`
+installs a copy, which is already what the README tells a user to do. Live
+loading is a development convenience, and it is the only configuration where
+this was ever observed.
+
+**Refuted along the way**, recorded so they are not re-tested: the account or
+API endpoint (both paths use the enterprise endpoint); a settings-file lock or
+parse failure (no lock waits, no parse errors, identical reads); startup
+ordering of workspace init and plugin activation (identical in every run); the
+CAPI `/models` fetch landing before or after the load (successes appear on both
+sides); feature flags (byte-identical blocks); concurrent `copilot` processes
+(constant at 4 across all trials); and the activation `fingerprint=legacy` value
+(present in five successes and one failure).
+
+**Not proven.** That the installed path is reliable — 12 of 12 is consistent
+with that, not proof of it. And the reason the live tier skips its own
+resolution is still unknown; it fails without logging anything, so the cause
+sits inside the CLI where this measurement cannot reach.
+
+**Consequence for F8 and F14.** Both were measured while live-loaded, so both
+inherit this confound. Any figure quoted from them — including the 33% in the
+README — has to be re-measured on an installed plugin before it is trusted.
