@@ -154,3 +154,93 @@ searching a checkout outside that scope concludes the code does not exist.
 
 Delegated agents working against an external checkout must be told explicitly
 to use shell-level search instead, or they will confidently report absence.
+
+## 10. One run per condition measures the reviewer's randomness, not the treatment
+
+This is the most important finding in the POC, and it invalidated its first
+published headline.
+
+Four arms were run once each. The gap between conditions was 3 threads out of
+24, and it appeared consistently across a 2x2, which felt like replication. It
+was reported as a clear negative result.
+
+Running the **identical** condition five times then produced scores of
+**2, 3, 3, 4 and 6** out of 24.
+
+The within-condition spread was 4. The "effect" was 3. There had never been a
+result to report.
+
+What makes this trap hard to see:
+
+- **The 2x2 looked like replication.** The same 3-versus-6 gap appeared in both
+  checkout conditions, which reads as a replicated effect. It was two draws
+  from the same wide distribution, twice.
+- **The instrument was stable, so suspicion fell elsewhere.** Re-scoring the
+  same findings files moved results by ±1. Judge variance was genuinely small.
+  That made the numbers feel trustworthy — but the noise was upstream, in
+  generation, not in scoring.
+- **Plausible mechanisms were available.** A displacement story explained the
+  apparent harm neatly: the knowledge base was 1.6x the size of the diff. A
+  good mechanism makes a noise artifact feel explained.
+
+**Rules now binding on every Atom experiment that compares agent
+configurations:**
+
+1. Run one condition at least twice **before** running many conditions once.
+   The noise floor determines whether the study is worth running at all.
+2. Report the noise floor next to every effect. An effect smaller than it is
+   not a result.
+3. Distinguish judge noise from generation noise — they need different fixes
+   (single-pass scoring versus replication).
+4. Test every gap before reporting it, including ones that look obvious. A
+   union gap of 3 here looked convincing and tested at p = 0.190.
+5. Prefer observables that need no judge. Findings volume required no scoring
+   and produced the only clear effect in the study.
+
+## 11. Persist the exact instruction given to each arm, or the experiment is not reproducible
+
+The first two rounds were run by passing instructions inline to sub-agents.
+Nothing was saved. When a later round needed to extend the comparison, the
+exact treatment text no longer existed — so those arms can never be reproduced,
+and newly-run arms cannot be proven to share their instructions.
+
+The fix was to write `ARM-INSTRUCTION.md` and have every arm read it, with
+per-arm inputs appended. A fresh control run from that file then doubled as a
+replication check — which is what exposed finding 10.
+
+**An experiment whose treatment text is not on disk is a demonstration, not an
+experiment.**
+
+## 12. A statistical test used without checking it is another way to be confidently wrong
+
+The permutation test that carries the conclusions here was validated against
+four cases with known answers before being pointed at real data: identical
+groups must give p = 1.0, perfectly separated groups must give the design's
+floor of 2/252, a small gap against a wide spread must not reach significance,
+and a large gap against a tight spread must.
+
+This cost one short file (`test_permutation.py`) and removed a whole class of
+silent error. A wrong test does not fail loudly — it emits a plausible number
+that ends an argument.
+
+The same run revealed a design limit worth knowing in advance: with five per
+group the smallest achievable p is **0.008**, so "p = 0.008" here means "the
+most extreme of 252 possible splits", not a precise probability.
+
+## 13. Fixing a retriever by inspecting its output, not by trusting its score
+
+The first retrieval build returned a fixed top-5 per file. Inspection showed a
+2-line JSON config change had been given five entries of pure noise, because
+nothing relevant existed and the cutoff never bound. A relative floor — an
+entry must reach 60% of the best score for its file — removed the padding.
+
+The first de-duplication fix then created a worse failure: entries were homed to
+their single best-scoring file, which left the pull request's **largest and most
+important file with nothing at all**, because every one of its matches scored
+higher somewhere else. Repetition wastes context; starvation loses the answer.
+The resolution was one de-duplicated list with each entry naming the files it
+was retrieved for.
+
+Both defects were invisible in the summary statistics — bundle size and
+reduction percentage looked excellent throughout. **Retrieval quality has to be
+read, not measured.**

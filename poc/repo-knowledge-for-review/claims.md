@@ -1,7 +1,7 @@
 # POC Claims: does repository knowledge improve an AI code review?
 
 **Pre-registration status is recorded per claim.** Three of these claims were
-stated before the measurements that test them ran. Two were formed
+stated before the measurements that test them ran. Three were formed
 mid-experiment, after earlier results forced a change of design. Claims formed
 after seeing data are marked as such and carry less weight — a hypothesis
 invented to explain a number it has already seen is not a prediction.
@@ -90,6 +90,35 @@ human threads than either alone.
   best single arm.
 - **Threshold:** union exceeds the best single arm by at least two threads.
 
+**Threshold retrospectively inadequate.** The +2 threshold was set before the
+run-to-run noise floor was known. It was later measured at 4 threads, so a
+union gain of 2 or 3 cannot be distinguished from noise. The threshold was not
+moved to rescue a result — it is recorded here as having been set too low to
+decide anything, which is itself a finding about how to register thresholds.
+
+## C6 — Retrieval delivery rescues the knowledge base where bulk delivery failed
+
+**Formed mid-experiment**, after C1 came back negative and the knowledge base
+was found to be 116 KB against a 73 KB diff.
+
+The argument: bulk injection degrades as the knowledge base grows, because an
+ever-larger fraction of the reviewer's attention goes to mined prose. Retrieval
+does not, because the bundle size is bounded by relevance rather than corpus
+size. So retrieval is not an optimisation of bulk — it is the only delivery
+that survives a knowledge base accumulating over time.
+
+A reviewer given only the entries retrieved as relevant to the changed lines
+will match more human threads than a reviewer given the whole corpus, and more
+than a reviewer given only the diff.
+
+- **Measure:** as C1.
+- **Threshold, registered before the retrieval arms ran:** retrieval must
+  exceed the plain-diff control. Equal or fewer refutes it.
+- **Replication requirement, added before scoring:** five independent runs per
+  condition, compared by exact permutation test, after a two-run replication
+  check revealed that single runs of one condition differ by as much as the
+  effect under test.
+
 ---
 
 ## What would make this POC invalid
@@ -109,13 +138,24 @@ Recorded so the result cannot be rescued by adjusting the frame afterwards:
 - **Judge drift.** If arms are scored in separate passes, the judge's matching
   threshold can move between passes, and that drift is indistinguishable from a
   treatment effect. All arms must be scored in one pass.
+- **Insufficient replication.** *Added after the fact, and the reason the first
+  version of the results was withdrawn.* If a condition is run once, its score
+  conflates the condition with the reviewer's own randomness. Any claimed
+  effect smaller than the within-condition spread is invalid. A noise floor
+  must be measured — by running one condition at least twice — before any gap
+  is interpreted.
 
 ## What this POC cannot decide
 
-- Whether a knowledge base delivered by **retrieval** — fetching only the
-  entries relevant to the hunk under review — behaves differently from one
-  delivered as **bulk context**. Only bulk delivery is tested here.
+- Whether a knowledge base helps by an amount **smaller than this design can
+  detect**. The measured noise floor is 4 threads out of 24; a real benefit
+  below that would be invisible here. Every negative result in this POC is
+  bounded by that sensitivity.
 - Whether results generalise beyond one pull request in one repository.
 - Whether a knowledge base grown and curated over time behaves like a freshly
-  mined one.
+  mined one. Retrieval was tested, so corpus *growth* is no longer blocked by
+  the delivery mechanism — but growth itself remains untested.
 - Whether a different reviewing model changes the ordering of the arms.
+- Whether **matching human threads** is the right success measure at all. Every
+  arm produced findings judged real that no human raised. This is baked into
+  the scoring and therefore cannot be questioned from within this design.
