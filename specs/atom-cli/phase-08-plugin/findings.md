@@ -79,7 +79,7 @@ every directory matching the phase pattern. That keeps the real-repo check and
 removes the churn. Not done here because weakening a Tier-1 test is the
 developer's call, not the agent's.
 
-## F8 — Free-text routing usually loads no skill at all, and it is invisible
+## F8 — Free-text routing usually loads no skill at all, and it is invisible (CORRECTED BY F15)
 
 Measured over 24 scored trials from a neutral directory: a skill loaded 33.3% of
 the time. Precision was perfect — zero prompts reached the wrong beat — so the
@@ -92,6 +92,13 @@ ever loading the SKILL.md behind it. One trial produced fluent TDD advice while
 its log recorded `tool_counts: {"session_store_sql":1}` and no skill call. The
 developer receives description-shaped advice instead of the workflow and has no
 way to tell the difference.
+
+**Corrected by F15.** This was measured with the plugin live-loaded, a mode that
+drops it silently in some sessions. Re-measured on an installed plugin, with
+plugin presence recorded per trial, the same 27 prompts loaded the right skill
+25 times out of 25 — and the silent description-shaped answer did not recur
+once. Most of the missing two thirds were sessions with no plugin at all. The
+reasoning above was sound; the input to it was not.
 
 **Suggested:** document slash commands as the supported interface and stop
 implying prose is equivalent. Re-run
@@ -293,3 +300,10 @@ sits inside the CLI where this measurement cannot reach.
 **Consequence for F8 and F14.** Both were measured while live-loaded, so both
 inherit this confound. Any figure quoted from them — including the 33% in the
 README — has to be re-measured on an installed plugin before it is trusted.
+
+**Re-measured.** Done immediately, rather than left as a caveat: same 27
+prompts, same unmodified skills (hash-matched between the installed copy and the
+repository), installed plugin, with plugin presence recorded per trial and stale
+logs cleared first. Routing scored **25 of 25** with **zero** trials missing the
+plugin, against 8 of 24 before. F8, the design-spec gap list, the bundled-assets
+spike and the README have all been corrected.

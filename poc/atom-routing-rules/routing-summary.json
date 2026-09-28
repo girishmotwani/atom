@@ -1,12 +1,13 @@
 {
   "trials": 27,
-  "timeouts_excluded": 3,
-  "scored": 24,
-  "skill_loaded": 8,
-  "load_rate_pct": 33.3,
-  "correct": 8,
-  "accuracy_pct": 33.3,
+  "timeouts_excluded": 2,
+  "plugin_unavailable_excluded": 0,
+  "scored": 25,
+  "skill_loaded": 25,
+  "load_rate_pct": 100.0,
+  "correct": 25,
+  "accuracy_pct": 100.0,
   "precision_when_loaded_pct": 100.0,
   "mis_routed": 0,
-  "elapsed_seconds": 10363
+  "elapsed_seconds": 2357
 }

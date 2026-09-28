@@ -105,11 +105,12 @@ short name `atom`, so the install line reads `atom-go@atom`.
 
 - The Python `atom` package is still a **separate** install. A plugin cannot
   carry a pip dependency, so `pip install -e ./tools` remains a second step.
-- **Free-text routing reaches a beat only about a third of the time.** Measured
-  at 33.3% over 24 scored trials, with 100% precision and zero mis-routes — when
-  a skill loads it is always the right one, but usually no skill loads at all.
-  Slash commands are therefore the supported interface, and prose is a
-  convenience. See [the routing POC](../../../poc/atom-routing-rules/results.md).
+- **Free-text routing reaches the right beat reliably once the plugin is
+  installed.** Measured at 100% over 25 scored trials, with zero mis-routes. An
+  earlier 33.3% figure was an artifact of live-loading the plugin, which drops
+  it silently in some sessions and leaves nothing to route to. Slash commands
+  remain the exact interface when a developer wants no ambiguity. See
+  [the routing POC](../../../poc/atom-routing-rules/results.md).
 - **`com.github.copilot/rules/` does nothing in CLI 1.0.89-4**, despite being a
   documented component location. It was the obvious fix for the gap above and
   was refuted under five conditions against a working control. No rules file is

@@ -284,19 +284,25 @@ A session then walks the beats, and you can check in at any point:
 `/atom-status` and `/atom-check` are safe to run at any time — they report and never
 change your code.
 
-### Type the slash command
+### Prose works, and the slash command is still the certain path
 
-Atom's skills carry routing keywords, so Copilot will *sometimes* pick the right beat
-from a bare description. Do not rely on it.
+Atom's skills carry routing keywords, so you can describe what you want in plain
+English and Copilot will pick the right beat.
 
-Measured over 24 trials from a clean directory, a plain-English prompt loaded a skill
-**33% of the time**. It never chose the *wrong* beat — precision was 100% — but two
-times in three it loaded nothing at all and answered from the skill's one-line
-description instead. That reply reads perfectly plausibly and gives no sign the actual
-workflow was skipped, which is what makes it worth knowing about.
+Measured over 25 trials from a clean directory, with prompts that never name a skill,
+a slash command, or Atom: a plain-English prompt loaded the right skill **25 times out
+of 25**. It never once chose the wrong beat, and never answered from the one-line
+description without loading the workflow behind it.
 
-So: **prose is a convenience, the slash command is the contract.** Full numbers and
-method in [the routing POC](poc/atom-routing-rules/results.md).
+That number replaces an earlier 33% figure quoted here. The 33% was real but
+misleading — it was measured with the plugin *live-loaded* from a local directory, a
+development-only mode that silently drops the plugin in some sessions. Two thirds of
+those "routing failures" were sessions with no Atom plugin loaded at all. Installed
+normally, as the steps above do it, the problem does not occur.
+
+So: **prose is reliable enough to use, and the slash command is exact.** Reach for the
+slash command when you want no ambiguity about which beat runs. Full numbers, the
+correction, and the method are in [the routing POC](poc/atom-routing-rules/results.md).
 
 If you are extending Atom itself rather than using it, [AGENTS.md](AGENTS.md) documents
 the same rules for agents working inside this repository.

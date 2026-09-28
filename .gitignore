@@ -35,3 +35,6 @@ vendor/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Scratch space for measurement logs and workflow artifacts.
+.temp/

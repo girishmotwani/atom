@@ -99,6 +99,12 @@ points at a shared cause upstream of routing.
 If that is right, the routing number is measuring the wrong thing, and the fix
 is not better keywords.
 
+**It was right.** F15 traced it to live-loading: a live plugin resolves through
+a separate startup step that sometimes does not run, leaving the session with
+only built-in skills and no error logged anywhere. Installed from the
+marketplace, the plugin loaded 12 of 12, and the re-measured routing figure is
+100% over 25 scored trials rather than 33%.
+
 ## Not proven here
 
 - **Interactive behaviour.** Every trial used `-p`, where the refusal message is

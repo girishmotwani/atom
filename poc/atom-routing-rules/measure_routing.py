@@ -65,6 +65,12 @@ LOG_ROOT = REPO_ROOT / ".temp" / "routing-logs"
 # a JSON string, so the quotes may or may not be backslash-escaped.
 SKILL_CALL_PATTERN = re.compile(r'\\?"skill\\?"\s*:\s*\\?"(atom-[a-z-]+)')
 
+# Whether the plugin was present at all in a session. This is the control that
+# the first measurement lacked: a session that never loaded the plugin has no
+# Atom skill to route to, so scoring it as a routing miss blames the keywords
+# for an availability failure.
+PLUGIN_LOADED_PATTERN = re.compile(r"Plugins loaded: \[(.*?)\]")
+
 # How many Copilot calls to keep in flight. Kept low deliberately: the point is
 # a trustworthy measurement, not a fast one, and hammering the API risks
 # throttling that would show up as fake routing failures.
@@ -176,13 +182,14 @@ def revert() -> None:
     print("reverted skills/ from git")
 
 
-def ask(prompt: str, trial_id: int) -> tuple[str, str | None]:
+def ask(prompt: str, trial_id: int) -> tuple[str, str | None, bool]:
     """Run one Copilot prompt and report which skill it actually loaded.
 
-    Returns the visible reply plus the skill name taken from the debug log, or
-    None if no skill tool call was made. A timeout kills the process explicitly
-    so a single hung call cannot stall the whole measurement, and timeouts are
-    reported distinctly so they are never mistaken for a routing failure.
+    Returns the visible reply, the skill name taken from the debug log (or None
+    if no skill tool call was made), and whether the Atom plugin was present in
+    the session at all. A timeout kills the process explicitly so a single hung
+    call cannot stall the whole measurement, and timeouts are reported
+    distinctly so they are never mistaken for a routing failure.
     """
     log_dir = LOG_ROOT / f"trial-{trial_id:02d}"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -208,8 +215,22 @@ def ask(prompt: str, trial_id: int) -> tuple[str, str | None]:
     except subprocess.TimeoutExpired:
         proc.kill()
         proc.communicate()
-        return "<<TIMEOUT>>", None
-    return out or "", skill_from_logs(log_dir)
+        return "<<TIMEOUT>>", None, False
+    return out or "", skill_from_logs(log_dir), plugin_loaded_from_logs(log_dir)
+
+
+def plugin_loaded_from_logs(log_dir: Path) -> bool:
+    """Report whether the Atom plugin was loaded in a trial's session.
+
+    The CLI logs the plugin list once at startup. An empty list means the plugin
+    was dropped -- silently, with no error -- which happens to live-loaded
+    plugins and leaves the session with only built-in skills.
+    """
+    for path in log_dir.glob("*.log"):
+        match = PLUGIN_LOADED_PATTERN.search(path.read_text(encoding="utf-8", errors="replace"))
+        if match:
+            return "atom" in match.group(1)
+    return False
 
 
 def skill_from_logs(log_dir: Path) -> str | None:
@@ -225,9 +246,14 @@ def run() -> None:
     """Execute every trial, grade it, and write results to disk."""
     started = time.time()
 
+    # The logs are the instrument, so a log left over from an earlier
+    # measurement would be read as this run's result. Clear them first.
+    if LOG_ROOT.exists():
+        shutil.rmtree(LOG_ROOT)
+
     def one(index_trial: tuple[int, Trial]) -> dict:
         index, trial = index_trial
-        reply, actual = ask(trial.prompt, index)
+        reply, actual, plugin_loaded = ask(trial.prompt, index)
         timed_out = reply == "<<TIMEOUT>>"
         return {
             "index": index,
@@ -235,6 +261,7 @@ def run() -> None:
             "actual": actual or ("<timeout>" if timed_out else "<none>"),
             "correct": actual == trial.beat,
             "timed_out": timed_out,
+            "plugin_loaded": plugin_loaded,
             "prompt": trial.prompt,
             # Keep a trimmed excerpt so a surprising verdict can be inspected
             # later without re-running the whole measurement.
@@ -249,7 +276,11 @@ def run() -> None:
     # Timeouts say nothing about routing, so they are excluded from the
     # denominator rather than being silently scored as failures.
     timeouts = [r for r in rows if r["timed_out"]]
-    scored = [r for r in rows if not r["timed_out"]]
+    # A session without the plugin has no Atom skill to reach, so it measures
+    # availability rather than routing. Excluding it is what separates the two;
+    # conflating them is what made the first measurement unsafe.
+    unavailable = [r for r in rows if not r["timed_out"] and not r["plugin_loaded"]]
+    scored = [r for r in rows if not r["timed_out"] and r["plugin_loaded"]]
     correct = sum(1 for r in scored if r["correct"])
     loaded = [r for r in scored if r["actual"] != "<none>"]
     mis_routed = [r for r in loaded if not r["correct"]]
@@ -257,7 +288,7 @@ def run() -> None:
     with (OUT_DIR / "routing-results.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=["index", "expected", "actual", "correct", "timed_out", "prompt", "excerpt"],
+            fieldnames=["index", "expected", "actual", "correct", "timed_out", "plugin_loaded", "prompt", "excerpt"],
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -265,6 +296,7 @@ def run() -> None:
     summary = {
         "trials": len(rows),
         "timeouts_excluded": len(timeouts),
+        "plugin_unavailable_excluded": len(unavailable),
         "scored": len(scored),
         "skill_loaded": len(loaded),
         "load_rate_pct": round(100.0 * len(loaded) / len(scored), 1) if scored else 0.0,
@@ -281,7 +313,14 @@ def run() -> None:
     print(json.dumps(summary, indent=2))
     print()
     for row in rows:
-        flag = "ok  " if row["correct"] else ("time" if row["timed_out"] else "MISS")
+        if row["timed_out"]:
+            flag = "time"
+        elif not row["plugin_loaded"]:
+            flag = "gone"
+        elif row["correct"]:
+            flag = "ok  "
+        else:
+            flag = "MISS"
         print(f"{flag} expected={row['expected']:<14} actual={row['actual']}")
 
 

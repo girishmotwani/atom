@@ -3,8 +3,17 @@
 Claims were registered in [claims.md](claims.md) before any measurement ran.
 Nothing in this document moves a threshold that was set there.
 
-Environment: GitHub Copilot CLI **1.0.89-4**, Windows, plugin `atom-go@atom`
-live-loaded from a local marketplace.
+Environment: GitHub Copilot CLI **1.0.89-4/5**, Windows, plugin `atom-go@atom`.
+The first measurement ran with the plugin **live-loaded** from a local
+marketplace; the re-measurement ran with it **installed** from the marketplace.
+That difference turned out to matter more than anything else in this document.
+
+> **Correction (F15).** The 33.3% headline below was confounded. Live loading
+> drops the plugin silently in some sessions, so trials where no plugin existed
+> at all were scored as routing failures. Re-measured on an installed plugin,
+> recording plugin presence per trial, prose routing scores **100%**. The
+> original numbers are kept, marked superseded, because the conclusions they led
+> to were wrong in a way worth remembering.
 
 ---
 
@@ -84,7 +93,7 @@ to have invoked the skill, and `None` for a run whose log showed no skill call
 at all. The sentinel was then reverted so the measurement ran against the
 **unmodified** skills.
 
-### Result
+### Result (SUPERSEDED — see the re-measurement below)
 
 | Metric | Value |
 |---|---|
@@ -111,7 +120,7 @@ Per beat, out of three prompts each:
 | atom-ship | 0 |
 | atom-review | excluded — all three timed out |
 
-### What this means
+### What this meant at the time (SUPERSEDED)
 
 **The failure mode is recall, not precision.** Not one prompt reached the wrong
 beat. When a skill loads, the description keywords pick the right one every
@@ -132,6 +141,55 @@ a home directory with no repository.
 
 ---
 
+---
+
+## C3 (re-measured) — Beat-routing accuracy on an installed plugin **100%**
+
+Same harness, same 27 prompts, same unmodified skills — verified byte for byte:
+all nine `SKILL.md` files in the installed copy hash-match the repository. The
+only substantive change is that the plugin is installed rather than live-loaded.
+Two instrument fixes came with it:
+
+- **Plugin presence is recorded per trial.** A session without the plugin has no
+  Atom skill to reach, so it is excluded from the routing denominator rather
+  than counted as a routing miss. This is the control the first run lacked, and
+  the absence of it is what produced the 33.3%.
+- **Stale logs are cleared before the run.** The previous run's logs were still
+  on disk and would otherwise have been read as this run's results.
+
+| Metric | Live-loaded (first) | Installed (re-measured) |
+|---|---|---|
+| Trials | 27 | 27 |
+| Excluded as timeouts | 3 | 2 |
+| Excluded — plugin absent | not measured | **0** |
+| Scored | 24 | 25 |
+| Skill actually loaded | 8 (33.3%) | **25 (100%)** |
+| Routed to the correct beat | 8 (33.3%) | **25 (100%)** |
+| Precision when loaded | 100% | 100% |
+| Mis-routed | 0 | 0 |
+| Wall clock | 10,363s | 2,357s |
+
+Every beat scored 3 of 3 except `atom-review`, which scored 1 of 3 with the
+other two lost to the 600s timeout — the same expensive-exploration behaviour
+seen the first time, and still not a routing failure.
+
+The invisible failure described above — fluent, description-shaped advice with
+no skill call behind it — **did not occur once** in 25 scored trials.
+
+**Against the pre-registered bar of >= 80%, prose routing passes at 100%.** The
+bar was not moved; the defect underneath it was removed.
+
+### What the re-measurement does not prove
+
+- That routing is 100% in general. These prompts were written before the first
+  measurement rather than tuned to pass this one, but they remain 27 prompts
+  from one author against one model.
+- That the installed path never drops a plugin. Zero of 25 here, and 12 of 12 in
+  the F15 trials, is consistent with reliability rather than proof of it.
+- Anything about a different model, a real Go repository, or a later CLI build.
+
+---
+
 ## C4 — Do rules improve accuracy? **CANNOT BE TESTED**
 
 Blocked by C1.
@@ -140,18 +198,21 @@ Blocked by C1.
 
 ## Verdict
 
-**Refuted** for the rules mechanism. **Measured** for routing accuracy.
+**Refuted** for the rules mechanism. **Measured, then corrected,** for routing.
 
-Against the pre-registered bar of >= 80%, prose routing scores 33.3% and fails.
-The bar was not lowered to accommodate the result.
+Against the pre-registered bar of >= 80%, prose routing scores **100%** on an
+installed plugin and passes. The 33.3% recorded first was an artifact of live
+loading, not a property of the keywords.
 
 ### What Atom should do
 
-1. **Slash commands are the contract.** They are explicit, and they work. The
-   documentation should say so plainly instead of implying prose is equivalent.
-2. **Do not ship a rules file** until the mechanism demonstrably works.
-3. **Do not claim natural-language routing as a feature.** It works one time in
-   three, and its failure mode is invisible.
+1. **Install the plugin; do not rely on live loading.** Live loading drops the
+   plugin silently, with no error logged anywhere. It is a development
+   convenience only, and every measurement taken under it is suspect.
+2. **Prose routing can be claimed** — with the honest caveat that it was
+   measured on 27 prompts against a single model. Slash commands remain the
+   explicit path when a developer wants certainty rather than a good bet.
+3. **Do not ship a rules file** until the mechanism demonstrably works.
 4. Re-run this harness against future CLI versions. It is repeatable:
    `python measure_routing.py run`.
 
