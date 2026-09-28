@@ -12,10 +12,9 @@ Report where this project stands and what the developer should do next.
 Run `atom status` and read its output. It names the current phase, recent
 activity, and any problems it detected.
 
-If the command is not found, the Atom Python package is not installed. Say so
-plainly and give the fix, then stop:
-
-    pip install -e ./tools
+If the command is not found, the Atom Python package is not installed. Follow
+[bootstrap.md](../../skills/atom/references/bootstrap.md) to install it, then
+read the status.
 
 If there is no `.atom/` directory, this is not an Atom project. Say so and
 point at `/atom-init`, then stop.

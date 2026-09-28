@@ -103,8 +103,16 @@ short name `atom`, so the install line reads `atom-go@atom`.
 
 ## Known gaps
 
-- The Python `atom` package is still a **separate** install. A plugin cannot
-  carry a pip dependency, so `pip install -e ./tools` remains a second step.
+- A plugin cannot declare a pip dependency, so the Python `atom` package cannot
+  be installed by the plugin manager. Worked around rather than solved: the
+  beats bootstrap it themselves via
+  [bootstrap.md](../../../skills/atom/references/bootstrap.md), which installs
+  the package on first use and falls back to `python -m atom.cli` when PATH
+  hides the entry point. The developer runs one install command, not two.
+  Measured at 4 of 4 recoveries across `/atom-check` and `/atom-status` on a
+  machine where `atom` does not resolve (F16). The first beat of a genuinely
+  fresh install still pays for a pip fetch, and that install path — as opposed
+  to the PATH-fallback path — is not yet exercised end to end.
 - **Free-text routing reaches the right beat reliably once the plugin is
   installed.** Measured at 100% over 25 scored trials, with zero mis-routes. An
   earlier 33.3% figure was an artifact of live-loading the plugin, which drops

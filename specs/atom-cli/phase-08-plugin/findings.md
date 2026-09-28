@@ -307,3 +307,65 @@ repository), installed plugin, with plugin presence recorded per trial and stale
 logs cleared first. Routing scored **25 of 25** with **zero** trials missing the
 plugin, against 8 of 24 before. F8, the design-spec gap list, the bundled-assets
 spike and the README have all been corrected.
+
+---
+
+## F16 — The plugin can install its own CLI, but only after two wrong turns
+
+Atom needed two installs: the plugin, and the `atom` Python package the beats
+shell out to. The second was documented rather than automated, which left
+`atom-init` unable to verify the one tool it runs from. The fix is a shared
+[bootstrap.md](../../../skills/atom/references/bootstrap.md) that every entry
+point into the CLI links to.
+
+Writing it was easy. Getting it right required being wrong twice, both times
+caught by checking the machine instead of reasoning about it.
+
+**Wrong turn 1 — install-first would have destroyed a working install.** The
+first draft was the obvious one: run `atom --help`, and if it fails, `pip
+install`. Checking the local machine before testing showed `atom` was *not
+resolvable* — yet `python -m atom.cli` worked, because the package was installed
+editable and its entry-point directory was simply not on PATH. The obvious draft
+would have fetched a copy from the remote and overwritten the developer's own
+editable checkout of Atom, and still not fixed the PATH. The order now is: try
+the command, **then try the module**, and install only if both fail.
+
+**Wrong turn 2 — the edits were verified in the wrong directory.** The first
+end-to-end run failed: the agent quoted install advice that had just been
+deleted. It looked like the agent had ignored the link. The debug log said
+otherwise — the skill loaded successfully, and the *content delivered to the
+model* was the old text. Two copies exist:
+
+| Path | Role |
+|---|---|
+| `~/.copilot/marketplaces/<owner>-<repo>/` | source clone; **not** read at session start |
+| `~/.copilot/installed-plugins/<marketplace>/<plugin>/` | what is actually served |
+
+Editing the marketplace clone changes nothing. This also means the F15
+hash-match was run against the wrong directory; the two happened to be identical
+there, so that conclusion survives, but the check did not prove what it claimed.
+
+**A session cannot reinstall the plugin it is running on.** `plugin uninstall`
+and `marketplace remove` both fail with `Access is denied (os error 5)` from
+inside a Copilot session, because the running process holds the directory. Any
+plugin-content change has to be tested by writing into `installed-plugins/`
+directly, or from outside a session.
+
+**Measured, not asserted.** Four trials on a machine where `atom` genuinely does
+not resolve, across both entry points:
+
+| Prompt | Plugin loaded | Took the no-install path | Verdict |
+|---|---|---|---|
+| `/atom-check .` | yes | yes | Green |
+| `/atom-check .` | yes | yes | Green |
+| `/atom-check .` | yes | yes | Green |
+| `/atom-status` | yes | yes | correctly reported "not an Atom project" |
+
+Four of four recovered, none ran a needless `pip install`, and each told the
+developer once that it was using the module form. The gate output was right too
+— "no test files" reported as skipped rather than passed.
+
+**Not proven.** Step 3, the actual `pip install` for a machine with no package
+at all, was not exercised here; it is the command the README already shipped, so
+it is not new, but it is untested in this path. Four trials is also consistent
+with reliability, not proof of it.

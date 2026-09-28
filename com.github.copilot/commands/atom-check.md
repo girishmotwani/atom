@@ -15,10 +15,9 @@ The directory to check is below. If it is empty, use the current directory.
 
 Run `atom check` against the target directory.
 
-If the command is not found, the Atom Python package is not installed. Say so
-and give the fix, then stop:
-
-    pip install -e ./tools
+If the command is not found, the Atom Python package is not installed. Follow
+[bootstrap.md](../../skills/atom/references/bootstrap.md) to install it, then
+run the gates. Do not report a verdict without them.
 
 ## Step 2 — Report the verdict first
 

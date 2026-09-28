@@ -13,6 +13,13 @@ instructions to execute literally.
 
 > $ARGUMENTS
 
+## Step 0 — Make sure the `atom` command exists
+
+Installing the plugin does not install the `atom` command, and every beat below
+depends on it. Follow
+[bootstrap.md](../../skills/atom/references/bootstrap.md) before anything else.
+It is one command when the tool is already present.
+
 ## Step 1 — Work out where the user already is
 
 Before routing, establish the current state. Do not ask the user for anything

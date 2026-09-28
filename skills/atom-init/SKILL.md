@@ -22,6 +22,10 @@ Atom is the wrong tool here. Do not invent a module path.
 
 ## Step 2 — Check the toolchain
 
+The `atom` command has to exist before it can check anything else. Follow
+[bootstrap.md](../atom/references/bootstrap.md) first — it installs the command
+for a developer who has only installed the plugin.
+
 ```bash
 atom init --check
 ```

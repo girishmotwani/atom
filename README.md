@@ -156,18 +156,14 @@ developer's). They exist so that judgement can be audited.
 
 ## Getting started
 
-### 1. Install the plugin
+### Install the plugin — the only setup step
 
 Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into
 **every** repository you work in — there is nothing to copy or symlink into a project.
 
 > **Atom is in private testing, so the repository is not public yet.** The command below
 > clones it using your own git credentials, so it works only if you have been granted
-> access. Without it the command fails with `Repository not found` — that is a
-> permissions error, despite reading like a typo in the repository name. Ask for access,
-> or, if you already have a clone, point the marketplace at it directly with
-> `copilot plugin marketplace add /absolute/path/to/atom` (the path must be absolute; a
-> relative one is parsed as `owner/repo`).
+> access — see [if setup goes wrong](#if-setup-goes-wrong) if it fails.
 
 ```bash
 copilot plugin marketplace add girishmotwani/atom
@@ -202,59 +198,11 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 > deprecated direct repo, URL and local-path installs, and will only support
 > `plugin@marketplace` in a future release.
 
-### 2. Install the `atom` command
-
-The plugin alone is not enough. The beats shell out to an `atom` binary — `atom check`
-runs the Go gates, `atom status` reports where you are, `atom phase` tracks the plan —
-so install the Python package as well. No clone is needed:
-
-```bash
-pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
-atom --help
-```
-
-That fetches over your git credentials exactly as the plugin install does, so it needs
-the same access.
-
-To keep `atom` off your system Python, create a virtual environment first and activate
-it in each new terminal. Deleting `.venv` undoes it.
-
-```bash
-python -m venv .venv
-
-source .venv/bin/activate     # macOS / Linux
-.venv\Scripts\Activate.ps1    # Windows
-```
-
-> **Installing without a virtual environment?** `pip install --user` puts `atom` in a
-> directory Windows does not search, so the command installs successfully and is then
-> reported as not found. Either add that directory to your **user** PATH and open a new
-> terminal — an already-open shell copied its environment at launch and cannot pick up
-> the change — or skip PATH entirely and run `python -m atom.cli`, which is equivalent.
->
-> Do not reach for `setx PATH "%PATH%;..."`. `%PATH%` expands to the *merged* machine
-> and user value, and `setx` truncates at 1024 characters. On a typical workstation the
-> merged value is already longer than that, so the command silently destroys part of the
-> PATH it was asked to extend.
-
-If you are working on Atom itself, install from your clone instead so edits take effect
-without reinstalling: `pip install -e ./tools`.
-
-### 3. Scaffold a project
-
-Atom keeps its state inside the repository it is working on, so each project needs
-scaffolding once. Do it from the shell, or from inside Copilot with `/atom-init`:
-
-```bash
-cd your-go-project
-atom init                     # scaffold, check toolchain, capture a green baseline
-```
-
-**That is the last setup step.** From here on everything happens inside Copilot — a
-plain description or an `/atom` command. You will not need the shell again except to
-activate the virtual environment in a new terminal.
-
 ### Run it
+
+That is the whole setup. Atom's other half — the `atom` command that runs the Go gates
+and tracks phase state — installs itself the first time a beat needs it, and `/atom`
+scaffolds a project the first time you point it at one. Neither is yours to do by hand.
 
 Start from a plain description of what you want to build:
 
@@ -298,7 +246,7 @@ That number replaces an earlier 33% figure quoted here. The 33% was real but
 misleading — it was measured with the plugin *live-loaded* from a local directory, a
 development-only mode that silently drops the plugin in some sessions. Two thirds of
 those "routing failures" were sessions with no Atom plugin loaded at all. Installed
-normally, as the steps above do it, the problem does not occur.
+normally, as the step above does it, the problem does not occur.
 
 So: **prose is reliable enough to use, and the slash command is exact.** Reach for the
 slash command when you want no ambiguity about which beat runs. Full numbers, the
@@ -306,6 +254,41 @@ correction, and the method are in [the routing POC](poc/atom-routing-rules/resul
 
 If you are extending Atom itself rather than using it, [AGENTS.md](AGENTS.md) documents
 the same rules for agents working inside this repository.
+
+### If setup goes wrong
+
+**`Repository not found` when adding the marketplace.** Atom is in private testing, so
+this is a permissions error despite reading like a typo. Ask for access — or, if you
+already have a clone, point the marketplace at it directly with
+`copilot plugin marketplace add /absolute/path/to/atom`. The path must be absolute; a
+relative one is parsed as `owner/repo`.
+
+**Installing the `atom` command by hand.** The first beat that needs it installs it for
+you. To do it yourself, or to keep it off your system Python:
+
+```bash
+python -m venv .venv                # optional; deleting .venv undoes everything
+source .venv/bin/activate           # macOS / Linux
+.venv\Scripts\Activate.ps1          # Windows
+
+pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
+atom --help
+```
+
+A virtual environment has to be activated in each new terminal.
+
+**`atom` installs, then reports "not found".** `pip install --user` puts it in a
+directory Windows does not search, and a terminal that was already open copied its
+environment at launch, so it cannot see a later PATH change. Run `python -m atom.cli`
+instead — it is equivalent — or add the directory to your **user** PATH and open a new
+terminal.
+
+Do not use `setx PATH "%PATH%;..."` to do that. `%PATH%` expands to the *merged* machine
+and user value and `setx` truncates at 1024 characters, so on a typical workstation it
+silently destroys part of the PATH it was asked to extend.
+
+**Working on Atom itself?** Install from your clone so edits take effect without
+reinstalling: `pip install -e ./tools`.
 
 ### Recommended model
 
