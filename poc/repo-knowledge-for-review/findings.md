@@ -337,3 +337,83 @@ It immediately paid for itself twice:
 
 Written afterwards, either decision would have looked like tuning the category
 to fit the answer.
+
+## 18. A derived table goes stale silently and then gets used as a map
+
+The report contained a table categorising the review threads no arm had
+matched, split by what each category would need to fix it. It was built after
+stage 1. Stages 2 and 3 changed which threads got matched, and nothing
+recomputed it.
+
+When it was finally checked -- only because it was about to be used to target
+the next experiment -- it had two defects:
+
+- It accounted for **17 of 24 threads**. Two threads that no arm ever matched
+  appeared in no category at all. They had simply been dropped when the table
+  was written, and nothing noticed, because a category table has no natural
+  total to check against.
+- Three threads were listed as unmatched that an earlier stage had matched.
+
+Either defect would have misdirected the follow-up experiment, and the table
+looked perfectly reasonable in both states. The failure is not arithmetic; it
+is that a **derived artifact was stored as prose** and then treated as data.
+
+What makes this dangerous is that stale tables get *more* trustworthy-looking
+over time. It had survived two rounds of editing, so it read as settled.
+
+**Rules now applied:**
+
+- A derived table gets a script that regenerates it, and the script asserts a
+  completeness property -- here, that the categories plus the matched threads
+  partition all 24 exactly, with no gaps and no overlaps. The check raises
+  rather than printing a number someone has to notice.
+- Run that script again every time the underlying data changes, not only when
+  the table is about to be used.
+- Prefer properties that fail loudly over totals a reader must verify. "Covers
+  17" only reads as wrong if you already know the answer is 24.
+
+For Atom: any generated artifact that summarises repository state -- a
+knowledge base, a coverage map, a dependency inventory -- needs both a
+regeneration command and a self-check. Without them the artifact drifts out of
+agreement with the repository and stays convincing while it does.
+
+## 19. Test the instruction before testing the inputs
+
+Three stages and roughly twenty reviewing arms went into varying what the
+reviewer could see: a mined knowledge base, the same base delivered by
+retrieval, a full repository checkout. None produced a measurable change in
+coverage.
+
+One stage varied the *instruction*, holding inputs fixed at the diff, and
+produced the only effect in the study that reproduced across five runs and
+survived a three-judge check.
+
+In hindsight the ordering was backwards, and the reason is worth naming. The
+context experiments were attractive because they were **buildable** -- mining
+PRs, building a retriever, provisioning a checkout are all satisfying
+engineering. Editing a paragraph of instructions is not. So the expensive,
+buildable lever got tested first and the cheap one got tested last, on
+essentially no evidence that the expensive one was the bottleneck.
+
+The signal that should have redirected this earlier was available from the
+start: a **single sentence** added to the instruction had already swung output
+volume eightfold and coverage from 1/24 to 6/24. That was noted as an
+incidental defect rather than treated as the largest measured effect in the
+experiment, because it was not the thing being studied.
+
+**Rules now applied:**
+
+- Before building a retrieval system, a knowledge base, or any context-assembly
+  machinery for an agent, test whether **changing the instruction** achieves the
+  same goal. It costs one run pair.
+- When an incidental change produces a larger effect than the treatment under
+  test, stop and make it the treatment. A large effect in the noise channel is
+  more informative than a small effect in the signal channel.
+- Rank levers by **effect per unit of work**, and note that this ranking usually
+  runs opposite to how interesting the work is.
+
+The caveat that keeps this honest: the effective instruction was written by
+someone who already knew which defects had been missed. It is an upper bound on
+a *tuned* instruction, not proof that instructions generally beat context. The
+untested version -- freeze the checklist, run it on an unseen pull request -- is
+the experiment that would settle it, and it has not been run.

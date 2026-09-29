@@ -36,6 +36,23 @@ per stage by an independent judge, anonymised with attribution fields stripped.
 
 ## Headline
 
+**Four stages. Twenty-eight reviewing arms. Every context input tested failed;
+the one instruction change tested produced the only reproducible effect.**
+
+| lever | what was tested | verdict |
+|---|---|---|
+| context | knowledge base mined from ~100 PRs, bulk-injected | no effect detected |
+| context | the same knowledge base via retrieval (82% smaller) | no effect detected |
+| context | read-only checkout at the base commit | no effect detected |
+| context | checkout aimed at the "already exists" category | **refuted on replication** |
+| **instruction** | directed close-reading checklist | **no effect on total coverage; one defect class reproducibly unlocked** |
+
+The instruction result is narrow and honest about it: total coverage did not
+move, and the effect traces to a single thread out of four targeted. But it
+reproduced 5/5 against 0/5, survived a three-judge check, and has a mechanism
+that can be read directly in the output. Nothing in the first three stages did.
+
+
 **This report has been corrected twice, each time after a replication. Read
 this section before any other.**
 
@@ -533,33 +550,40 @@ the harness, not to conclude the inputs do not matter.
 
 ## What the unmatched threads actually need
 
-The reviewer's ceiling is not one thing. Categorising the 15 threads no stage-1
-arm matched (the pooled figure across stages 2 and 3 is 14, a nearly identical
-set):
+The reviewer's ceiling is not one thing. Categorising the **14 threads no arm
+in either replicated stage matched** — `[1, 3, 5, 6, 9, 11, 12, 13, 14, 15, 16,
+19, 20, 24]`:
 
 | Cause | Threads | Reachable by any artifact we can gather? |
 |---|---|---|
-| **External API contract** — a vendor team's spec, not in the repository | 9, 12, 13, 17 | **No.** One thread's answer was a link to an external design document. |
-| **Deep state-machine reasoning** about pending/failed/retry transitions | 8, 11, 19, 20, 23, 24 | Hard. Needs operational understanding of the running system. |
-| **Close-reading misses** — wrong error constant, an unnecessary database read, a stale comment, a readability split | 2, 3, 14, 16 | **Yes.** These should have been caught. |
-| **Repository context** | 1, 4, 15 | **In principle yes. In practice, not by simply supplying a checkout** — see C3. |
+| **External API contract** — a vendor team's spec, not in the repository | 9, 12, 13 | **No.** One thread's answer was a link to an external design document. |
+| **Deep state-machine reasoning** about pending/failed/retry transitions | 11, 19, 20, 24 | Hard. Needs operational understanding of the running system. |
+| **Close-reading misses** — wrong status constant, an unnecessary database read, a package-level global, a readability extraction | 3, 6, 14, 16 | **Yes, and they need no new input at all.** |
+| **Repository context and convention** — reuse an existing client, follow the prevailing choice of helper | 1, 5, 15 | In principle yes. **Not in practice by simply supplying a checkout** — see C3. |
 
-Roughly 4 of 24 threads are unreachable from any artifact `atom review` could
-plausibly assemble. Another 4 were missed through inattention rather than
-missing knowledge. Only 3 were the repository-context problem I had assumed
-dominated.
+**This table was rebuilt after stage 3 and was wrong before.** Two defects, both
+worth recording because both would have misdirected the next experiment:
 
-Two corrections have landed on this table:
+1. It was computed against stage 1's unmatched set and never updated, so it
+   described a list that three of its own rows no longer belonged to.
+2. It only accounted for 17 of the 24 threads. Threads 5 and 6 were unmatched by
+   every arm and appeared in no category — they had simply been dropped. A
+   category table that does not partition the ground truth is not a map, and it
+   was being used as one.
 
-1. I had characterised the whole ceiling as a "repository context" problem
-   before categorising it. It is at most 3 of 15.
-2. The last column originally read *"Yes — solved by the checkout"* for that
-   row. Stage 3 refuted it. Supplying a checkout does not reliably convert
-   those threads; across five checkout runs, threads 1 and 15 were never
-   matched at all.
+The corrected picture changes where effort should go. The largest *tractable*
+category is not context at all — it is the four **close-reading misses**, which
+need no new input, only a more careful pass:
 
-So the largest tractable category is not context at all — it is the four
-**close-reading misses**, which need no new input, only a more careful pass.
+| Thread | What the human said | Why it is tractable |
+|---|---|---|
+| 3 | extract this block into its own named method | visible in the diff |
+| 6 | do not introduce package-level globals in new code | visible in the diff |
+| 14 | this sets the wrong failure constant for the operation | visible in the diff |
+| 16 | this database read is not needed | visible in the diff |
+
+All four are answerable from the diff alone. Every arm had the diff. Every arm
+missed all four.
 
 ## C6 — Retrieval delivery beats bulk delivery: **REFUTED (as stated)**
 Formed after stage 1, on the argument that bulk injection scales badly with
@@ -588,6 +612,93 @@ future claim, not as a confirmed result.
 
 ---
 
+## Stage 4 — the instruction experiment, and the first thing that worked
+
+Three stages tested what the reviewer could **see**. None moved coverage. Stage
+4 tested what it was **told to look for**, holding inputs fixed at the diff.
+
+Treatment: the shared instruction plus a seven-item close-reading checklist,
+phrased as standing obligations -- status and error constants, reads whose
+results go unused, new package-level state, function length, duplication of
+existing capability, error paths and partial failure, consistency with
+neighbouring code. Control: the same five plain arms used in stages 2 and 3,
+re-scored in the same fresh pass.
+
+```
+PRIMARY   total coverage /24
+  directed  3.6   [2, 4, 4, 4, 4]
+  plain     2.4   [4, 3, 2, 2, 1]
+  gap 1.2   p = 0.167          -> NOT SUPPORTED
+
+SECONDARY targeted close-reading threads {3, 6, 14, 16}
+  directed  1.0/4 [1, 1, 1, 1, 1]
+  plain     0.0/4 [0, 0, 0, 0, 0]
+  gap 1.0   p = 0.008          -> SUPPORTED, narrow
+
+CONFOUND  findings emitted per arm (judge-free)
+  directed  20.4  plain 14.0   ratio 1.46x
+```
+
+**The primary measure failed, and that is the honest headline.** A 1.2-thread
+gap is below the 2-thread judging noise floor. Nothing about total coverage
+changed.
+
+### The one thing that did reproduce
+
+The entire secondary effect is **thread 6** -- a human objecting to new code
+introducing a package-level global. Every directed run flagged it, at the same
+file and line, in five independently-worded findings. No plain run objected.
+
+The usual suspicion applies: stage 3 died because a single judge call on a
+control arm created an apparent effect. So the plain arms were checked against
+**all three** scoring passes that have now judged them:
+
+| plain arm | judge 2 | judge 3 | judge 4 | matched thread 6? |
+|---|---|---|---|---|
+| control3 | 4 | 2 | 3 | no judge |
+| plain-02 | 6 | 5 | 4 | no judge |
+| plain-03 | 2 | 2 | 2 | no judge |
+| plain-04 | 3 | 2 | 1 | no judge |
+| plain-05 | 3 | 3 | 2 | no judge |
+
+Fifteen arm-judgements by three independent judges, zero matches. Five directed
+runs, five matches. This is not judge drift.
+
+It is also the first result in this POC verified by **reading the output**
+rather than by trusting a summary statistic -- and the one plain finding that
+mentions the same variable turns out to be about a different concern
+(nil-initialisation), which the judge correctly declined to match.
+
+### What it does not establish
+
+- **One of four targets.** Threads 3, 14 and 16 -- a readability extraction, a
+  wrong failure constant, an unnecessary database read -- were still missed by
+  every arm, directed included. The checklist named all three explicitly. Being
+  told to look is not sufficient.
+- **Six directives, one measurable effect.** The bundle was deliberate, to buy
+  detectability against a 4-thread noise floor. The cost, stated in advance, is
+  that a positive result cannot be attributed to a specific directive. Here the
+  mechanism happens to be visible -- checklist item 3 maps cleanly onto thread 6
+  -- but that is luck, not design.
+- **The checklist was tuned to known misses on this pull request.** Declared
+  before the treatment was written. This is an upper bound on a tuned
+  instruction, not evidence about an arbitrary one. Generalisation requires an
+  unseen PR with the checklist frozen.
+- **Volume rose 1.46x.** Under the 1.5x confound line fixed in advance, so not
+  declared confounded -- but close enough that precision per finding is now the
+  measure that matters, and this design never measured it.
+
+### One more thing worth recording
+
+A single directed arm matched **thread 15** -- one of the repository-context
+threads about reusing something that already exists. No checkout arm reached it
+in five runs, across a stage built specifically to unlock that category.
+
+One run out of five is nothing on its own. But the direction is worth noting:
+*instructing* the reviewer to ask "does this already exist?" -- explicitly
+allowing it to raise the question without being able to verify the answer --
+reached a thread that *supplying the repository* did not. If that survives
+replication it inverts the assumption the first three stages were built on.
 ## What this changes
 
 | Assumption going in | Status | Consequence for the design |
@@ -729,3 +840,5 @@ Conditions before continuing:
 - Retire the mined corpus from the critical path, but **keep it** — the
   consistency observation is worth a properly powered follow-up, and the corpus
   cost real effort to build.
+
+

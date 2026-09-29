@@ -133,6 +133,46 @@ than a reviewer given only the diff.
 
 ---
 
+## C7 — A directed close-reading instruction improves coverage
+
+**Pre-registered** in full before the treatment text was written, including the
+confound rule, the bundling tradeoff, and an explicit declaration that the
+checklist was tuned to known misses on this pull request.
+
+Three stages had varied what the reviewer could *see*. This one varied what it
+was *told to look for*, holding inputs fixed at the diff alone.
+
+- **Primary** — total threads matched. Directed 3.6/24, plain 2.4/24, gap 1.2,
+  p = 0.167. **Not supported.** The gap sits below the measured 2-thread
+  judging noise floor, so it is not interpretable even setting the p-value
+  aside.
+- **Secondary** — the four close-reading threads the checklist targeted
+  {3, 6, 14, 16}. Directed 1.0/4 in **every** run, plain 0.0/4 in every run.
+  p = 0.008, the floor of this test. **Supported, and narrow.**
+
+The secondary result is carried entirely by **one thread**: a new
+package-level global in new code. Five independent directed runs flagged it, at
+the same file and line, in five different phrasings. No plain run objected to
+it. Three independent judges scored those plain arms across three passes and
+none matched that thread on any of them — fifteen arm-judgements, zero matches.
+So this is not judging drift, which is what killed C3.
+
+The other three targeted threads were reached by nobody. The checklist has six
+directives; the measurable effect traces to one.
+
+**Confound, pre-registered:** directed arms emitted 1.46x more findings
+(20.4 vs 14.0). That is under the 1.5x line fixed in advance, so the result is
+not declared confounded -- but it is close enough that precision per finding is
+now the measure that matters, and this design never measured it.
+
+**Overfitting, declared in advance:** thread 6 was one of the four threads the
+checklist was written to catch. This is an upper bound on what a *tuned*
+instruction achieves, not evidence about an untuned one. Generalisation needs a
+different, unseen pull request with the checklist frozen. Not claimed here.
+
+**What it does establish:** instruction content changes which defects a
+reviewer finds, reproducibly and with a traceable mechanism. That is more than
+any context input managed across three stages.
 ## What would make this POC invalid
 
 Recorded so the result cannot be rescued by adjusting the frame afterwards:
@@ -177,3 +217,4 @@ Recorded so the result cannot be rescued by adjusting the frame afterwards:
 - Whether **matching human threads** is the right success measure at all. Every
   arm produced findings judged real that no human raised. This is baked into
   the scoring and therefore cannot be questioned from within this design.
+
