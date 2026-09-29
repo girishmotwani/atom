@@ -15,7 +15,7 @@ review comments are deliberately omitted. Human threads are referenced by local
 index only, and their substance is paraphrased at the level of category. The
 full unsanitised working set stays outside this repository.
 
-**Design.** Two stages.
+**Design.** Three stages.
 
 *Stage 1* — four reviewing arms over a 2x2: knowledge base present/absent by
 checkout present/absent, one run each.
@@ -23,6 +23,10 @@ checkout present/absent, one run each.
 *Stage 2* — a replication, added after stage 1's result turned out to be
 unsupportable: five independent runs each of two conditions (plain diff, and
 diff plus retrieved knowledge), ten arms in total.
+
+*Stage 3* — a second replication, of the one claim stage 2 left standing: five
+independent runs of the checkout condition, scored against the five plain arms
+on a thread category fixed in writing beforehand.
 
 Every arm received identical review instructions apart from the input under
 test. None could read the ground truth. Arms were scored in a single blind pass
@@ -32,39 +36,73 @@ per stage by an independent judge, anonymised with attribution fields stripped.
 
 ## Headline
 
-**This report was corrected after replication. Read this section before any
-other.**
+**This report has been corrected twice, each time after a replication. Read
+this section before any other.**
 
-The first version of this report led with: *the mined knowledge base halved
-review coverage*. **That claim is withdrawn.** It was not a transcription error
-— the numbers were real. The experiment simply could not support the inference
-drawn from them.
+The first version led with: *the mined knowledge base halved review coverage*.
+**Withdrawn.** The second version retained one positive claim — that a
+repository checkout unlocks "reuse what already exists" feedback.
+**Also withdrawn.** Neither was a transcription error; the numbers were real
+each time. The experiment simply could not support the inferences drawn.
 
-Stage 1 ran one arm per condition and saw 6/24 without a knowledge base against
-3/24 with one. Stage 2 ran the *identical* condition five times and got
-**2, 3, 3, 4 and 6** out of 24.
+| Stage | Claim it produced | What replication did to it |
+|---|---|---|
+| 1 | Knowledge base halves coverage (6/24 → 3/24) | Same condition re-run five times: **2, 3, 3, 4, 6**. Effect was 3; noise is 4. |
+| 2 | Checkout uniquely unlocks reuse feedback (3 of 3) | Checkout re-run five times: **1 of 15** category opportunities. |
 
-A single condition varies by 4 threads run to run. The "effect" was 3. It was
-inside the noise the whole time.
+**Nothing tested in this POC produced a detectable improvement in review
+coverage.** Not a mined knowledge base, in bulk or retrieved form. Not a
+repository checkout.
 
 What actually survives measurement:
 
 - **No detectable coverage effect from a knowledge base**, in either bulk or
   retrieved delivery (p = 0.183 on per-run coverage, p = 0.190 on pooled union).
-- **No detectable coverage effect from a checkout** on totals — though see C3,
-  which is about *which* threads, not how many.
+- **No detectable coverage effect from a checkout**, on totals (p = 0.603) or
+  on the reuse category it was predicted to unlock (1 hit in 5 runs, and a
+  plain arm arguably matched the same thread).
 - **One detectable effect in the entire study**: retrieval makes the reviewer's
   output volume **3.25x more consistent** run to run (p = 0.008). It does not
   make it find more.
 - **The instruction wording effect** — an 8x swing in findings volume from one
   sentence — remains far larger than any treatment, and is the only finding here
   that was never in doubt.
-- **All ten replication arms pooled reached 9/24 human threads.** Fifteen were
-  matched by nobody.
+- **Every arm in the two replicated stages, pooled, reached 10/24 human
+  threads.** Fourteen were matched by nobody — including two of the three
+  "reuse what exists" threads the checkout was predicted to unlock.
 
-The honest summary of this POC is not "knowledge bases don't work". It is
-**"this experiment was not powerful enough to tell, and neither treatment showed
-a signal large enough to escape its own noise floor"**.
+Pooling across conditions is the sharpest summary of how little the inputs
+mattered (stages 2 and 3, twenty arms, two scoring passes combined — which can
+only flatter the ceiling):
+
+```
+checkout     8/24  [2, 4, 7, 8, 10, 17, 18, 22]
+plain        7/24  [2, 4, 7, 10, 17, 21, 22]
+retrieved    4/24  [2, 10, 18, 23]
+
+reached ONLY by checkout  : [8]
+reached ONLY by plain     : [21]
+reached ONLY by retrieved : [23]
+```
+
+Each condition reaches exactly **one** thread no other condition ever reached.
+That symmetry is what "no effect" looks like: the conditions are not finding
+different things in any structured way, they are each sampling a little
+differently from the same small reachable set.
+
+The honest summary of this POC is not "repository context doesn't work". It is
+**"this experiment was not powerful enough to tell, and no treatment showed a
+signal large enough to escape its own noise floor"**.
+
+**The error budget, now measured rather than assumed:**
+
+| source of variation | size |
+|---|---|
+| judging, two judges over identical arm files | up to **2 threads** (97% per-decision agreement) |
+| generation, same condition re-run | up to **4 threads** |
+
+Nothing below roughly 4 threads out of 24 is measurable in this design. Every
+treatment effect this POC ever reported was smaller than that.
 
 ---
 
@@ -240,8 +278,24 @@ a result; the union difference is inside noise.
 
 ---
 
-## C1 — Knowledge base improves coverage: **UNDETERMINED** (was: Refuted)
+## Stage 3 — the replication that took the last claim
 
+Stage 2 left exactly one positive claim standing: C3, that a checkout unlocks
+the "this already exists" class of comment. It rested on one run, and the
+report named replicating it as the top follow-up and the thing the design most
+depended on.
+
+Stage 3 ran it. Five checkout arms against the five existing plain arms, all
+ten re-scored blind in one fresh pass, with the thread category and the
+analysis plan fixed in writing beforehand (`CATEGORY-C3.md`) — including a
+pre-registered caveat that one of the three category threads points at a
+parallel unmerged change a base-commit checkout cannot contain.
+
+Because the plain arms were re-scored by a new judge, stage 3 also produced the
+study's first clean measurement of **judge-to-judge** variance. Both results
+are in C2 and C3 below.
+
+## C1 — Knowledge base improves coverage: **UNDETERMINED** (was: Refuted)
 Stage 1 measured 3/24 with the knowledge base against 6/24 without, in both
 checkout conditions, and I recorded C1 as Refuted.
 
@@ -273,47 +327,151 @@ Displacement survives only in the weaker, more interesting form suggested by
 stage 2: knowledge may narrow *what the reviewer attends to* rather than crowd
 out context by sheer size. Untested.
 
-## C2 — Checkout improves coverage: **UNDETERMINED** (was: Refuted)
+## C2 — Checkout improves coverage: **NO EFFECT DETECTED** (was: Refuted, then Undetermined)
 
-Stage 1: 6/24 with the checkout, 6/24 without — and on re-scoring, 5/24 and
-6/24. Identical within the noise floor, but with one run per arm that
-demonstrates nothing either way.
+Stage 1 could not decide this: 6/24 with the checkout against 6/24 without, one
+run each, which demonstrates nothing either way.
 
-The totals were never the interesting part. C3 is.
+Stage 3 tested it properly — five checkout runs against five plain runs, scored
+blind in one pass:
 
-## C3 — Checkout unlocks "this already exists" feedback: **SUPPORTED, NOT REPLICATED**
+```
+  plain     mean 2.8/24   values [2, 2, 2, 3, 5]
+  checkout  mean 3.4/24   values [2, 2, 4, 4, 5]
+  difference (checkout - plain) : +0.6 threads
+  exact permutation p (252 splits) : 0.603
+  widest within-condition spread (noise floor) : 3 threads
+```
+
+The checkout arms score slightly higher on average, and the difference is
+comfortably inside run-to-run variation. This is the only claim in the study
+with adequate replication behind a null result, so it carries more weight than
+the "undetermined" verdicts: **a checkout does not measurably raise total
+coverage**, though an effect below roughly 3-4 threads would still be invisible.
+
+The totals were never supposed to be the interesting part. C3 was.
+
+## C3 — Checkout unlocks "this already exists" feedback: **REFUTED ON REPLICATION** (was: Supported)
+
+This was the last claim left standing, the one the recommended design depended
+on, and the one flagged as most worth replicating. It was replicated. It did
+not survive.
 
 Three human threads share one substance: *stop writing new code, reuse what the
 repository already has*. One asks the author to fold a hand-rolled client into
-an existing vendor-API client that already handles retries and backoff. One
-asks for a helper to move into that same client so it can be mocked. One points
-at another in-flight change that already implements the same helpers.
+an existing sibling-library client that already handles retries and backoff.
+One asks for a helper to move into that same client so it can be mocked. One
+points at another in-flight change that already implements the same helpers.
 
-| Thread category | Checkout arms | Non-checkout arms |
+Stage 1, one run per condition, looked decisive:
+
+| Thread category | Checkout arm | Non-checkout arms |
 |---|---|---|
-| "reuse the existing client / helper" (3 threads) | **3 matched** | **0 matched** |
+| "reuse what exists" (3 threads) | **3 of 3** | **0 of 3** |
 
-The checkout arm matched all three. Every arm without a checkout matched none.
-Two of them were matched by *no other arm at all*.
+Stage 3 ran the checkout condition **five times** against the five existing
+plain-diff arms, all ten re-scored blind in a single fresh pass. The category
+and the analysis plan were fixed in writing *before* scoring.
 
-This is the most senior feedback on the pull request — one of these threads was
-bumped by its reviewer and escalated — and it is structurally unreachable from
-a diff. The checkout is the only input tested that reaches it.
+```
+--- PRIMARY: C3 category (threads [1, 4, 15], max 3) ---
+  plain     mean 0.0/3   values [0, 0, 0, 0, 0]
+  checkout  mean 0.2/3   values [0, 0, 0, 0, 1]
+  difference (checkout - plain) : +0.2
+  exact permutation p (252 splits) : 1.000
+  union checkout [4]   union plain none
+```
 
-**Why this is downgraded from Confirmed to Supported.** It rests on a single
-checkout run, and stage 2 showed single runs to be unreliable. What protects it
-is that it is not a count — it is a clean 3-for-3 against 0-for-3 on a
-semantically coherent category, with an obvious mechanism: you cannot suggest
-reusing a helper you cannot see. A count of 3 could be noise; *which* threads
-those were is harder to explain away.
+Across five checkout runs and three category threads — fifteen opportunities —
+the checkout condition landed **one**. Stage 1's 3-of-3 became 1-of-15.
 
-Replicating C3 specifically — five checkout runs, scoring only the
-"reuse what exists" category — is the cheapest high-value follow-up available,
-and it is the claim the spec most depends on.
+Pooled across the two *replicated* passes (stages 2 and 3, twenty arms),
+threads 1 and 15 were matched by **no arm at all**. The only arm in the entire
+study that ever matched them is the single stage-1 checkout run — the run whose
+result this stage was testing. Thread 4, the one stage-3 hit, was matched by a
+plain arm too, in the stage-2 pass.
 
-The reason the total did not move is that the checkout arm lost two other
-threads the diff-only arm caught. Repository access **redistributes** attention
-rather than adding to it.
+**p = 1.000 here is degenerate, and saying so matters.** With exactly one
+non-zero observation in ten, *every* one of the 252 splits produces the same
+mean gap. The test is not reporting "definitely no effect"; it is reporting
+that this data cannot discriminate at all. Quoting 1.000 as strong evidence of
+absence would be the same over-reading this POC has already had to retract
+once.
+
+### The judge disagreement that finishes the claim
+
+The single checkout hit is thread 4. The stage-3 judge recorded a near miss it
+declined to count:
+
+> *Thread 4 vs M19: M19 identifies duplicate supported-API logic, but it does
+> not raise the human's client/mockability concern directly enough.*
+
+**M is a plain-diff arm.** And the stage-2 judge, scoring that identical file,
+*had* counted it as a match for thread 4.
+
+So the entire surviving C3 signal — one thread, one arm — is a thread two
+judges disagree about on a *plain* arm. There is no effect here to measure.
+
+### Judge variance, now measured properly
+
+Stage 3 re-scored the five plain arms that stage 2 had already scored: same
+files, different judge. That is a clean measurement of judging noise with
+generation held fixed.
+
+```
+arm file              judge2  judge3  delta
+control3.jsonl             4       2     -2
+plain-02.jsonl             6       5     -1
+plain-03.jsonl             2       2     +0
+plain-04.jsonl             3       2     -1
+plain-05.jsonl             3       3     +0
+
+mean shift judge3 - judge2 : -0.8 threads
+largest single-arm shift   : 2 threads
+per-decision agreement     : 116/120 (97%)
+```
+
+97% agreement on individual decisions sounds strong, and the per-arm totals
+still move by up to 2. Stage 2 had estimated judge noise at ±1 by re-parsing a
+single judge's table — a weaker check than comparing two judges, and it
+under-estimated.
+
+**Revised error budget:** generation noise up to 4 threads, judging noise up to
+2. Nothing this design measures below roughly 4 threads means anything.
+
+### Secondary: the checkout did not move overall coverage either
+
+```
+  plain     mean 2.8/24   values [2, 2, 2, 3, 5]
+  checkout  mean 3.4/24   values [2, 2, 4, 4, 5]
+  difference (checkout - plain) : +0.6 threads
+  exact permutation p (252 splits) : 0.603
+```
+
+Consistent with noise. The stage-1 story that a checkout *redistributes*
+attention — trading the reuse threads for others — also fails to replicate;
+there is no redistribution visible, because there was no reuse gain to trade.
+
+### What was wrong with the stage-1 reasoning
+
+Stage 1 defended C3 on the grounds that it was "not a count" — a clean 3-for-3
+on a semantically coherent category, with an obvious mechanism. That argument
+felt much stronger than a raw score gap, and it was wrong in a way worth
+recording:
+
+- **A coherent category does not make a small sample large.** Three threads
+  matched by one run is three observations from one draw. Coherence describes
+  the threads, not the evidence.
+- **A good mechanism makes noise feel explained.** "You cannot suggest reusing
+  a helper you cannot see" is true, and it predicts the stage-1 result
+  perfectly. It also predicts a result that did not recur.
+- **Naming the replication as the top follow-up was not a substitute for doing
+  it.** The claim was carried into the recommendation while flagged as n=1. Had
+  the spec been written before this ran, it would have been built on nothing.
+
+The mechanism may still be real. What is now established is that if a benefit
+exists, **this reviewer does not reliably realise it** — one run in five found
+the thread, and a plain arm arguably found it too.
 
 ## C4 — Knowledge base and checkout are complementary: **UNDETERMINED** (was: Refuted)
 
@@ -373,29 +531,37 @@ the harness, not to conclude the inputs do not matter.
 
 ---
 
-## What the 15 unmatched threads actually need
+## What the unmatched threads actually need
 
-The reviewer's ceiling is not one thing. Categorising every thread no arm
-matched:
+The reviewer's ceiling is not one thing. Categorising the 15 threads no stage-1
+arm matched (the pooled figure across stages 2 and 3 is 14, a nearly identical
+set):
 
 | Cause | Threads | Reachable by any artifact we can gather? |
 |---|---|---|
 | **External API contract** — a vendor team's spec, not in the repository | 9, 12, 13, 17 | **No.** One thread's answer was a link to an external design document. |
 | **Deep state-machine reasoning** about pending/failed/retry transitions | 8, 11, 19, 20, 23, 24 | Hard. Needs operational understanding of the running system. |
 | **Close-reading misses** — wrong error constant, an unnecessary database read, a stale comment, a readability split | 2, 3, 14, 16 | **Yes.** These should have been caught. |
-| **Repository context** | 1, 4, 15 | **Yes — solved by the checkout.** |
+| **Repository context** | 1, 4, 15 | **In principle yes. In practice, not by simply supplying a checkout** — see C3. |
 
 Roughly 4 of 24 threads are unreachable from any artifact `atom review` could
 plausibly assemble. Another 4 were missed through inattention rather than
 missing knowledge. Only 3 were the repository-context problem I had assumed
 dominated.
 
-I had characterised this ceiling as a single "repository context" problem
-before measuring the categories. That was wrong, and the correction changes the
-design: chasing more context would address at most 3 of 15 misses.
+Two corrections have landed on this table:
+
+1. I had characterised the whole ceiling as a "repository context" problem
+   before categorising it. It is at most 3 of 15.
+2. The last column originally read *"Yes — solved by the checkout"* for that
+   row. Stage 3 refuted it. Supplying a checkout does not reliably convert
+   those threads; across five checkout runs, threads 1 and 15 were never
+   matched at all.
+
+So the largest tractable category is not context at all — it is the four
+**close-reading misses**, which need no new input, only a more careful pass.
 
 ## C6 — Retrieval delivery beats bulk delivery: **REFUTED (as stated)**
-
 Formed after stage 1, on the argument that bulk injection scales badly with
 knowledge-base size while retrieval does not — so retrieval, not bulk, is the
 only delivery that survives a knowledge base growing over time.
@@ -427,12 +593,13 @@ future claim, not as a confirmed result.
 | Assumption going in | Status | Consequence for the design |
 |---|---|---|
 | Mining review history is the primary lever for reviewing an unfamiliar repository | No measurable support, in bulk or retrieved form | Keep the knowledge base out of the `atom review` critical path — on grounds of "unproven", not "harmful". |
-| A checkout mainly helps by giving more context around each hunk | Not supported | The totals do not move. Any value is narrow and specific. |
-| A checkout uniquely enables "reuse what exists" review | Supported, not replicated | The strongest reason to ship the checkout — and the claim most worth replicating first. |
+| A checkout mainly helps by giving more context around each hunk | Not supported | The totals do not move (p = 0.603 over five runs per condition). |
+| A checkout uniquely enables "reuse what exists" review | **Refuted on replication** | The last remaining reason to put a checkout in the critical path is gone. Ship it as an *option*, not as the design's foundation. |
 | More inputs compound | Undetermined | The design could not test interaction. Add inputs one at a time, each with a measured effect. |
 | One thorough reviewer is the right shape | Partly refuted, differently than thought | Re-running the *same* reviewer adds almost nothing (7/24 union from 5 runs, best single 6/24). Variety, not repetition. |
 | The reviewer's ceiling is repository knowledge | Refuted | It is four separate causes; repository knowledge is the smallest of them. |
-| A single run per condition tells you what a condition does | **Refuted, and this invalidated the first version of this report** | Every future Atom experiment comparing agent configurations must replicate and report a noise floor. |
+| A single run per condition tells you what a condition does | **Refuted twice, and this invalidated two successive versions of this report** | Every future Atom experiment comparing agent configurations must replicate and report a noise floor. |
+| A clean result on a coherent category is safer than a raw count | **Refuted** | C3 was defended on exactly this reasoning and still failed to replicate. Coherence describes the threads, not the strength of the evidence. |
 
 ---
 
@@ -448,40 +615,60 @@ to measure.**
 Consequences now binding on Atom's own experiments:
 
 1. **Never compare configurations on one run each.** The first version of this
-   report did, and published a confident, wrong headline.
+   report did, and published a confident, wrong headline. The second version
+   did it again for C3, on one run, and was wrong again.
 2. **Measure the noise floor before interpreting any gap.** Run one condition
    twice before running six conditions once. It is the cheapest possible
    experiment and it determines whether the rest is worth running.
-3. **Separate judge noise from generation noise.** Re-scoring identical
-   findings moved results by ±1; re-generating moved them by 4. Those need
-   different fixes — single-pass scoring for the first, replication for the
-   second.
+3. **Separate judge noise from generation noise.** Two judges scoring identical
+   arm files disagreed by up to 2 threads; re-generating moved results by 4.
+   Those need different fixes — single-pass scoring for the first, replication
+   for the second.
 4. **Test the gap you are about to report**, including ones that look obvious.
    The union gap of 3 looked convincing and was noise (p = 0.190).
 5. **Persist the exact instructions given to each arm.** Stage 1's were inline
-   and unsaved, so those arms can never be reproduced. Stage 2's live in
+   and unsaved, so those arms can never be reproduced. Stages 2 and 3 read from
    `ARM-INSTRUCTION.md`.
 6. **Prefer observables that need no judge.** Findings volume needed no scoring
    and produced the study's only clear effect.
+7. **A mechanism that explains the result is not evidence for it.** "You cannot
+   suggest reusing a helper you cannot see" is true, obvious, and predicted a
+   result that did not recur. Plausibility is what makes a noise artifact
+   survive scrutiny.
+8. **Fix the category and the analysis plan in writing before scoring.** Stage 3
+   did this in `CATEGORY-C3.md`, including a caveat that one of the three
+   threads might be unreachable in principle. Without it, the single hit could
+   have been written up as partial support.
+9. **Re-score a shared subset when judges change.** Stage 3 re-scored stage 2's
+   plain arms, which is the only reason judging noise could be separated from
+   the treatment — and it revealed that the deciding thread was one the two
+   judges disagreed about.
 
 ---
 
 ## Explicitly not covered
 
-- **Whether a knowledge base helps at all.** This study lacked the power to
+- **Whether repository context helps at all.** This study lacked the power to
   detect an effect smaller than roughly 4 threads out of 24. A real but modest
-  benefit would have been invisible here. "Not detected" is not "not there".
+  benefit would have been invisible here. "Not detected" is not "not there",
+  and that applies to the checkout as much as to the knowledge base.
 - **A knowledge base grown and curated over time**, rather than mined in one
   pass. Accumulated, pruned, human-corrected entries may behave differently,
   and nothing here speaks to that.
+- **Whether a better-used checkout helps.** The arms were told they had a
+  checkout and left to decide how to use it. A reviewer *directed* to ask
+  "does this already exist?" for every new helper is a different treatment,
+  and an obvious next candidate — the instruction-wording effect is the largest
+  one this study ever measured.
 - **Whether retrieval's consistency effect is real and useful.** It cleared
   this design's significance floor on one observable, on one pull request. It
   has not been replicated, and its cost — a narrower pooled union — is
   unmeasured.
-- **C3 at adequate power.** The checkout's "reuse what exists" advantage rests
-  on one run per arm, the exact weakness that invalidated the headline.
+- **C3 under a directed instruction.** Stage 3 refuted C3 as a property of
+  *having* a checkout. It says nothing about a reviewer explicitly told to
+  check for duplication, which is a different and untested treatment.
 - **Generalisation.** One pull request, one repository, one language, one
-  reviewing model. Fourteen arms total, all on the same diff.
+  reviewing model. Twenty-three reviewing arms in total, all on the same diff.
 - **Whether matching human threads is the right target at all.** Every arm
   produced findings judged real that the humans never raised. A reviewer that
   finds different true problems is not obviously worse than one that reproduces
@@ -494,21 +681,26 @@ Consequences now binding on Atom's own experiments:
 
 ## Recommendation
 
-**Proceed to spec** — but on a much thinner evidential base than the first
-version of this report claimed.
+**Proceed to spec — but the spec can no longer be justified by this POC's
+findings, only by its constraints.**
+
+Twenty-three reviewing arms across three stages produced **no treatment that
+measurably improves review coverage**. That is a real result, and it should
+change the shape of what gets built rather than be worked around.
 
 The design should be:
 
-1. A **checkout at the base commit**, searchable, as the primary context input.
-   Justified by C3, which is supported but unreplicated — so replicate C3
-   before building anything expensive on it.
-2. Reviewer instructions that **explicitly invite nits and questions**, with
-   `question` as a first-class severity. This is the one recommendation carried
-   by a large, unambiguous effect.
+1. Reviewer instructions that **explicitly invite nits and questions**, with
+   `question` as a first-class severity. After three stages this is still the
+   only recommendation carried by a large, unambiguous effect — an 8x swing in
+   output from a single sentence.
+2. A **checkout at the base commit** as an *available* input, not the
+   foundation. C3 is refuted, so the checkout is no longer justified by
+   evidence of benefit; it is justified by being cheap, harmless (p = 0.603 on
+   totals), and a prerequisite for any future directed-duplication instruction.
 3. **No knowledge base in the critical path.** Not because it was shown to
-   harm — that claim is withdrawn — but because two delivery mechanisms across
-   fourteen arms produced no measurable benefit, and unproven machinery should
-   not ship.
+   harm — that claim is withdrawn — but because two delivery mechanisms
+   produced no measurable benefit, and unproven machinery should not ship.
 4. An honest statement in the output that some classes of review feedback —
    external contracts in particular — are out of reach.
 
@@ -516,16 +708,24 @@ Multiple unioned passes are **no longer recommended on this evidence**. Union
 from repetition was measured and is nearly worthless (7/24 from five runs
 against 6/24 from the best single run). Union from *variety* is untested.
 
-Next artifact: a design spec for `atom review`, co-written with the developer.
+**The most promising untested lever is the instruction, not the context.** Every
+context treatment failed; the one instruction change tested produced the largest
+effect in the study. The obvious next experiment is a *directed* reviewer —
+told to ask "does this already exist?" of every new helper, with the checkout as
+the means of answering — measured with five runs per condition from the start.
+
+Next artifact: a design spec for `atom review`, co-written with the developer,
+written in full knowledge that its context inputs are unproven.
 
 Conditions before continuing:
 
-- **Replicate C3** — five checkout runs, scored on the "reuse what exists"
-  category. It is the only claim the recommended design depends on, and it is
-  currently n=1.
 - **Adopt the replication protocol** for every future Atom experiment comparing
-  agent configurations. Measure the noise floor first; report it alongside any
-  effect.
+  agent configurations. Five runs per condition minimum, noise floor reported
+  alongside any effect, category and analysis plan fixed before scoring. This
+  POC published two wrong headlines without it.
+- **Do not reinstate any refuted claim** into the spec's justification. If the
+  spec needs C3, C3 must be re-established by a new, properly powered
+  experiment — not by the stage-1 result, which is superseded.
 - Retire the mined corpus from the critical path, but **keep it** — the
   consistency observation is worth a properly powered follow-up, and the corpus
   cost real effort to build.

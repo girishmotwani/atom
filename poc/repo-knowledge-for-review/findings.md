@@ -244,3 +244,96 @@ was retrieved for.
 Both defects were invisible in the summary statistics — bundle size and
 reduction percentage looked excellent throughout. **Retrieval quality has to be
 read, not measured.**
+
+## 14. A coherent category is not a substitute for a sample
+
+The knowledge-base result was withdrawn after replication. One claim survived:
+that a repository checkout unlocked the "this already exists" class of comment,
+scoring 3 of 3 on that category where every arm without a checkout scored 0.
+
+It was explicitly defended on the grounds that it was **not just a count**:
+
+> A count of 3 could be noise; *which* threads those were is harder to explain
+> away.
+
+That reasoning is wrong, and it is worth naming because it is persuasive.
+Running the checkout condition five times produced **1 hit in 15 opportunities**
+against the same category.
+
+Three things made a single run feel like enough:
+
+- **Semantic coherence was mistaken for evidential weight.** The three threads
+  really did share one substance. That is a property of the threads, not of the
+  sample. Three observations from one generation are still one draw.
+- **The mechanism was true and obvious.** "You cannot suggest reusing a helper
+  you cannot see" is correct, and it predicts the stage-1 result exactly. A
+  plausible mechanism is precisely what lets a noise artifact survive scrutiny —
+  it supplies the explanation that stops the questioning.
+- **Naming the replication as the top follow-up felt like discharging it.** The
+  claim was flagged as n=1 *and* carried into the recommendation as the primary
+  design input. Had the spec been written on schedule, it would have rested on
+  nothing.
+
+**Rule: a claim is unreplicated or it is not. There is no intermediate status
+that licenses building on it.**
+
+## 15. When the judge changes, re-score a shared subset
+
+Single-pass scoring stops the judge's threshold drifting *within* a pass. It
+says nothing about whether a different judge would apply the same threshold.
+
+Stage 3 re-scored five arm files that a previous pass had already scored. Same
+files, different judge:
+
+```
+per-decision agreement     : 116/120 (97%)
+largest single-arm shift   : 2 threads
+mean shift                 : -0.8 threads
+```
+
+97% agreement on individual decisions, and totals still moving by 2. An earlier
+estimate of judge noise at +/-1 had come from re-parsing one judge's own table —
+which measures the parser, not the judge.
+
+The overlap did more than calibrate. The deciding observation in the whole
+stage — the one category thread a treatment arm matched — was a thread the
+**previous judge had matched on a control arm**. Without the shared subset, a
+single hit would have been reported as weak support instead of as something two
+judges disagree about.
+
+**Any experiment whose scoring pass changes must carry a shared subset across
+the boundary, or its passes are not comparable.**
+
+## 16. p = 1.000 can mean "no data", not "no effect"
+
+The category comparison returned an exact permutation p of 1.000. Read
+carelessly, that is overwhelming evidence of no difference. It is not.
+
+With one non-zero observation among ten, *every* one of the 252 possible splits
+produces an identical mean gap. The test is not discriminating between
+hypotheses; it is reporting that the data cannot discriminate at all.
+
+A p-value at either extreme deserves an explanation of the mechanism producing
+it. The same design had already shown its floor of 0.008 means "most extreme of
+252 splits" rather than a precise probability. Both extremes are artifacts of a
+small exact test, and both are easy to quote as though they were strong claims.
+
+## 17. Fix the category and the analysis plan before scoring, in a file
+
+Before stage 3 was scored, the thread category was written down, with the
+reasoning for every inclusion and exclusion, and with the analysis plan and the
+statistical test named.
+
+It immediately paid for itself twice:
+
+- Reading all 24 opening comments to build it **caught an error**: a thread
+  about which of two existing clients is conventional had initially looked like
+  a duplication thread. It is a convention question and was excluded, with the
+  reason recorded so the exclusion is visible rather than silent.
+- It pre-registered a **caveat that could only weaken the result** — one of the
+  three category threads points at a parallel unmerged change that a
+  base-commit checkout cannot contain, so the category was specified to be
+  reported both with and without it.
+
+Written afterwards, either decision would have looked like tuning the category
+to fit the answer.

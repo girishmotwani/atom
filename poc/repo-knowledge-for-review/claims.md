@@ -66,6 +66,18 @@ rather than write a new one, and no amount of diff-reading can answer that.
 - **Threshold:** checkout arms match at least one such thread that no
   non-checkout arm matches.
 
+**Replication added, and the threshold tightened, before stage 3 ran.** The
+original threshold — "at least one thread no other arm matched" — is satisfiable
+by a single lucky run, which stage 2 proved is not informative. Stage 3
+therefore fixed the category membership in writing (`CATEGORY-C3.md`), ran five
+checkout arms against five plain arms, and required the gap to survive an exact
+permutation test. The category was also specified to be reported twice, with
+and without one thread that a base-commit checkout may be unable to reach in
+principle.
+
+Note that tightening a threshold *before* the measurement, and recording why,
+is the opposite of moving one afterwards to rescue a result.
+
 ## C4 — Knowledge base and checkout are complementary
 
 **Formed mid-experiment**, after the first knowledge base result came back
@@ -138,12 +150,18 @@ Recorded so the result cannot be rescued by adjusting the frame afterwards:
 - **Judge drift.** If arms are scored in separate passes, the judge's matching
   threshold can move between passes, and that drift is indistinguishable from a
   treatment effect. All arms must be scored in one pass.
-- **Insufficient replication.** *Added after the fact, and the reason the first
-  version of the results was withdrawn.* If a condition is run once, its score
-  conflates the condition with the reviewer's own randomness. Any claimed
-  effect smaller than the within-condition spread is invalid. A noise floor
-  must be measured — by running one condition at least twice — before any gap
-  is interpreted.
+- **Insufficient replication.** *Added after the fact, and the reason two
+  successive versions of the results were withdrawn.* If a condition is run
+  once, its score conflates the condition with the reviewer's own randomness.
+  Any claimed effect smaller than the within-condition spread is invalid. A
+  noise floor must be measured — by running one condition at least twice —
+  before any gap is interpreted.
+- **Unmeasured judge-to-judge variance.** *Added after stage 3.* Single-pass
+  scoring controls drift *within* a pass but says nothing about the threshold a
+  *different* judge would apply. When scoring passes change, a shared subset of
+  arms must be re-scored so judging noise can be separated from treatment
+  effect. Stage 3 did this and found the two judges disagreed by up to 2
+  threads — including on the single thread that the C3 verdict turned on.
 
 ## What this POC cannot decide
 
