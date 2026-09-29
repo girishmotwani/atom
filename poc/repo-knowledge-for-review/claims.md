@@ -218,3 +218,64 @@ Recorded so the result cannot be rescued by adjusting the frame afterwards:
   arm produced findings judged real that no human raised. This is baked into
   the scoring and therefore cannot be questioned from within this design.
 
+
+---
+
+## C8 — The directed checklist generalises to an unseen pull request: **NOT SUPPORTED**
+
+**Status:** not supported on both pre-registered measures; the narrower C7
+claim is **untested** rather than refuted.
+
+Pre-registered in full before the pull request was selected: claim, measures,
+run count, statistic, threshold, a hash of the frozen checklist, the selection
+rule, and a decision table naming the meaning of each outcome in advance. One
+amendment, recorded before any draw, excluded pull requests present in the
+mined corpus.
+
+Selection screened 375 candidates on structure alone and took the first
+qualifying draw under a fixed seed. No re-rolls permitted; none taken.
+
+| measure | directed | plain | gap | p |
+|---|---|---|---|---|
+| total coverage /13 | 2.2 | 2.2 | 0.0 | 1.000 |
+| targeted subset /7 | 1.6 | 1.0 | 0.6 | 0.167 |
+| findings emitted | 13.6 | 13.6 | 1.00x | — |
+
+The verbosity confound present in C7 at 1.46x is absent here at 1.00x.
+
+**Answer key defects, found and decided before scoring.** Of 28 reported
+threads, ten were machine-generated review output posted under a human account
+— and posted twice, five texts appearing verbatim a second time, four of them
+anchored to a different line. Three were author-only acknowledgements. Two sat
+on a file outside the diff. Thirteen human threads remained, above the
+pre-registered minimum.
+
+**Reported both ways, as committed before scoring:**
+
+| answer key | directed | plain | gap | p |
+|---|---|---|---|---|
+| 13 human threads | 2.2 | 2.2 | 0.0 | 1.000 |
+| 5 machine-authored | 3.2 | 2.2 | 1.0 | 0.127 |
+| all 18, uncleaned | 5.4 | 4.4 | 1.0 | 0.079 |
+
+The pre-scoring prediction that excluding machine threads would make a positive
+result harder was correct. Without the audit this stage would have reported a
+one-thread gap at p = 0.079.
+
+**Limit on the interpretation, found after scoring.** C7's effect was one
+checklist item firing on newly introduced package-level state. The held-out
+diff adds 220 lines and six package-level declarations, none of them a variable
+or constant. A judge-free check agrees: 0/5 directed arms raise package-level
+state here, against 5/5 on the tuned pull request. The item responsible for C7
+had no target, so C7 is untested here.
+
+**What stands:** the seven-item bundle produced no general benefit on an unseen
+change, and the only gap anywhere in the stage is agreement with machine-written
+review text.
+
+**What would settle C7:** a held-out pull request chosen by a mechanical
+pre-scoring rule requiring new package-level declarations in the diff, with the
+claim narrowed to that population.
+
+**Flaw in the pre-registration:** the selection rule constrained structure but
+not applicability, so a null is indistinguishable from a refutation.

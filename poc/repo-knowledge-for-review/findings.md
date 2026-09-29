@@ -417,3 +417,69 @@ someone who already knew which defects had been missed. It is an upper bound on
 a *tuned* instruction, not proof that instructions generally beat context. The
 untested version -- freeze the checklist, run it on an unseen pull request -- is
 the experiment that would settle it, and it has not been run.
+
+---
+
+## 20. Scraped review history contains machine-written threads, and scoring against them measures model-model agreement
+
+The held-out pull request reported 28 review threads. Ten were machine-generated
+review output, posted under a human account. Five texts appeared **twice**, and
+four of those duplicates were anchored to a *different* line in the same change.
+
+Scored against the thirteen genuinely human threads, the treatment gap was
+exactly 0.0 (p = 1.000). Scored against the machine-written threads, it was 1.0
+(p = 0.127). Scored against the uncleaned key, 1.0 (p = 0.079) — the most
+favourable number anywhere in the stage, and the one that would have been
+reported had nobody looked.
+
+An AI reviewer scored against another AI's review output is being rewarded for
+writing in a model-like register, not for finding defects. The effect is
+directional: it flatters whichever condition is more systematically worded,
+which is exactly the condition a checklist produces.
+
+**Rule for Atom.** Any feature that mines pull request history — review
+knowledge bases, convention extraction, answer keys for evaluation — must
+detect and label machine-authored threads, not just filter bot accounts. The
+detectable signals here were: uniform comment length, formulaic structure,
+severity markers, and verbatim duplication at differing anchors. Author-only
+threads need filtering too; a bot-account filter does not catch a human opening
+a thread on their own change.
+
+**Wider rule.** When an evaluation's ground truth is scraped rather than
+constructed, audit it before scoring and record the audit before unsealing any
+result. State the expected direction of bias in writing first, so the audit
+cannot be a post-hoc convenience. Here that prediction was made and held.
+
+---
+
+## 21. A generalisation test must select for applicability, not just structure
+
+Stage 5 pre-registered a selection rule constraining thread count, language,
+file types and corpus membership. Every criterion was structural. The drawn
+pull request satisfied all of them and contained **zero instances of the defect
+class** the treatment had been shown to catch.
+
+The result was a gap of exactly zero — which reads as a clean refutation and is
+nothing of the kind. A treatment cannot fail to catch what is not there.
+
+The failure mode is specific to *narrow* treatments. A broad treatment acts on
+almost any change, so a structural selection rule is adequate. A treatment
+whose measured effect traces to a single defect class needs a held-out case
+containing that class, or the null is uninformative while being numerically
+indistinguishable from a refutation.
+
+Selecting on defect-class presence is **not** selecting on outcome. Outcome
+selection picks cases where the treatment did well; applicability selection
+picks cases where the treatment is claimed to apply, decided mechanically on
+the input before any scoring. The distinction is the difference between
+defining a population and rigging a result.
+
+**Rule for Atom.** When pre-registering a generalisation test, add a criterion
+that the held-out case contains at least one instance of the mechanism under
+test, evaluated mechanically on the input. If that criterion cannot be written
+down, the claim is too vague to generalise and should be narrowed first.
+
+**Corollary.** Narrow a claim to the population where its mechanism applies at
+the moment the mechanism is identified — not after a null forces it. C7 should
+have been stated as a claim about changes that introduce package-level state as
+soon as the single-thread mechanism was read out of the output.

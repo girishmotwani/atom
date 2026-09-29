@@ -36,8 +36,9 @@ per stage by an independent judge, anonymised with attribution fields stripped.
 
 ## Headline
 
-**Four stages. Twenty-eight reviewing arms. Every context input tested failed;
-the one instruction change tested produced the only reproducible effect.**
+**Five stages. Thirty-eight reviewing arms. Every context input tested failed.
+The one instruction change tested produced the only reproducible effect, and
+it did not survive contact with an unseen pull request.**
 
 | lever | what was tested | verdict |
 |---|---|---|
@@ -45,12 +46,21 @@ the one instruction change tested produced the only reproducible effect.**
 | context | the same knowledge base via retrieval (82% smaller) | no effect detected |
 | context | read-only checkout at the base commit | no effect detected |
 | context | checkout aimed at the "already exists" category | **refuted on replication** |
-| **instruction** | directed close-reading checklist | **no effect on total coverage; one defect class reproducibly unlocked** |
+| **instruction** | directed close-reading checklist, tuned pull request | no effect on total coverage; one defect class unlocked 5/5 vs 0/5 |
+| **instruction** | the same checklist, unseen pull request | **no effect; gap exactly 0.0** |
 
-The instruction result is narrow and honest about it: total coverage did not
-move, and the effect traces to a single thread out of four targeted. But it
-reproduced 5/5 against 0/5, survived a three-judge check, and has a mechanism
-that can be read directly in the output. Nothing in the first three stages did.
+The instruction result was narrow and stage 4 said so: total coverage did not
+move, and the effect traced to a single thread out of four targeted. It
+reproduced 5/5 against 0/5, survived a three-judge check, and had a mechanism
+readable directly in the output. Nothing in the first three stages did.
+
+Stage 5 re-tested it on a pull request chosen by a pre-registered rule. The
+gap was **exactly zero**. But the held-out change contains **no instance of the
+defect class** the stage-4 effect came from, so that specific claim was not
+refuted — it was untestable. What stage 5 does establish is that the checklist
+as a bundle produced no general benefit, and that the only gap visible anywhere
+in it appears solely when scoring against review threads that were themselves
+machine-generated.
 
 
 **This report has been corrected twice, each time after a replication. Read
@@ -699,6 +709,124 @@ One run out of five is nothing on its own. But the direction is worth noting:
 allowing it to raise the question without being able to verify the answer --
 reached a thread that *supplying the repository* did not. If that survives
 replication it inverts the assumption the first three stages were built on.
+## Stage 5 — the generalisation test, and what the answer key was made of
+
+Stage 4 ended with a declaration written before the checklist was authored:
+the checklist was written by someone who had read the misses it was meant to
+catch, so a positive result is an optimistic upper bound and must be re-tested
+on a pull request nobody had looked at. Stage 5 is that re-test.
+
+### Everything was fixed before the pull request was chosen
+
+In order: the claim, the two measures, the run count, the exact statistic, the
+threshold, a hash of the frozen checklist, the selection rule, and a decision
+table saying in advance what each possible outcome would mean. Then an
+amendment, also recorded before any draw, adding a sixth selection criterion —
+the pull request must not appear in the mined corpus — because summaries of
+those pull requests had been read during earlier stages and that is an indirect
+route by which the checklist could have been influenced by the test set.
+
+Selection screened 375 candidates on structure only — thread counts and file
+extensions, never comment text — shuffled with the pre-registered seed, and
+took the first that qualified. **No re-rolls were permitted and none were
+taken.** The same frozen checklist was copied into the treatment arm verbatim,
+hashed before and after, with the copy refusing to proceed on any difference,
+and asserted absent from the control arm.
+
+### The answer key was not what it claimed to be
+
+The chosen pull request reported 28 review threads. Inspection before scoring
+found it was not 28 human findings.
+
+- **Ten were machine-generated.** Uniform length, emoji severity markers,
+  formulaic structure — review output posted under a person's account. Worse,
+  the run had happened **twice**: five texts appeared verbatim a second time,
+  and in four of the five cases the duplicate was anchored to a *different*
+  line. Identical prose, different location, same pull request.
+- **Three were author-only**, a one-word acknowledgement with no reviewer
+  comment. The distiller filters bot accounts; it does not filter threads a
+  human opened on their own change.
+- **Two sat on a file outside the diff** and were unreachable by construction.
+
+Thirteen human threads survived. That still cleared the pre-registered
+minimum, so no re-roll was needed.
+
+The exclusion decision was recorded in full before scoring, including a
+prediction: three of the five machine-authored concerns map onto checklist
+items, so removing them should make a positive result *harder* to obtain. That
+prediction was stated in writing precisely so it could not be taken on trust,
+and the stage committed to reporting the result both ways.
+
+### The result
+
+| measure | directed | plain | gap | p | verdict |
+|---|---|---|---|---|---|
+| total coverage /13 | 2.2 | 2.2 | **0.0** | 1.000 | not supported |
+| targeted subset /7 | 1.6 | 1.0 | 0.6 | 0.167 | not supported |
+| findings emitted | 13.6 | 13.6 | 1.00x | — | confound absent |
+
+Dead flat on the pre-registered primary measure. The verbosity confound that
+clouded stage 4 at 1.46x is completely absent here at 1.00x, which at least
+means neither stage's number is explained by one condition simply saying more.
+
+Across ten runs, **nine of the thirteen threads were reached by nobody.**
+
+### Both ways, as promised
+
+| answer key | directed | plain | gap | p |
+|---|---|---|---|---|
+| 13 human threads | 2.2 | 2.2 | 0.0 | 1.000 |
+| 5 machine-authored threads | 3.2 | 2.2 | 1.0 | 0.127 |
+| all 18, the uncleaned key | 5.4 | 4.4 | 1.0 | 0.079 |
+
+The pre-scoring prediction held. Keeping the machine-authored threads raises
+the directed condition, and raises it enough to turn a dead-flat null into the
+best-looking number in the stage.
+
+**Had the answer key not been audited, this stage would have reported a
+one-thread gap at p = 0.079 and called it suggestive.** The entire apparent
+effect is the treatment agreeing more closely with another model's review
+output. An experiment scored against machine-written review threads is not
+measuring agreement with human reviewers; it is measuring agreement with a
+model, and it will flatter whichever condition writes in a more model-like
+register.
+
+### The part the pre-registration got wrong
+
+Stage 4's effect was never "the checklist helps". It was one checklist item
+firing on one thread about newly introduced package-level state, 5/5 against
+0/5. So the obvious question for a null result is whether the held-out pull
+request contains that defect class at all.
+
+A mechanical check of the diff says it does not. Of 220 added lines, six
+introduce package-level declarations and **none of them is a variable or
+constant** — they are a type, a constructor, a method and three test functions.
+A judge-free string check agrees: package-level state is raised by 0/5 directed
+arms here, against 5/5 on the tuned pull request.
+
+**The item responsible for the entire stage-4 effect had nothing to act on.**
+
+That materially changes what this stage establishes:
+
+- the seven-item bundle produced **no measurable benefit** on an unseen pull
+  request, gap exactly zero on the pre-registered primary measure — this stands;
+- the one item with a demonstrated effect was **untestable here**, so the
+  stage-4 claim is neither confirmed nor refuted, it is **untested**;
+- the benefit that does appear, appears **only against machine-authored text**.
+
+The flaw is in the selection rule, and it is mine. It constrained *structure* —
+thread count, language, file types, corpus membership — but not
+*applicability*. A pull request can satisfy every structural criterion and
+still contain nothing for a narrow treatment to act on. The resulting null is
+uninformative about the treatment while being indistinguishable, in the
+numbers, from a refutation.
+
+Selecting on defect-class presence would not have been selecting on outcome. It
+would have been defining the population in which the claim is made. A treatment
+that catches new package-level state should be tested on changes that add some,
+and its claim should be narrowed to that population rather than stated over
+pull requests in general.
+
 ## What this changes
 
 | Assumption going in | Status | Consequence for the design |
@@ -795,9 +923,10 @@ Consequences now binding on Atom's own experiments:
 **Proceed to spec — but the spec can no longer be justified by this POC's
 findings, only by its constraints.**
 
-Twenty-three reviewing arms across three stages produced **no treatment that
-measurably improves review coverage**. That is a real result, and it should
-change the shape of what gets built rather than be worked around.
+Thirty-eight reviewing arms across five stages produced **no treatment that
+measurably improves review coverage on an unseen change**. That is a real
+result, and it should change the shape of what gets built rather than be
+worked around.
 
 The design should be:
 
@@ -819,14 +948,28 @@ Multiple unioned passes are **no longer recommended on this evidence**. Union
 from repetition was measured and is nearly worthless (7/24 from five runs
 against 6/24 from the best single run). Union from *variety* is untested.
 
-**The most promising untested lever is the instruction, not the context.** Every
-context treatment failed; the one instruction change tested produced the largest
-effect in the study. The obvious next experiment is a *directed* reviewer —
-told to ask "does this already exist?" of every new helper, with the checkout as
-the means of answering — measured with five runs per condition from the start.
+**The instruction lever has now been tested, and the result is a narrow one.**
+On the pull request whose misses had been read, a directed checklist unlocked
+one defect class 5/5 against 0/5. On an unseen pull request the gap was exactly
+zero — but that change contained no instance of the defect class in question,
+so the narrow claim is untested rather than refuted.
 
+Two consequences for the spec:
+
+5. Ship the directed checklist as **opt-in, off by default**, described by the
+   one defect class it has been shown to catch — newly introduced package-level
+   state — and not as a general improvement. It is cheap, it did not increase
+   output volume on the held-out change (1.00x), and it has a readable
+   mechanism. None of that makes it a default.
+6. Treat review-history mining as **unproven and hazardous**, per finding 20.
+   Any such feature must detect machine-written threads before using them.
+
+The next experiment is not another context input. It is the same checklist on a
+held-out change selected by a mechanical rule requiring the defect class to be
+present, with the claim narrowed to that population from the outset.
 Next artifact: a design spec for `atom review`, co-written with the developer,
-written in full knowledge that its context inputs are unproven.
+written in full knowledge that its context inputs are unproven and its one
+instruction result is narrow and not yet shown to transfer.
 
 Conditions before continuing:
 
@@ -834,11 +977,15 @@ Conditions before continuing:
   agent configurations. Five runs per condition minimum, noise floor reported
   alongside any effect, category and analysis plan fixed before scoring. This
   POC published two wrong headlines without it.
+- **Pre-register generalisation tests on applicability, not just structure**
+  (finding 21). A held-out case must contain an instance of the mechanism under
+  test, or the null means nothing.
+- **Audit any scraped ground truth before scoring** (finding 20), and record the
+  expected direction of bias in writing first. Stage 5 would have reported a
+  false positive without this.
 - **Do not reinstate any refuted claim** into the spec's justification. If the
   spec needs C3, C3 must be re-established by a new, properly powered
   experiment — not by the stage-1 result, which is superseded.
 - Retire the mined corpus from the critical path, but **keep it** — the
   consistency observation is worth a properly powered follow-up, and the corpus
   cost real effort to build.
-
-
