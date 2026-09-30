@@ -91,7 +91,7 @@ Measured at the cut point, the subsystem under test contains:
 | Go source files | 394 |
 | Go test files | 192 |
 | Lines of Go source | ~100,000 |
-| Top-level areas | ~30 |
+| Areas | 50 |
 | Commits of history available | 1,656 |
 
 ### How it is built
@@ -109,8 +109,22 @@ real Atom feature would do.
 
 ### How large it may be
 
-**About 10,000 words**, roughly 300 per area: purpose, main interfaces, and who each
-area talks to.
+**About 10,000 words**, with length scaled to the size of each area rather than
+spread evenly: 400 words for the largest areas, 300 for mid-sized ones, 150 for
+small ones, plus roughly 1,200 for the synthesis.
+
+**Recorded deviation.** The subsystem turned out to contain 50 areas, not the ~30
+that the top-level directory count suggested, because many small areas hold only
+one or two files. Two options were available: skip the small areas and stay under
+10,000 words, or cover everything and overshoot. Covering everything projects to
+about **12,200 words**.
+
+The overshoot was accepted. Several of the small areas — telemetry, metrics,
+caching, certificates, retry handling — are touched by repairs already in the
+sample, so skipping them would have left the knowledge base silent on code the
+agent genuinely has to find. Two thousand words is a poor trade against a blind
+spot. The ceiling existed to protect the context budget, and 12,200 words does not
+threaten it.
 
 The knowledge base deliberately does **not** list files. Its job is to tell the agent
 which areas are involved, so that the agent's own search lands in the right place.
@@ -195,10 +209,11 @@ A repair is a fix or an improvement to existing behaviour — not a new capabili
 |---|---|---|
 | cut point | last commit before 1 June 2025 | precedes every repair in the sample, so no answer can leak |
 | how the knowledge base is built | structured sweep, one pass per area then synthesis | a single pass over 100,000 lines risks a shallow document |
-| how large it may be | ~10,000 words, ~300 per area | enough to point at the right areas without becoming skimmable |
+| how large it may be | ~12,200 words, scaled by area size | enough to point at the right areas without becoming skimmable; overshoots the original ~10,000 target to cover small areas (see above) |
 | arms | two | the question is knowledge base versus nothing; the old hints arm was already refuted |
 | sample | 20 repairs of 10+ files, all after the cut point | that is where recall actually fails |
 | trials | 5 per repair per arm | repeat runs of the same prompt vary by ~0.145 |
+| model | `gpt-5.4`, both arms | the 0.726 plain-search baseline was measured on this model; changing it invalidates the comparison |
 
 ## Privacy
 
