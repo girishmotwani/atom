@@ -38,3 +38,16 @@ Thumbs.db
 
 # Scratch space for measurement logs and workflow artifacts.
 .temp/
+
+# Blast-radius experiment working data.
+#
+# This measurement runs against a private repository, so everything the driver
+# produces is saturated with that repo's internal file paths, commit hashes and
+# name -- 761 path references at last count, plus 72 raw agent replies whose whole
+# purpose is to name real files in it. None of that can be published.
+#
+# The brief and the driver are worth publishing once the repo-specific parts are
+# replaced with placeholders. Until that work is done the whole tree stays local,
+# because a leak into git history cannot be taken back.
+poc/blast-radius/
+specs/blast-radius/
