@@ -92,6 +92,9 @@ Atom's most valuable moment is an agent reporting *"I was wrong, here's the outp
 | `atom-ship` | Commit and open a pull request |
 | `atom-build` | End-to-end orchestrator |
 
+**New to Atom?** [docs/workflow.md](docs/workflow.md) walks through what happens at
+each step, what you are expected to do at the gates, and what ends up on disk.
+
 ---
 
 ## Design principles
