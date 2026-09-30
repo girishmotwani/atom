@@ -4,10 +4,12 @@ Claims were registered in [claims.md](claims.md), with each claim marked as
 pre-registered or formed mid-experiment. Nothing here moves a threshold that
 was set there.
 
-**Subject.** One held-out pull request in a large internal Go service: a
-networking control-plane component. 12 production files, 73 KB of unified diff
-with 12 lines of context per hunk. Ground truth is the 24 comment threads its
-human reviewers actually wrote.
+**Subject.** The first five stages used one held-out pull request in a large
+internal Go service: a networking control-plane component. 12 production files,
+73 KB of unified diff with 12 lines of context per hunk. Ground truth was the
+24 comment threads its human reviewers actually wrote. Later stages used either
+a second large production change to test checklist length or a synthetic Go
+corpus with planted defects after the scraped-comment metric failed.
 
 **Sanitisation.** This report is written for an open-source repository. The
 subject repository, its pull request identifiers, and the verbatim text of its
@@ -15,7 +17,7 @@ review comments are deliberately omitted. Human threads are referenced by local
 index only, and their substance is paraphrased at the level of category. The
 full unsanitised working set stays outside this repository.
 
-**Design.** Three stages.
+**Design.** Eight stages. The first five used scraped human review threads; the later stages moved to a synthetic seeded-defect benchmark after that metric failed.
 
 *Stage 1* — four reviewing arms over a 2x2: knowledge base present/absent by
 checkout present/absent, one run each.
@@ -29,16 +31,15 @@ independent runs of the checkout condition, scored against the five plain arms
 on a thread category fixed in writing beforehand.
 
 Every arm received identical review instructions apart from the input under
-test. None could read the ground truth. Arms were scored in a single blind pass
-per stage by an independent judge, anonymised with attribution fields stripped.
+test. None could read the ground truth. Arms were scored blind, with attribution
+fields stripped; later seeded stages also verified prompt identity mechanically
+so the rule block was the only intended difference.
 
 ---
 
 ## Headline
 
-**Five stages. Thirty-eight reviewing arms. Every context input tested failed.
-The one instruction change tested produced the only reproducible effect, and
-it did not survive contact with an unseen pull request.**
+**Eight stages. Every context input tested failed. A hand-curated checklist is the only review aid that has beaten its alternatives, and the later experiments narrowed that result rather than generalising it.**
 
 | lever | what was tested | verdict |
 |---|---|---|
@@ -48,6 +49,10 @@ it did not survive contact with an unseen pull request.**
 | context | checkout aimed at the "already exists" category | **refuted on replication** |
 | **instruction** | directed close-reading checklist, tuned pull request | no effect on total coverage; one defect class unlocked 5/5 vs 0/5 |
 | **instruction** | the same checklist, unseen pull request | **no effect; gap exactly 0.0** |
+| **instruction** | checklist length on scraped human threads | not decided; the answer key was mostly unreachable |
+| **instruction** | checklist length on seeded defects | **longer lists lose recall** |
+| **instruction** | model-picked rules versus curated rules | **model selection refuted; curation won** |
+| **instruction** | extra rules added to the curated set | stopped before main run; selector overlap made the question unanswerable |
 
 The instruction result was narrow and stage 4 said so: total coverage did not
 move, and the effect traced to a single thread out of four targeted. It
@@ -61,6 +66,13 @@ refuted — it was untestable. What stage 5 does establish is that the checklist
 as a bundle produced no general benefit, and that the only gap visible anywhere
 in it appears solely when scoring against review threads that were themselves
 machine-generated.
+
+Stages 6 through 8 changed the benchmark instead of adding more context. Stage
+6 showed that scraped review threads were a broken scoreboard. Stage 7 showed
+on seeded defects that checklist dilution is real and that model selection does
+not recover hand curation. Stage 8 was stopped before its main run because the
+selector outputs made the additive critical-mass question arithmetically
+unanswerable.
 
 
 **This report has been corrected twice, each time after a replication. Read
@@ -827,6 +839,248 @@ that catches new package-level state should be tested on changes that add some,
 and its claim should be narrowed to that population rather than stated over
 pull requests in general.
 
+
+## Stage 6 — the checklist-length experiment, and the metric that failed
+
+The next question came from the developer's model of how `atom review` should
+improve over time: the checklist should keep accumulating rules from human
+review history until it reaches enough mass to find more issues. Stage 6 tested
+the first part of that claim directly. Does a checklist still work as it grows
+from seven rules to thirty to one hundred?
+
+The design used a large, old production change: 906 changed lines, a 194 KB
+diff, and 24 human review threads after the answer key was audited. The seven
+core rules were placed in the middle of the longer lists, not at the top or the
+bottom, and the prompts were checked to be identical apart from the rule block.
+There were five runs per list length, fifteen reviewing arms total.
+
+| measure | 7 rules | 30 rules | 100 rules |
+|---|---:|---:|---:|
+| findings per run | 3.2 | 3.2 | 4.0 |
+| coverage of 24 human threads | 0.0 | 0.0 | 0.0 |
+| package-state rule fired, strict argument | 0/5 | 0/5 | 0/5 |
+| precision | 81% | 88% | 85% |
+
+All pairwise coverage comparisons were gap 0.0, exact p = 1.000.
+
+That does **not** mean longer lists are harmless. It means this stage could not
+answer the checklist-length question. The rule chosen as the clean primary
+measure did not fire even in the seven-rule condition. The arms often mentioned
+the same topic, but they did not make the argument the rule requires. They were
+not saying "make this a field or injected dependency"; they were raising a
+different concern, usually concurrency.
+
+The more important result was not the list-length result at all. It was the
+answer key.
+
+### The scraped answer key was mostly not a review benchmark
+
+Every one of the 24 human threads was classified item by item after the null
+result:
+
+| class | n | what it was |
+|---|---:|---|
+| reachable | 5 | a substantive issue visible in the diff |
+| local convention | 7 | repository-specific naming or import-alias preferences |
+| artefact | 8 | pasted benchmark output or process negotiation |
+| tooling | 4 | formatter or import-order complaints |
+
+Only **5 of 24** threads — **21%** — were reachable by a diff-only reviewer.
+That finding invalidated the metric used by the earlier stages. The reviewers
+were not mostly wrong; their precision was 83% across all 52 findings. They
+were finding real problems, but the scoreboard was mostly asking them to
+rediscover things no diff reviewer should be expected to rediscover.
+
+This is why the next stage stopped scoring against scraped human comments and
+moved to a curated seeded-defect benchmark.
+
+### What Stage 6 does and does not establish
+
+It establishes that the old metric was broken and that answer keys scraped from
+review history must be classified before being counted. It also records a large
+change-size effect: on the 194 KB diff the reviewer produced roughly a quarter
+as many findings as it had on the smaller held-out change.
+
+It does **not** establish that longer checklists help. It does **not** establish
+that longer checklists dilute. The headline question remained open because the
+measurement instrument failed first.
+
+## Stage 7 — the seeded-defect benchmark, and why model selection lost to curation
+
+Stage 7 replaced the broken scoreboard with a synthetic Go service and a
+planted-defect key. The corpus was written for the experiment, contains no
+private source material, and can be published with Atom. Fourteen defects were
+targeted by the curated seven-rule checklist, two additional defects were kept
+as controls, and the key was blind to rule attribution.
+
+The first run re-tested checklist length on this new benchmark:
+
+| condition | findings per run | targeted defects found /14 | controls /2 | precision |
+|---|---:|---:|---:|---:|
+| curated 7 | 10.4 | **9.2** | 0.0 | 98% |
+| 30 rules | 7.8 | **6.8** | 0.0 | 100% |
+| 100 rules | 7.2 | **6.2** | 0.0 | 100% |
+
+Exact two-sided permutation tests:
+
+| comparison | gap | p |
+|---|---:|---:|
+| curated 7 vs 30 rules | +2.40 | **0.024** |
+| curated 7 vs 100 rules | +3.00 | **0.024** |
+| 30 rules vs 100 rules | +0.60 | 0.571 |
+
+On the seeded benchmark, dilution is real. The seven-rule checklist finds about
+33% more targeted defects than the thirty-rule list and about 48% more than the
+hundred-rule list. Longer lists did not add false positives; they lost recall.
+
+The controls failed as an instrument. They scored zero in every condition,
+including the seven-rule baseline. A floor cannot measure crowding-out. That
+failure became a rule for later work: a control or newly seeded defect must be
+findable in the baseline before its decline can mean anything.
+
+### The shippable mechanism was then tested and refuted
+
+The mechanism Atom would actually ship is not "always send all hundred rules".
+It is "grow a knowledge base, then select the few rules relevant to this change".
+So the next test gave five independent selectors the diff and the full
+hundred-rule checklist, asked each to pick seven rules, and then ran reviewers
+with those selected lists. A random seven-rule condition was added as a count
+control.
+
+All five conditions were scored in one blind pass:
+
+| condition | rules | targeted defects found /14 | precision |
+|---|---:|---:|---:|
+| hand-curated | 7 | **9.2** | 98% |
+| model-selected | 7 | **6.8** | 90% |
+| 30 rules | 30 | 6.8 | 100% |
+| 100 rules | 100 | 6.2 | 100% |
+| random | 7 | **5.2** | 90% |
+
+Pre-registered comparisons:
+
+| comparison | gap | p |
+|---|---:|---:|
+| model-selected vs hand-curated | -2.40 | **0.048** |
+| model-selected vs 100 rules | +0.60 | 0.643 |
+| random vs hand-curated | -4.00 | **0.008** |
+| random vs 100 rules | -1.00 | 0.286 |
+| model-selected vs random | +1.60 | 0.087 |
+
+Model selection was **refuted**. It was significantly worse than the curated
+seven and indistinguishable from sending all one hundred rules. Random seven
+rules also performed like the hundred-rule list, so the short-list advantage was
+not caused by brevity alone. Count was not the lever; content was.
+
+The selector was not random. It recovered curated rules at 6.9x chance and was
+stable across runs. The failure was systematic: it picked rules with obvious
+lexical cues in the diff and missed rules about shape and comparison with
+neighbouring code. Those are exactly the rules a reviewer most needs prompting
+to apply, because nothing in the changed text points to them.
+
+Curation won. The result supports a small standing checklist more strongly than
+a per-change selector, at least for this corpus and this selector.
+
+### What Stage 7 still cannot decide
+
+Seeded defects may not behave like organic defects. Purpose-written synthetic
+code makes precision easier and may make some planted problems more salient.
+Everything measured here should be treated as an upper bound until checked
+against real defects.
+
+Stage 7 also does not decide whether selection helps as an addition to the
+curated seven. The selected race and timeout rules were genuinely relevant;
+they were harmful only because buying them meant dropping curated rules that
+mattered more. That additive version became the next experiment.
+
+## Stage 8 — the extra-rules experiment, stopped before the main run
+
+Stage 8 tested the developer's critical-mass hypothesis in its additive form:
+keep the curated seven, then add a few change-specific rules from the larger
+rule base. The seeded benchmark was extended so there was something for
+non-curated rules to find.
+
+The design planted six new defects targeted by non-curated rules, in addition
+to the fourteen old defects targeted by the curated seven. The planned main run
+had four conditions, five runs each: curated seven; curated seven plus three
+model-selected rules; curated seven plus three random rules; and all one hundred
+rules. The three-rule additions make ten-rule checklists; the data artifacts and
+pre-registration agree on that point.
+
+The target rules were chosen mechanically. The procedure shuffled the
+non-curated rules with a fixed seed, walked the list in order, and accepted the
+first six that could be instantiated as plausible defects in the synthetic
+corpus. The accepted rules covered log severity, omitted empty fields, stale
+documentation, repeated literals, exhaustive status handling, and renamed
+exported methods. The accepted checklist positions were 11, 12, 15, 54, 90 and
+92. The whole walk was recorded before selector runs.
+
+### The findability gate did its job
+
+Before spending the twenty main runs, the six new defects were tested with a
+checklist containing only their six targeting rules. That gate was there because
+Stage 7's controls had failed at the floor.
+
+Round 1 found four of six defects 3/3 and two defects 0/3. The two failures were
+purely stylistic: an omitted-field encoding detail and a repeated literal. Each
+was repaired once, under a rule fixed before repair, to give it an observable
+consequence.
+
+Round 2 produced:
+
+| defect slug | runs detecting |
+|---|---:|
+| backoff-cap-broken | 3/3 |
+| cancelled-task-still-runs | 3/3 |
+| renamed-without-deprecation | 3/3 |
+| repeated-literal | 3/3 |
+| shutdown-logged-as-failure | 2/3 |
+| omitempty-hides-zero | 1/3 |
+
+That gate prevented a repeat of the failed-control problem. It also produced a
+finding that matters outside this experiment: reviewers report consequences,
+not rule violations. A rule whose violation changes nothing observable goes
+unreported even when the reviewer is handed that exact rule.
+
+The repair creates a declared limitation. Two of the six new defects were made
+more consequential after being observed unfindable, so the six-defect headroom
+set is biased toward defects a reviewer can see. Any measured headroom would be
+an upper bound, not a typical value.
+
+### Why the main run was stopped
+
+The new defects targeted checklist positions 11, 12, 15, 54, 90 and 92.
+
+The five model selectors chose positions 42, 95 and 90 in four runs, and 25, 42
+and 95 in one run. In aggregate: 42 was chosen 5/5, 95 was chosen 5/5, 90 was
+chosen 4/5, and 25 was chosen 1/5.
+
+The overlap with the six new target rules is exactly one position: 90.
+
+That made the headline question arithmetically unanswerable before a single
+main reviewing arm ran. The model-selected additive checklist could catch at
+most one of the six new defects by rule selection. Spending twenty runs would
+have measured a ceiling that was already visible from the selector outputs.
+
+Three paths were considered. Running the planned arms anyway would have spent a
+main run on a question the design could no longer answer. Relabelling the stage
+as a dilution test would have changed the claim after seeing a decisive planning
+result. Adding a hand-picked checklist aimed at the planted defects would have
+been teaching to the test: a win would prove only that rules chosen because they
+match planted defects can find those planted defects.
+
+The decision was to stop the seeded-defect version rather than spend the main
+run.
+
+### What remains open
+
+The critical-mass hypothesis is not settled for organic defects. This stopped
+experiment shows that the tested selector did not pick the non-curated rules the
+new seeded defects needed, and that adding hand-picked target rules would not be
+a fair test. It does not prove that a growing checklist cannot help on real
+changes, and it does not prove that seeded defects represent organic defects.
+Those remain open questions.
+
 ## What this changes
 
 | Assumption going in | Status | Consequence for the design |
@@ -906,8 +1160,10 @@ Consequences now binding on Atom's own experiments:
 - **C3 under a directed instruction.** Stage 3 refuted C3 as a property of
   *having* a checkout. It says nothing about a reviewer explicitly told to
   check for duplication, which is a different and untested treatment.
-- **Generalisation.** One pull request, one repository, one language, one
-  reviewing model. Twenty-three reviewing arms in total, all on the same diff.
+- **Generalisation.** The first five stages used one pull request, one
+  repository, one language, and one reviewing model. The seeded stages used one
+  synthetic corpus. They are stronger as controlled mechanism tests, but weaker
+  as evidence about organic defects.
 - **Whether matching human threads is the right target at all.** Every arm
   produced findings judged real that the humans never raised. A reviewer that
   finds different true problems is not obviously worse than one that reproduces
@@ -923,10 +1179,11 @@ Consequences now binding on Atom's own experiments:
 **Proceed to spec — but the spec can no longer be justified by this POC's
 findings, only by its constraints.**
 
-Thirty-eight reviewing arms across five stages produced **no treatment that
-measurably improves review coverage on an unseen change**. That is a real
-result, and it should change the shape of what gets built rather than be
-worked around.
+The context-input stages produced **no treatment that measurably improves
+review coverage on an unseen change**. The seeded stages add a narrower result:
+a small hand-curated checklist beats longer lists and model-selected lists on
+planted defects. Both results should change the shape of what gets built rather
+than be worked around.
 
 The design should be:
 

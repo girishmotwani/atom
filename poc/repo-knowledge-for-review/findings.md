@@ -483,3 +483,122 @@ down, the claim is too vague to generalise and should be narrowed first.
 the moment the mechanism is identified — not after a null forces it. C7 should
 have been stated as a claim about changes that introduce package-level state as
 soon as the single-thread mechanism was read out of the output.
+
+---
+
+## 22. A benchmark built from scraped human comments must be classified before it is counted
+
+Stage 6 scored fifteen reviewing arms against 24 human review threads and got
+zero coverage everywhere. That looked like a reviewer failure until the answer
+key was read item by item.
+
+Only 5 of the 24 threads were substantive issues visible in the diff. The rest
+were local convention preferences, formatter complaints, pasted benchmark
+output, or process discussion. Those may be useful human review comments, but
+they are not all defects a diff-only reviewer should be expected to rediscover.
+
+This invalidates any metric that treats "human thread count" as "defect count"
+without classification. It also explains why the arms could have high precision
+and zero coverage at the same time: they were finding real issues that were not
+on the scraped scoreboard.
+
+**Rule for Atom.** Before scoring against review-history output, classify each
+key item by reachability and by kind. If the benchmark contains process chat,
+tooling requests, local convention preferences, or copied diagnostic output,
+report those classes separately. Do not mix them into a defect-recall measure.
+
+---
+
+## 23. A judge-free proxy must be validated against the construct before it is trusted
+
+Stage 6 had a judge-free check that appeared to say a checklist rule fired in
+12 of 15 runs. The strict judge said it fired in 0 of 15. Both were right about
+what they measured.
+
+The proxy detected the topic: arms used words like package-level or global. The
+rule required a specific argument: that new state should be a field or injected
+dependency. The arms raised the same syntax for different reasons, usually
+concurrency safety, so the topic was present and the rule was absent.
+
+Finding 19 remains right: prefer observables that do not require a judge. The
+addition is that the observable must be checked against the construct once
+before it becomes a metric. Otherwise a precise, reproducible proxy can measure
+something adjacent with complete confidence.
+
+---
+
+## 24. A control or new defect must be findable before its absence can measure anything
+
+Stage 7 included two controls intended to test whether longer checklists crowd
+out unguided attention. They scored zero in every condition, including the
+seven-rule baseline. A floor cannot discriminate. Their decline could never
+have been observed, because there was nowhere lower to go.
+
+Stage 8 added a findability gate before the main run: give reviewers only the
+rules that target the new defects, then require each new defect to be found in
+at least two of three runs. The gate caught two unfindable defects before the
+main run and forced the limitation into the record.
+
+**Rule for Atom.** Before using a control, planted defect, or newly introduced
+answer-key item to measure a treatment, prove that it is detectable under a
+condition where it should be detected. If it is not findable there, it cannot be
+used to interpret a null elsewhere.
+
+---
+
+## 25. Per-change rule selection favours lexical cues, not necessarily useful rules
+
+The model selector in Stage 7 was better than random. It recovered curated rules
+at 6.9x chance and made stable choices across five independent runs. That makes
+the failure more informative, not less.
+
+It consistently chose rules whose trigger was visible as text in the diff: a
+shared data structure, an outbound call, a status switch. It consistently missed
+rules about shape and comparison with neighbouring code: function size, single
+responsibility, and local consistency. Those missed rules are exactly the ones a
+reviewer needs prompting to apply, because no token in the changed text points
+to them.
+
+The result refutes the cheap design "grow the rule base, then ask the model to
+choose seven". The selector is drawn toward what it can already see. Curation is
+still doing real work by keeping non-lexical review obligations in front of the
+reviewer.
+
+---
+
+## 26. Reviewers report consequences, not rule violations
+
+The extra-rules findability gate initially failed on two defects even though the
+reviewers were handed the exact rules those defects violated. Both failures were
+stylistic: an encoding tag and a repeated literal. Neither produced a visible
+behavioural consequence. Four defects with visible consequences passed.
+
+After one bounded repair gave the two failures real consequences, one became
+strong and the other became weakly findable. That is the lesson: the reviewer is
+not a checklist compliance engine. It silently applies a consequence filter.
+
+**Rule for Atom.** Phrase checklist rules around the observable failure they
+prevent, not around style alone. A rule whose violation changes nothing the
+reviewer can explain is unlikely to be reported, even when explicitly present in
+the checklist.
+
+---
+
+## 27. Stop when the arithmetic makes the experiment unable to answer its question
+
+The extra-rules main run was stopped before twenty reviewing arms were spent.
+The reason was not cost or inconvenience. The selectors had already made the
+headline question impossible to answer: the six new defects targeted six
+non-curated rules, and the model-selected additions overlapped them on exactly
+one rule.
+
+Running anyway would have produced a numeric result with an interpretation that
+was already capped by the setup. Adding a hand-picked target arm would have been
+worse: it would teach to the test by choosing rules because they match defects
+that were planted for them.
+
+A pre-run planning result can be decisive evidence. When it shows that the
+measurement cannot move enough to answer the registered question, the correct
+response is to stop and write that down, not to spend the main run for the sake
+of having a table.
+

@@ -279,3 +279,61 @@ claim narrowed to that population.
 
 **Flaw in the pre-registration:** the selection rule constrained structure but
 not applicability, so a null is indistinguishable from a refutation.
+
+---
+
+## Checklist length on scraped human threads — NOT DECIDED
+
+**Status:** not decided. The checklist-length experiment could not answer its
+registered question because the primary rule did not fire in the baseline and
+the scraped answer key was later found to be mostly unreachable by a diff-only
+reviewer.
+
+The measured table was flat on coverage: 0.0 of 24 human threads for seven,
+thirty and one hundred rules, with all pairwise p-values equal to 1.000. That
+is not evidence that longer checklists help, and it is not evidence that longer
+checklists are harmless. The measurement instrument failed first.
+
+The stage did change the POC: only 5 of 24 scraped human threads were reachable
+review findings. Later stages therefore moved to a seeded-defect benchmark.
+
+## Checklist dilution on a seeded-defect benchmark — SUPPORTED
+
+**Status:** supported on the synthetic seeded benchmark.
+
+A seven-rule curated checklist found 9.2 of 14 targeted defects per run. The
+thirty-rule list found 6.8, and the hundred-rule list found 6.2. The seven-rule
+condition beat both longer lists by exact permutation test (p = 0.024 for each
+comparison). Precision did not degrade, so the loss is recall rather than noise.
+
+**Limit:** the benchmark is synthetic. The result is an upper bound until checked
+against organic defects.
+
+## Model rule selection versus hand curation — REFUTED
+
+**Status:** refuted for the tested selector and corpus.
+
+The model-selected seven-rule lists found 6.8 of 14 targeted defects per run,
+significantly below the hand-curated seven at 9.2 (p = 0.048) and statistically
+indistinguishable from the hundred-rule list at 6.2 (p = 0.643). Random seven
+rules performed like the hundred-rule list, so count alone was not the lever.
+
+The selector was stable and better than random, but it favoured rules with
+lexical cues in the diff and missed rules about shape and neighbouring-code
+consistency. Curation won.
+
+## Extra rules as an additive critical-mass test — STOPPED BEFORE MAIN RUN
+
+**Status:** stopped before the twenty planned main reviewing arms.
+
+The experiment added six new seeded defects to create headroom for non-curated
+rules. The findability gate mostly worked, but selector outputs made the
+headline question arithmetically unanswerable: the six new defects targeted
+checklist positions 11, 12, 15, 54, 90 and 92, while the model-selected
+additions overlapped that set only at position 90.
+
+The stopped result does not refute the critical-mass hypothesis for organic
+defects. It records that this seeded version could not answer it without either
+spending runs on a known ceiling or adding a hand-picked arm that would teach to
+the test.
+
