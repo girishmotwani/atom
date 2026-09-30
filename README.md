@@ -198,6 +198,58 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 > deprecated direct repo, URL and local-path installs, and will only support
 > `plugin@marketplace` in a future release.
 
+### Installing and updating as Atom evolves
+
+Installing copies Atom into `~/.copilot/installed-plugins/atom/atom-go`. That copy is a
+**snapshot, not a live link** — it has no `.git` inside it and does not track the source.
+New bits never arrive on their own, so this is the command that matters:
+
+```bash
+copilot plugin update atom-go@atom      # one plugin
+copilot plugin update --all             # everything installed
+```
+
+**Know what you are updating *from* before you run it.** A plugin updates from the
+marketplace it was installed from, which is not necessarily the copy you are editing:
+
+```bash
+copilot plugin marketplace list
+```
+
+That distinction gives two different workflows:
+
+| You are | Marketplace points at | To get new bits |
+|---|---|---|
+| **Using** Atom | `girishmotwani/atom` on GitHub | `copilot plugin update atom-go@atom` |
+| **Developing** Atom | your local clone | same command — no push required |
+
+To develop against your own clone, point the marketplace at it with an **absolute** path
+(a relative path is parsed as `owner/repo`) and reinstall:
+
+```bash
+copilot plugin marketplace add /absolute/path/to/atom
+copilot plugin update atom-go@atom
+```
+
+Because the marketplace is a local directory, this picks up committed changes without
+pushing anything.
+
+> **Do not develop with `--plugin-dir`.** Live-loading from a directory silently fails to
+> load the plugin in some sessions, which is exactly how this README once reported a
+> bogus 33% routing figure — two thirds of those "failures" were sessions with no Atom
+> loaded at all. Installed properly the problem disappears. The evidence is in
+> [the routing POC](poc/atom-routing-rules/results.md).
+
+When publishing a change for other people, bump the version in **both** `plugin.json` and
+`.github/plugin/marketplace.json` — they must agree — and push before asking anyone to
+update.
+
+Confirm the update actually landed, rather than assuming:
+
+```bash
+copilot plugin list                     # shows the installed version
+```
+
 ### Run it
 
 That is the whole setup. Atom's other half — the `atom` command that runs the Go gates
