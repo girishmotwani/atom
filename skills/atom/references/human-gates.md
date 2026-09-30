@@ -73,6 +73,39 @@ the artifact as presented.
 
 ---
 
+## Research Loops
+
+Some POCs are not a single spike but a **series of experiments**, where each result
+decides what the next experiment should be. Measuring whether a technique works,
+comparing approaches, or chasing down why something underperforms all take this shape.
+
+A research loop is the easiest place in Atom to drift, because every individual step
+feels like "still finishing the POC". It is not one POC. **Each experiment is its own
+POC and carries its own two gates.**
+
+| Gate | What you present | What a "yes" authorises |
+|---|---|---|
+| Before an experiment runs | The question it answers, the conditions, what result would count as a yes and what would count as a no, and what it will cost | Running that experiment only |
+| After an experiment finishes | The result, whether it matched your prediction, and what you now think the next experiment should be | Deciding the next step together — never automatically running it |
+
+Rules specific to research loops:
+
+- **A result that changes the plan is a gate, not a paragraph.** If an experiment
+  refutes the approach, exposes a flaw in the measurement, or makes the next step
+  obvious, stop and say so. "Obvious" is exactly when you are most likely to be wrong.
+- **Discovering the experiment cannot answer the question is a full stop.** Do not
+  silently redesign the benchmark and carry on. The redesign is the developer's
+  decision, because it changes what is being claimed.
+- **Changing what you measure is a material change.** New benchmark, new scoring
+  method, new ground truth, or repairing the thing being measured — all re-gate.
+- **Batches of parallel agents are spend.** Gate before launching a batch, not after
+  the results are in.
+
+State the cost in the pre-run gate, in terms the developer can weigh — how many
+agents, roughly how long, and what is thrown away if it is wrong.
+
+---
+
 ## Existence Is Not Approval
 
 An artifact already being on disk never auto-satisfies a gate.

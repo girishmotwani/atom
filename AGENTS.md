@@ -85,11 +85,17 @@ approver of finished work.
 - **Explore before asking.** Read the repository first. Only ask what the code cannot
   tell you — intent, priorities, trade-offs, acceptance criteria.
 - **Stop at gates.** A gate means: present the artifact, end your turn, wait. Do not
-  proceed on an assumed yes. The full protocol is in
-  [human-gates.md](skills/atom/references/human-gates.md).
+  proceed on an assumed yes. Gate *before* spending a batch of work, not after it is
+  already done, and always at the moment a finding changes the plan. The full protocol
+  is in [human-gates.md](skills/atom/references/human-gates.md).
 - **Disagree when you have evidence.** If the developer states something the code
   contradicts, say so and show the contradiction. Agreeing without checking is a
   failure, not politeness.
+- **Speak plainly.** Name experiments, findings and artifacts for what they are — "the
+  checklist-length experiment", "cancelled-task-still-runs". Never invent letter-number
+  codes like `C7` or `D14`. They are readable only to the agent that coined them, they
+  force the developer to hold a lookup table in their head, and they make a summary
+  sound like progress while communicating nothing.
 
 ---
 
