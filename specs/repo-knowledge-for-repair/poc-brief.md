@@ -237,6 +237,36 @@ whichever way they fall.
 - Total: 20 repairs x 2 arms x 5 trials = **200 agent calls**.
 - An unreadable reply is excluded and counted, never guessed at or filled in.
 
+### Recorded deviation: thirteen calls outlived their time limit
+
+Part way through the run the machine put itself to sleep for close to two hours.
+Calls that were in flight stayed open across the sleep, so their elapsed time ran
+past the fifteen minute limit and the driver stopped them. Thirteen calls are
+marked failed for this reason.
+
+These are being kept, for three reasons:
+
+- **The answers are complete.** The driver only produces a score when the reply
+  contains a whole answer block; a cut-off reply is marked unreadable instead.
+  All thirteen produced scores, so all thirteen finished answering. The agent had
+  done its work and only the exit was stuck.
+- **Sleep gives no advantage.** A sleeping machine pauses the work; it does not
+  let the agent think longer or look at more of the repo. The agent gets the same
+  budget either way.
+- **It cannot favour one side.** Sleep stops whatever happens to be running at
+  that moment. Because the work runs in repair order, a stretch of paused time
+  lands on a run of neighbouring jobs no matter which side of the comparison
+  they belong to. It looks lopsided per repair for that reason alone.
+
+To keep this honest, the result is reported **both ways**: once with these
+thirteen included, and once with all thirteen dropped. If the two versions land
+on different sides of the bar, the result is reported as inconclusive rather than
+picking the flattering one.
+
+Timing: this rule was written down after the per-call lines for these thirteen
+were visible in the run log, but before any total or comparison was worked out.
+That is weaker than deciding it before the run started, and is recorded as such.
+
 ## Decided in advance, so it cannot be chosen later
 
 - The bar is the table above. It is applied verbatim.
