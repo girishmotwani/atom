@@ -191,7 +191,7 @@
       "panicked": true,
       "build_output": "built cleanly",
       "vet_output": "vet clean",
-      "run_output": "panic: assignment to entry in nil map\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/gimotwan/AppData/Local/Temp/tmps9vcjyrz/main.go:8 +0x28"
+      "run_output": "panic: assignment to entry in nil map\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/dev/AppData/Local/Temp/tmps9vcjyrz/main.go:8 +0x28"
     },
     {
       "id": "nil-pointer-dereference",
@@ -203,7 +203,7 @@
       "panicked": true,
       "build_output": "built cleanly",
       "vet_output": "vet clean",
-      "run_output": "panic: runtime error: invalid memory address or nil pointer dereference\n[signal 0xc0000005 code=0x0 addr=0x0 pc=0x199a10]\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/gimotwan/AppData/Local/Temp/tmps9vcjyrz/main.go:8 +0x10"
+      "run_output": "panic: runtime error: invalid memory address or nil pointer dereference\n[signal 0xc0000005 code=0x0 addr=0x0 pc=0x199a10]\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/dev/AppData/Local/Temp/tmps9vcjyrz/main.go:8 +0x10"
     },
     {
       "id": "typed-nil-in-interface",
@@ -239,7 +239,7 @@
       "panicked": true,
       "build_output": "built cleanly",
       "vet_output": "vet clean",
-      "run_output": "panic: runtime error: index out of range [5] with length 3\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/gimotwan/AppData/Local/Temp/tmps9vcjyrz/main.go:9 +0x17"
+      "run_output": "panic: runtime error: index out of range [5] with length 3\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/dev/AppData/Local/Temp/tmps9vcjyrz/main.go:9 +0x17"
     },
     {
       "id": "variable-division-by-zero",
@@ -251,7 +251,7 @@
       "panicked": true,
       "build_output": "built cleanly",
       "vet_output": "vet clean",
-      "run_output": "panic: runtime error: integer divide by zero\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/gimotwan/AppData/Local/Temp/tmps9vcjyrz/main.go:8 +0x9"
+      "run_output": "panic: runtime error: integer divide by zero\n\ngoroutine 1 [running]:\nmain.main()\n\tC:/Users/dev/AppData/Local/Temp/tmps9vcjyrz/main.go:8 +0x9"
     },
     {
       "id": "non-exhaustive-switch",

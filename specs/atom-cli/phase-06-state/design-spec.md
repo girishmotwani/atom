@@ -13,11 +13,11 @@ Run this in the Atom repository today:
 
 ```
 $ atom status
-Project: C:\Users\gimotwan\work\atom
+Project: C:\Users\dev\work\atom
 Phase:   unknown
 1 problem reported below.
 Problems:
-  - C:\Users\gimotwan\work\atom\.atom\state.json does not exist.
+  - C:\Users\dev\work\atom\.atom\state.json does not exist.
     This project does not look initialised -- run `atom init` first.
 exit=1
 ```

@@ -69,7 +69,7 @@ supported commands instead.
 ## Installation is global, not per-repo
 
 The installed plugin answered `/atom-poc` correctly from an unrelated
-repository (a Helios worktree). Atom therefore needs **no per-repo injection
+repository (an unrelated project's worktree). Atom therefore needs **no per-repo injection
 step at all** — this is strictly simpler than symlinking skills into each
 target repo.
 

@@ -95,7 +95,7 @@ short name `atom`, so the install line reads `atom-go@atom`.
 
 | Decision | Alternative | Why |
 |---|---|---|
-| Ship as a plugin | Per-repo symlink injection, as Helios does | Install once, works in every repo; nothing to commit into the user's project |
+| Ship as a plugin | Per-repo symlink injection, as some in-house frameworks do | Install once, works in every repo; nothing to commit into the user's project |
 | Skills as the command surface | A command file per beat | Skills win collisions anyway; duplicating them would create nine silent no-ops |
 | One `/atom` router | Rely on prose matching `AGENTS.md` | A slash command is discoverable; prose matching is not |
 | Marketplace install | `copilot plugin install owner/repo` | Direct installs are deprecated by the CLI |

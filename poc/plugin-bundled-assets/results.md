@@ -20,7 +20,7 @@ A loaded skill knows exactly where it lives. Asked for its own location it
 returned, unprompted and correct:
 
 ```
-C:\Users\gimotwan\work\atom\poc\plugin-bundled-assets\fixture\skills\atom-bundle-probe\SKILL.md
+C:\Users\dev\work\atom\poc\plugin-bundled-assets\fixture\skills\atom-bundle-probe\SKILL.md
 ```
 
 This was the assumed blocker and it is not one. A `SKILL.md` can legitimately
@@ -52,7 +52,7 @@ since an agent can narrate running a script it never ran (F10):
 ```
 script_path=...\fixture\scripts\probe.py
 argv=T3
-cwd=C:\Users\gimotwan\AppData\Local\Temp\bundleprobe-f52328
+cwd=C:\Users\dev\AppData\Local\Temp\bundleprobe-f52328
 ```
 
 Note `cwd`: the script ran from the throwaway working directory, not from the

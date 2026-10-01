@@ -111,7 +111,7 @@ So 727 green ended nothing. The phase ended when the program was run:
 
 ```
 $ python -m atom.cli status --no-colour
-Project: C:\Users\gimotwan\work\atom
+Project: C:\Users\dev\work\atom
 Phase:   phase-05-ship (resolved from the git branch)
 Artifacts:
   [x] poc-brief.md   [x] poc-report.md   [x] design-spec.md

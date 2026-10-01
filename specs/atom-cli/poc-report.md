@@ -34,7 +34,7 @@ Output:
 ========================================================================
 ATOM POC: module-isolation
 ========================================================================
-scenario built at: C:\Users\gimotwan\AppData\Local\Temp\atom-poc-isolation-ubat4n1l\parent
+scenario built at: C:\Users\dev\AppData\Local\Temp\atom-poc-isolation-ubat4n1l\parent
 go version go1.23.4 windows/amd64
 
 -- CONTROL: the spike must genuinely fail to compile --

@@ -79,5 +79,5 @@ UNREADABLE REPLIES
   claude-opus-5        trial  9  run did not complete (timed_out)
   claude-opus-5        trial 10  run did not complete (timed_out)
 
-raw replies: C:\Users\gimotwan\work\atom\poc\review-model-swap\raw
-summary:     C:\Users\gimotwan\work\atom\poc\review-model-swap\results.json
+raw replies: C:\Users\dev\work\atom\poc\review-model-swap\raw
+summary:     C:\Users\dev\work\atom\poc\review-model-swap\results.json
