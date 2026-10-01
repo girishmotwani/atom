@@ -34,7 +34,12 @@ DEFAULT_TRIALS = 5
 DEFAULT_WORKERS = 6
 DRAIN_GRACE_SECONDS = 2.0
 MAX_CONSECUTIVE_FAILURES = 20
-VALID_ARMS = ("plain", "knowledge-base")
+VALID_ARMS = ("plain", "knowledge-base", "symbol-walk", "symbol-index")
+
+# Arms that need the snapshot copy carrying `.atom-index/`. The other arms must
+# run against snapshots without it, or they could stumble on the index and the
+# comparison would mean nothing.
+ARMS_WITH_INDEX = ("symbol-index",)
 
 # The one-path-per-line fallback should not turn prose refusals into fake paths.
 PATHLIKE_LINE = re.compile(
@@ -326,9 +331,60 @@ Reply with a fenced ```json block containing only a JSON array of strings, for e
     plain = base + "\nUse ordinary search to find every file that must change.\n"
     if arm == "plain":
         return plain
+    if arm == "symbol-walk":
+        return plain + build_symbol_walk_section(use_index=False)
+    if arm == "symbol-index":
+        return plain + build_symbol_walk_section(use_index=True)
     if arm != "knowledge-base":
         raise ValueError(f"unknown arm: {arm}")
     return plain + build_knowledge_base_section(knowledge_base_text)
+
+
+def build_symbol_walk_section(use_index: bool) -> str:
+    """Describe the expand-from-seed-files strategy.
+
+    The two arms share every word of the strategy and differ only in how steps
+    two and three are carried out. Keeping the wording otherwise identical is
+    what lets the comparison attribute any difference to the lookup tool rather
+    than to the advice.
+    """
+
+    if use_index:
+        mechanism = (
+            "   This snapshot carries a prebuilt symbol index. Query it with:\n"
+            "\n"
+            "     python .atom-index/q.py symbols-in <file>      what a file declares\n"
+            "     python .atom-index/q.py neighbours <file>      files using what it declares\n"
+            "     python .atom-index/q.py who-uses <symbol>      files mentioning a symbol\n"
+            "     python .atom-index/q.py where-defined <symbol> where a symbol is declared\n"
+            "\n"
+            "   `neighbours` does steps 2 and 3 in one command and ranks results by how\n"
+            "   many symbols are shared. It understands Go visibility, so a package-private\n"
+            "   name in another package is correctly treated as a different symbol.\n"
+            "   The index is a navigational aid built by name matching, not proof: treat\n"
+            "   its output as leads to confirm by reading the files.\n"
+            "   `.atom-index/` is tooling, not repository source. Never report it as an answer.\n"
+        )
+    else:
+        mechanism = (
+            "   Open each file you have found and read the names it declares -- types,\n"
+            "   functions, methods. Then search for those names to find the files that\n"
+            "   use them.\n"
+        )
+
+    return (
+        "\nHow to search:\n"
+        "Do not stop at the files that match the words of the request. Work outward:\n"
+        "\n"
+        " 1. Search for files that look involved, using the words in the request.\n"
+        " 2. For each one, find out what it declares.\n"
+        " 3. Find the files that use those declarations, and judge whether they must change too.\n"
+        " 4. Repeat on anything new you find, until you stop finding new files.\n"
+        "\n"
+        f"{mechanism}"
+        "\nFiles that must change often do not contain the words of the request anywhere.\n"
+        "They are reached only by following the names declared in the files that do.\n"
+    )
 
 
 def build_knowledge_base_section(knowledge_base_text: str) -> str:
@@ -919,8 +975,34 @@ def run_experiment(arguments: argparse.Namespace) -> int:
         snapshots[case.sha8] = ensure_snapshot(case, config)
     print(f"setup complete: {len(snapshots)} snapshots", flush=True)
 
+    # Arms that need the symbol index run against a separate, pre-built copy of
+    # each snapshot. Those copies are made outside this driver; we only verify
+    # they are present, because silently falling back to an unindexed snapshot
+    # would produce a result that looks valid and means nothing.
+    indexed_root = (
+        Path(arguments.indexed_snapshot_root) if arguments.indexed_snapshot_root else None
+    )
+    indexed_arms = [arm for arm in arms if arm in ARMS_WITH_INDEX]
+    if indexed_arms:
+        if indexed_root is None:
+            raise SystemExit(
+                f"arms {indexed_arms} need --indexed-snapshot-root"
+            )
+        for case in cases:
+            index_file = indexed_root / case.sha8 / ".atom-index" / "index.json"
+            if not index_file.exists():
+                raise SystemExit(f"missing symbol index: {index_file}")
+        print(f"indexed snapshots verified: {len(cases)} under {indexed_root}", flush=True)
+
+    def snapshot_for(case: GroundTruthCase, arm: str) -> Path:
+        """Return the snapshot an arm must run in."""
+
+        if arm in ARMS_WITH_INDEX:
+            return indexed_root / case.sha8  # type: ignore[union-attr]
+        return snapshots[case.sha8]
+
     jobs = [
-        WorkItem(case=case, arm=arm, trial=trial, snapshot=snapshots[case.sha8])
+        WorkItem(case=case, arm=arm, trial=trial, snapshot=snapshot_for(case, arm))
         for case in cases
         for arm in arms
         for trial in range(1, arguments.trials + 1)
@@ -1050,6 +1132,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ground-truth", type=existing_dir, required=True, help="Directory of ground-truth JSON files")
     parser.add_argument("--source-repo", type=existing_dir, required=True, help="Repository to take snapshots from")
     parser.add_argument("--snapshot-root", type=path_value, required=True, help="Scratch directory for snapshots")
+    parser.add_argument(
+        "--indexed-snapshot-root",
+        type=path_value,
+        default=None,
+        help="Directory of pre-built snapshot copies carrying .atom-index/ (required by the symbol-index arm)",
+    )
     parser.add_argument("--subtree", required=True, help="Repo-relative subtree to export and score")
     parser.add_argument("--knowledge-base", type=path_value, required=True, help="Markdown knowledge document")
     parser.add_argument("--out", type=path_value, required=True, help="Directory for raw replies and results.json")
