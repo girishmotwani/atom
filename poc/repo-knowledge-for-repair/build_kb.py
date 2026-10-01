@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import re
 import shutil
 import subprocess
 import threading
@@ -303,6 +304,50 @@ def study_areas(areas: list[Area], repo: Path, out_dir: Path, model: str,
             list(pool.map(study, pending))
 
 
+def normalise_area_writeup(name: str, text: str) -> str:
+    """Strip the model's preamble and guarantee the area has its own heading.
+
+    Two defects show up often enough to be worth correcting here rather than
+    hoping a prompt tweak fixes them.  Some write-ups open by narrating the work
+    ("I'm reading the package and its history..."), which is noise.  Others omit
+    a heading entirely, which is worse than untidy: without one the section is
+    silently absorbed into whichever area preceded it, so a reader -- or an
+    agent -- attributes its contents to the wrong part of the system.
+    """
+
+    narration = re.compile(
+        r"^(I['\u2019]m|I will|I['\u2019]ll|Let me|Now I|First,? I|Reading|Looking at)\b",
+        re.IGNORECASE,
+    )
+
+    lines = text.splitlines()
+    # Drop leading blank or narrating lines, but stop at the first real content
+    # so we never eat the body of a write-up that simply starts with a sentence.
+    start = 0
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            start = index + 1
+            continue
+        if narration.match(stripped):
+            start = index + 1
+            continue
+        break
+    lines = lines[start:]
+
+    body = "\n".join(lines).strip()
+    first = next((line.strip() for line in lines if line.strip()), "")
+    if not first.startswith("#"):
+        body = f"## {name}\n\n{body}"
+    elif not first.startswith("## "):
+        # Demote or promote a stray heading level so every area sits at the same
+        # depth, otherwise the document's structure implies a hierarchy that the
+        # areas do not actually have.
+        body = re.sub(r"^#+\s*", "## ", body, count=1)
+
+    return body
+
+
 def assemble(areas: list[Area], out_dir: Path, repo: Path, cut_date: str, model: str,
              timeout_seconds: float, knowledge_base_path: Path) -> None:
     """Combine the area write-ups with a synthesis pass into one document."""
@@ -315,7 +360,10 @@ def assemble(areas: list[Area], out_dir: Path, repo: Path, cut_date: str, model:
             "Re-run to retry just those areas."
         )
 
-    notes = "\n\n".join(path.read_text(encoding="utf-8") for _, path in written)
+    notes = "\n\n".join(
+        normalise_area_writeup(area.name, path.read_text(encoding="utf-8"))
+        for area, path in written
+    )
 
     synthesis_path = out_dir / "_synthesis.md"
     if synthesis_path.exists():
@@ -336,7 +384,9 @@ def assemble(areas: list[Area], out_dir: Path, repo: Path, cut_date: str, model:
         f"Built from the repository as it stood at {cut_date}. It describes what the\n"
         "system does, what its areas are responsible for, how they interact, and what\n"
         "tends to change alongside what.\n\n"
-        "It deliberately contains no file listings.\n\n---\n\n"
+        "It describes areas rather than files. A handful of central files are named\n"
+        "in passing where the description would be unclear without them, but it is\n"
+        "not a file listing and does not enumerate the contents of any area.\n\n---\n\n"
     )
     document = header + synthesis + "\n\n---\n\n" + notes + "\n"
     knowledge_base_path.parent.mkdir(parents=True, exist_ok=True)

@@ -156,6 +156,41 @@ window, we will look at whether the benefit is smaller for repairs further from 
 cut point. Twenty samples cannot answer that. It is recorded as a signal for the
 next POC, never reported as a finding.
 
+### Recorded deviation: the finished size
+
+The assembled document came out at **18,019 words** (~33,000 tokens), not the
+~12,200 projected or the ~10,000 originally set. The write-ups ran consistently
+longer than their targets.
+
+It is used as-is. The question this POC asks is whether repository knowledge helps
+at all, so it should be asked of the best knowledge base we can actually produce.
+If a thorough one does not help, a shorter one will not either. The original limit
+existed to stop the document becoming skimmable; that risk is accepted and noted as
+a limitation rather than silently engineered away.
+
+### Recorded deviation: it names some files
+
+The document was instructed not to list files. It names 21 anyway, in prose.
+Across the twenty repairs, **11.5% of answer files are named somewhere in it**, and
+15 of the 20 cases have at least one answer named.
+
+This is not a leaked answer key. The document was built only from code and history
+from before the cut point, so it has no knowledge of any repair in the sample. The
+named files are central ones that any honest description of the system would
+mention, and most are files an agent's own search would reach immediately.
+
+It is still an unearned head start on file discovery, so rather than assume it does
+not matter, **it is measured**:
+
+> **Pre-registered analysis.** Recall is reported twice for each arm — once over
+> answer files that the knowledge base names, and once over answer files it does
+> not. If the knowledge-base arm's gain appears only on named files, the gain is
+> the head start and not repository knowledge, and will be reported as such.
+
+The alternative — deleting the 21 names — was rejected because editing sentences to
+remove the files they are about damages the document's meaning, and because
+measuring a confound is better evidence than assuming it away.
+
 ## The sample
 
 Twenty repairs, each touching **ten or more files**, all dated after the cut point.
@@ -165,9 +200,29 @@ groups scored far below the bar in the previous POC, so both are the hard case. 
 strict fifteen-file definition was also not achievable: the repository contains only
 about a dozen such repairs in the whole window, too few to conclude anything from.
 
-Twelve qualifying repairs are already curated and validated. Eight more are needed.
+Twelve qualifying repairs were already curated and validated. Eight more were added,
+and each of the eight was independently re-checked: correct parent commit, dated
+after the cut, no duplicate or out-of-subtree paths, every truth file genuinely
+present in the commit's own diff, and no request sentence naming a file.
 
 A repair is a fix or an improvement to existing behaviour — not a new capability.
+
+### One case is reported separately
+
+One of the twenty is a Go toolchain upgrade touching 37 files. It satisfies every
+rule fixed in advance, so it is **not** removed — dropping a case after looking at
+its contents is exactly the kind of choice that pre-registration exists to prevent.
+
+But it does not measure what this POC asks about. Nine of its files are Dockerfiles,
+two are module files, one is a shell script, and the whole change is about 82 added
+lines spread across 37 files — roughly two lines each. It is a sweep, not a repair
+with a blast radius to reason about, and no amount of knowledge about what the code
+does helps anyone find a Dockerfile. It is also 76% larger than the next biggest
+case, so in a sample of twenty it moves the average on its own.
+
+**Decided before the run:** the headline number is reported over the other nineteen,
+and this case is reported beside it as its own line. Both figures are published
+whichever way they fall.
 
 ## How it is scored
 
