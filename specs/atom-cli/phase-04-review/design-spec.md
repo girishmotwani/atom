@@ -84,14 +84,42 @@ diff. Choosing which models a developer has access to.
 ## The Pipeline
 
 ```
- diff source ──▶ call each model, N runs each (parallel) ──▶ extract ──▶ validate
-                                                                        │
-                       report ◀── rank ◀── merge across models ◀────────┘
+ toolchain ──▶ diff source ──▶ call each model, N runs each (parallel) ──▶ extract ──▶ validate
+                                                                                     │
+                                    report ◀── rank ◀── merge across models ◀────────┘
 ```
 
 Each stage is separately testable, and the boundary between *extract* and *validate*
 matters: extraction is deterministic normalisation, validation is a contract check.
 Conflating them is what would let a silently-wrong payload through.
+
+### Toolchain preflight
+
+**B138.** Unless `--skip-toolchain` is passed, `atom review` runs the required
+`atom check` gates with the race detector enabled before calling any model. A required
+gate failure raises a review-blocking error, exits with the check-failed code in the
+CLI, and prints the gate output. A review of code that does not compile, does not vet,
+is not formatted, fails tests, or has an observed race is premature; spending model
+calls there is exactly the waste this feature removes.
+
+**B139.** The review preflight also runs three advisory gates: `staticcheck ./...`,
+`errcheck ./...`, and `govulncheck ./...`. They are not required and never fail the
+check. A missing advisory tool is reported as skipped, not failed. A non-zero advisory
+exit is a warning whose details are preserved, because the output is evidence for the
+review prompt and report.
+
+**B140.** Toolchain evidence is inserted into the review prompt before the JSON-output
+instructions without changing any existing sentence in the measured prompt. An empty
+toolchain substitution reproduces the old prompt byte for byte.
+
+**B141.** The prompt excludes only the mechanical categories whose tool actually ran
+and passed. For example, ignored error returns are excluded only when `errcheck` passed;
+if `errcheck` was skipped, models must still look for ignored errors. If the
+toolchain did not run because the directory is not a Go module, or because
+`--skip-toolchain` was passed, the prompt says nothing is excluded.
+
+**B142.** The markdown review report records the toolchain verdicts in a compact
+section so a saved report shows what the models were told not to re-report.
 
 ---
 

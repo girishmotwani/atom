@@ -212,6 +212,51 @@ class RaceGate:
         return _evaluate_go_test_gate(runner, directory, self.name, self.command, self.required)
 
 
+class StaticcheckGate:
+    """Adds Staticcheck findings to review context without making it a gate."""
+
+    name = "staticcheck"
+    required = False
+    command = ("staticcheck", "./...")
+
+    def evaluate(self, runner: CommandRunner, directory: Path) -> GateResult:
+        """Run staticcheck ./... as advisory evidence for a later review."""
+
+        return _evaluate_advisory_exit_code_gate(
+            runner, directory, self.name, self.command, self.required
+        )
+
+
+class ErrcheckGate:
+    """Adds discarded-error evidence so models can spend attention elsewhere."""
+
+    name = "errcheck"
+    required = False
+    command = ("errcheck", "./...")
+
+    def evaluate(self, runner: CommandRunner, directory: Path) -> GateResult:
+        """Run errcheck ./... as advisory evidence for a later review."""
+
+        return _evaluate_advisory_exit_code_gate(
+            runner, directory, self.name, self.command, self.required
+        )
+
+
+class GovulncheckGate:
+    """Adds known-vulnerability evidence without requiring the tool locally."""
+
+    name = "govulncheck"
+    required = False
+    command = ("govulncheck", "./...")
+
+    def evaluate(self, runner: CommandRunner, directory: Path) -> GateResult:
+        """Run govulncheck ./... as advisory evidence for a later review."""
+
+        return _evaluate_advisory_exit_code_gate(
+            runner, directory, self.name, self.command, self.required
+        )
+
+
 def default_gates(enable_race: bool = True) -> list[Gate]:
     """Return the standard gate sequence: build, vet, fmt, test, race.
 
@@ -220,6 +265,12 @@ def default_gates(enable_race: bool = True) -> list[Gate]:
     """
 
     return [BuildGate(), VetGate(), FormatGate(), TestGate(), RaceGate(enabled=enable_race)]
+
+
+def advisory_gates() -> list[Gate]:
+    """Return optional toolchain signals that inform review but never block it."""
+
+    return [StaticcheckGate(), ErrcheckGate(), GovulncheckGate()]
 
 
 def _non_empty_lines(text: str) -> list[str]:
@@ -364,6 +415,72 @@ def _evaluate_exit_code_gate(
         return GateResult(name, GateStatus.PASSED, f"{_format_command(command)} passed", command_result.combined_output, required, command_result.duration_seconds)
 
     return GateResult(name, GateStatus.FAILED, f"{_format_command(command)} failed with exit code {command_result.exit_code}", command_result.combined_output, required, command_result.duration_seconds)
+
+
+def _evaluate_advisory_exit_code_gate(
+    runner: CommandRunner,
+    directory: Path,
+    name: str,
+    command: tuple[str, ...],
+    required: bool,
+) -> GateResult:
+    """Run an optional command where absence and findings are not hard failures."""
+
+    command_result = runner.run(command, directory)
+
+    if command_result.outcome is CommandOutcome.TOOL_MISSING:
+        tool_name = command[0] if command else "<empty command>"
+        return GateResult(
+            name,
+            GateStatus.SKIPPED,
+            f"{tool_name} is not installed; {name} was not checked",
+            command_result.combined_output,
+            required,
+            command_result.duration_seconds,
+        )
+
+    if command_result.outcome is CommandOutcome.TIMED_OUT:
+        # A timeout is not proof of a code defect, so an advisory gate must not
+        # fail the check. It is still louder than SKIPPED because the tool did
+        # exist and started, which gives the developer an environment problem
+        # worth noticing before trusting the missing signal.
+        return GateResult(
+            name,
+            GateStatus.WARNING,
+            f"{_format_command(command)} timed out before it could finish",
+            command_result.combined_output,
+            required,
+            command_result.duration_seconds,
+        )
+
+    if command_result.outcome is not CommandOutcome.COMPLETED:
+        return GateResult(
+            name,
+            GateStatus.WARNING,
+            f"{_format_command(command)} did not complete",
+            command_result.combined_output,
+            required,
+            command_result.duration_seconds,
+        )
+
+    if command_result.succeeded:
+        return GateResult(
+            name,
+            GateStatus.PASSED,
+            f"{_format_command(command)} passed",
+            command_result.combined_output,
+            required,
+            command_result.duration_seconds,
+        )
+
+    return GateResult(
+        name,
+        GateStatus.WARNING,
+        f"{_format_command(command)} reported findings with exit code {command_result.exit_code}",
+        command_result.combined_output,
+        required,
+        command_result.duration_seconds,
+    )
 
 
 def _result_for_non_completed_command(name: str, command_result: CommandResult, required: bool) -> GateResult | None:

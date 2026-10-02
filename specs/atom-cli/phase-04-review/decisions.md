@@ -110,6 +110,47 @@ neither is visible in the output.
 
 ---
 
+### P4-6 — The Go toolchain runs before any model, and blocks the review when it fails
+
+**Decision.** `atom review` now runs `go build`, `go vet`, `gofmt -l`, `go test` and
+`go test -race` before calling a single model, and refuses to call any model if a
+required gate fails. `staticcheck`, `errcheck` and `govulncheck` run as advisory
+signals when installed and never block. `--skip-toolchain` opts out.
+
+**Why.** Reviewers were spending attention on questions with exact free answers.
+Every model call that reports a vet diagnostic or an ignored error is a call that did
+not look at whether the code is readable — which is the category Atom exists to
+protect and the one reviewers are already least willing to report. Measured: seeded
+defects phrased as style preferences were reported by nobody across repeated runs,
+while defects with a visible consequence were reported by everybody.
+
+**The developer chose `-race` on every review**, accepting minutes of wall clock per
+review. The alternative — racing only on demand — makes the one gate nobody remembers
+to run the one gate nobody runs.
+
+**What the gate deliberately does not do.** It excludes a category only when the tool
+that proves it actually ran and passed. A missing `errcheck` leaves ignored errors in
+scope; a package with no tests leaves races in scope. Excluding a category nobody
+checked would be a silent downgrade of the review, which is worse than the waste it
+was meant to remove.
+
+**Known cost, unresolved: the measured prompt has changed.** `REVIEW_PROMPT` is
+reproduced verbatim from `poc/review-json/spike.py`, and the JSON format-compliance
+figures in this phase were measured against that exact wording. The evidence block is
+inserted between the opening line and the JSON schema, leaving the schema and the
+"nothing else" instruction byte-identical and still adjacent to the diff, and a test
+asserts the template collapses back to the original when nothing is inserted. That
+bounds the risk; it does not measure it. **Compliance has not been re-measured with a
+populated evidence block, and a longer prompt is exactly the kind of change that moves
+format compliance.** Recorded as an open cost rather than waved through.
+
+**Also unmeasured: whether the exclusion improves anything.** The reasoning is sound
+and the mechanism is verified end to end, but no experiment yet shows that freeing this
+attention produces more readability findings. That is the next thing to measure, and
+until it is measured this is a justified change, not a proven one.
+
+---
+
 ## Agent Decisions
 
 ### A1 — The bracket-scan fallback is deliberately not shipped
@@ -859,3 +900,19 @@ not decided here because "degrade quietly to a weaker reviewer" and "tell the
 developer their review is not the review that was measured" are in direct
 tension, and picking between them on the spot would be exactly the unmeasured
 guess this phase exists to refuse.
+
+## A27 — staticcheck gets a prompt exclusion even though the brief did not name one
+
+**Decision.** A passing `staticcheck ./...` run is shown in the prompt's verdict list
+and adds "staticcheck diagnostics" to the excluded mechanical categories.
+
+**Why.** The brief required a `StaticcheckGate` and required the prompt to tell models
+what was already proven, but its example exclusion list named vet, errcheck, race, and
+govulncheck categories while omitting staticcheck. Omitting staticcheck from the
+exclusion paragraph would make the new gate visible but not useful: a clean
+`staticcheck` run would still allow models to spend attention re-reporting diagnostics
+the tool already settled.
+
+**Consequence.** The wording is intentionally generic. Staticcheck's exact diagnostic
+set is broad and versioned, so the prompt does not enumerate every possible check or
+pretend it is a proof about readability or extensibility.

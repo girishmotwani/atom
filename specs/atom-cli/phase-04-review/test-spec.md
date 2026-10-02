@@ -51,6 +51,16 @@ python -m pytest tools/tests --cov=atom --cov-report=term-missing -q
 | B106a | The whole diff goes in one call; there is no per-file chunking. | `test_a_multi_file_diff_is_captured_whole`; `test_the_prompt_carries_the_whole_diff_in_one_call`; `test_the_prompt_reaches_the_runner_as_stdin` |
 | B106b | Diff size is reported; no size limit is imposed and nothing is truncated. | `test_nothing_is_truncated_however_large_the_diff`; `test_changed_lines_count_additions_and_removals`; `test_file_headers_are_not_counted_as_changed_lines`; `test_context_lines_are_not_counted`; `test_file_count_follows_the_b_side_of_a_rename`; `test_a_file_is_counted_once_however_many_hunks_it_has`; `test_size_reads_as_a_sentence_for_the_report`; `test_size_description_is_singular_for_one_file`; `test_the_report_describes_the_diff_that_was_reviewed` |
 
+### Toolchain preflight (B138-B142)
+
+| Behaviour | One-line description | Test(s) pinning it |
+|---|---|---|
+| B138 | Required toolchain gate failures block review before any model call. | `test_run_review_blocks_before_models_when_required_gate_fails`; `test_a_blocked_toolchain_returns_check_failed_without_reviewing` |
+| B139 | `staticcheck`, `errcheck`, and `govulncheck` are advisory: missing tools skip, findings warn, clean runs pass. | `test_advisory_gate_skips_when_tool_is_missing`; `test_advisory_gate_warns_and_preserves_output_when_tool_finds_something`; `test_advisory_gate_passes_when_tool_exits_zero`; `test_advisory_gates_returns_all_optional_review_signals` |
+| B140 | The prompt placeholder preserves the measured prompt byte-for-byte when empty. | `test_empty_toolchain_placeholder_preserves_original_prompt_bytes` |
+| B141 | Prompt exclusions are conditional on tools that ran and passed; skipped or absent toolchains exclude nothing. | `test_prompt_block_excludes_everything_the_passing_toolchain_proved`; `test_prompt_block_does_not_exclude_ignored_errors_when_errcheck_was_skipped`; `test_prompt_block_says_nothing_is_excluded_when_toolchain_did_not_run`; `test_run_review_continues_with_no_exclusions_when_directory_is_not_go_module` |
+| B142 | The markdown report records the toolchain verdicts. | `test_the_report_lists_toolchain_verdicts` |
+
 ### Model invocation (B107-B112, B132-B134)
 
 | Behaviour | One-line description | Test(s) pinning it |

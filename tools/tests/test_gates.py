@@ -6,11 +6,15 @@ import pytest
 
 from atom.gates import (
     BuildGate,
+    ErrcheckGate,
     FormatGate,
     GateStatus,
+    GovulncheckGate,
     RaceGate,
+    StaticcheckGate,
     TestGate,
     VetGate,
+    advisory_gates,
     default_gates,
 )
 from atom.runner import CommandOutcome
@@ -419,3 +423,75 @@ def test_default_gates_can_disable_race_without_removing_it(tmp_path):
 
     assert [gate.name for gate in gates] == ["build", "vet", "fmt", "test", "race"]
     assert gates[-1].evaluate(FakeRunner({}), tmp_path).status is GateStatus.SKIPPED
+
+
+@pytest.mark.parametrize(
+    ("gate", "command", "tool_name"),
+    [
+        pytest.param(StaticcheckGate(), ("staticcheck", "./..."), "staticcheck", id="staticcheck"),
+        pytest.param(ErrcheckGate(), ("errcheck", "./..."), "errcheck", id="errcheck"),
+        pytest.param(GovulncheckGate(), ("govulncheck", "./..."), "govulncheck", id="govulncheck"),
+    ],
+)
+def test_advisory_gate_skips_when_tool_is_missing(tmp_path, gate, command, tool_name):
+    """Advisory tools are useful evidence, not required local dependencies."""
+    runner = FakeRunner({})
+
+    result = gate.evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.SKIPPED
+    assert result.required is False
+    assert tool_name in result.summary
+    assert "not installed" in result.summary
+    assert runner.calls == [(command, tmp_path, 300.0)]
+
+
+@pytest.mark.parametrize(
+    ("gate", "command", "output"),
+    [
+        pytest.param(StaticcheckGate(), ("staticcheck", "./..."), "staticcheck finding", id="staticcheck"),
+        pytest.param(ErrcheckGate(), ("errcheck", "./..."), "ignored error", id="errcheck"),
+        pytest.param(GovulncheckGate(), ("govulncheck", "./..."), "CVE-0000", id="govulncheck"),
+    ],
+)
+def test_advisory_gate_warns_and_preserves_output_when_tool_finds_something(
+    tmp_path, gate, command, output
+):
+    """A finding from an advisory tool should inform review without blocking it."""
+    runner = FakeRunner({
+        command: command_result(command, tmp_path, exit_code=1, stdout=output),
+    })
+
+    result = gate.evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.WARNING
+    assert result.required is False
+    assert output in result.details
+
+
+@pytest.mark.parametrize(
+    ("gate", "command"),
+    [
+        pytest.param(StaticcheckGate(), ("staticcheck", "./..."), id="staticcheck"),
+        pytest.param(ErrcheckGate(), ("errcheck", "./..."), id="errcheck"),
+        pytest.param(GovulncheckGate(), ("govulncheck", "./..."), id="govulncheck"),
+    ],
+)
+def test_advisory_gate_passes_when_tool_exits_zero(tmp_path, gate, command):
+    """A clean advisory command is mechanical evidence the review prompt can cite."""
+    runner = FakeRunner({
+        command: command_result(command, tmp_path, exit_code=0, stdout="clean\n"),
+    })
+
+    result = gate.evaluate(runner, tmp_path)
+
+    assert result.status is GateStatus.PASSED
+    assert result.required is False
+
+
+def test_advisory_gates_returns_all_optional_review_signals():
+    """The review pipeline should ask for each advisory signal explicitly."""
+    gates = advisory_gates()
+
+    assert [gate.name for gate in gates] == ["staticcheck", "errcheck", "govulncheck"]
+    assert [gate.required for gate in gates] == [False, False, False]

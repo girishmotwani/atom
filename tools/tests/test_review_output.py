@@ -17,6 +17,7 @@ from atom.diff import CapturedDiff, DiffRequest, DiffSource
 from atom.extract import ExtractionFailure, ExtractionReport, Finding, extract_all
 from atom.invoke import InvocationReport, ModelAvailability, ModelRun, RunOutcome
 from atom.merge import merge_findings
+from atom.gates import GateResult, GateStatus
 from atom.report import (
     CHECK_SCHEMA_VERSION,
     REVIEW_SCHEMA_VERSION,
@@ -29,6 +30,7 @@ from atom.report import (
 )
 from atom.cli import main
 from atom.review import ReviewOutcome
+from atom.toolchain import ToolchainEvidence
 
 DIFF_TEXT = """diff --git a/store/cache.go b/store/cache.go
 --- a/store/cache.go
@@ -256,6 +258,31 @@ class TestFindingPresentation:
         assert "os.Create error ignored." in text
         assert "Export reads without the lock." in text
         assert "gpt-5.4" in text and "claude-haiku-4.5" in text
+
+    def test_the_report_lists_toolchain_verdicts(self):
+        evidence = ToolchainEvidence(
+            gate_results=(
+                GateResult("build", GateStatus.PASSED, "go build ./... passed", "", True, 0.1),
+                GateResult("errcheck", GateStatus.SKIPPED, "errcheck is not installed", "", False, 0.1),
+            ),
+            was_run=True,
+            skip_reason="",
+        )
+        base = outcome((finding(41),))
+        result = ReviewOutcome(
+            diff=base.diff,
+            invocation=base.invocation,
+            extraction=base.extraction,
+            findings=base.findings,
+            toolchain=evidence,
+        )
+
+        text = render_review_markdown(result)
+
+        assert "## Toolchain evidence" in text
+        assert "`go build ./...`" in text
+        assert "`errcheck ./...`" in text
+        assert "not installed - not checked" in text
 
     def test_agreement_is_shown_as_a_fraction_per_model(self):
         text = render_review_markdown(outcome((finding(41), finding(41, "claude-haiku-4.5"))))
@@ -896,4 +923,3 @@ class TestTheReportSurvivesEveryConsoleEncoding:
         report = render_review_markdown(outcome((finding(42),)))
 
         report.encode("ascii")
-

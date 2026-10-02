@@ -20,7 +20,9 @@ from pathlib import Path
 import pytest
 
 from atom.cli import EXIT_CHECK_FAILED, EXIT_PASSED, EXIT_USAGE_ERROR, main
+from atom.gates import GateResult, GateStatus
 from atom.review import DEFAULT_REVIEW_MODELS
+from atom.review import ToolchainGateFailed
 from atom.runner import CommandOutcome, CommandResult
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -187,6 +189,30 @@ class TestExitCodes:
 
         assert review("--working", "--runs", "1") == EXIT_CHECK_FAILED
         assert "atom review" in capsys.readouterr().err
+
+    def test_a_blocked_toolchain_returns_check_failed_without_reviewing(
+        self, monkeypatch, capsys
+    ):
+        """A failed required toolchain gate is a failed review setup, not a clean review."""
+        failure = GateResult(
+            "vet",
+            GateStatus.FAILED,
+            "go vet ./... failed with exit code 1",
+            "vet: printf mismatch",
+            True,
+            0.1,
+        )
+
+        def blocked_review(*args, **kwargs):
+            raise ToolchainGateFailed((failure,))
+
+        monkeypatch.setattr("atom.cli.run_review", blocked_review)
+
+        assert review("--working", "--runs", "1") == EXIT_CHECK_FAILED
+        captured = capsys.readouterr()
+        assert "review was not run" in captured.err
+        assert "vet" in captured.err
+        assert "printf mismatch" in captured.err
 
 
 class TestChannels:

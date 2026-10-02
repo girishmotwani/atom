@@ -36,7 +36,38 @@ atom review --working            # working tree
 Review the diff **with** the surrounding file, not the hunks alone. Context-free hunk
 review produces confident nonsense about code that is already handled ten lines up.
 
-## Step 2 — Run the models
+## Step 2 — Let the toolchain answer first
+
+No separate command: the gate runs inside `atom review`, before the models.
+
+Before a single model is called, Atom runs `go build`, `go vet`, `gofmt -l`, `go test`
+and `go test -race`, plus `staticcheck`, `errcheck` and `govulncheck` when they are
+installed.
+
+**A failing required gate stops the review.** Reviewing code that does not compile, or
+that `go vet` already objects to, spends model attention on a question that has an
+exact free answer — and the findings would be about code you are about to change
+anyway.
+
+What passed is then written into the prompt as **excluded**: the models are told not to
+re-report an ignored error, a vet diagnostic, a formatting complaint, or a data race on
+a tested path. That exclusion is the mechanism that frees attention for the rest of this
+page.
+
+Two rules keep the exclusion honest:
+
+- **A tool that did not run excludes nothing.** If `errcheck` is not installed, the
+  prompt says so and ignored errors stay in scope. Suppressing a category nobody checked
+  is how real bugs go missing.
+- **Clean is not absent.** `go test -race` only observes paths the tests actually
+  executed. Concurrent code with no test is unchecked, not safe — and the prompt says
+  that in those words.
+
+`--skip-toolchain` bypasses the gate. The prompt then tells the models that nothing was
+checked and nothing is excluded, so a skipped gate costs attention rather than silently
+hiding findings.
+
+## Step 3 — Run the models
 
 ```bash
 atom review --base main --models <model-a>,<model-b>,<model-c>
@@ -49,23 +80,41 @@ the diversity you are paying for.
 Models are resolved from `.atom/config.json`. Never hard-code a version; see
 [model-guidance.md](../atom/references/model-guidance.md).
 
-## Step 3 — What reviewers look for
+## Step 4 — What reviewers look for
 
-In priority order:
+Everything the toolchain decides has already been decided and excluded. What is left is
+the set of questions no tool can answer — and it is deliberately short, because a
+reviewer handed thirty concerns reports on none of them well.
 
-| Priority | Category | Examples |
+| Priority | Category | Why no tool catches it |
 |---|---|---|
-| 1 | **Correctness** | Logic errors, wrong boundaries, unhandled `nil`, ignored errors |
-| 2 | **Concurrency** | Races, deadlocks, unowned goroutines, leaks, misuse of context |
-| 3 | **Security** | Unvalidated input, injection, leaked secrets, unsafe defaults |
-| 4 | **Contract drift** | Code disagrees with the approved design spec |
-| 5 | **Test quality** | Tests that can't fail, missing error paths, weakened assertions |
-| 6 | **Readability** | Violations of [go-style.md](../atom/references/go-style.md) |
+| 1 | **Wrong logic** | It compiles, vets clean and the tests pass — because the tests assert the wrong thing |
+| 2 | **Untested concurrency** | The race detector only observes paths the tests ran. A goroutine with no test is unchecked |
+| 3 | **Misleading names** | A name that says the wrong thing costs every future reader, and no linter can tell |
+| 4 | **Code that resists extension** | A wide interface or a package-level dependency forces the next change to edit working code |
+| 5 | **Contract drift** | The code disagrees with the approved design spec, which no tool has read |
+| 6 | **Tests that cannot fail** | A green suite that asserts nothing looks identical to a green suite that works |
+| 7 | **Unvalidated input** | `govulncheck` finds known holes in dependencies, never the one you just wrote |
 
-Formatting is **not** reviewed. `gofmt` already settled it, and review attention spent
-on whitespace is attention not spent on the race condition.
+Severity still comes from consequence. A finding that cannot be stated as "this breaks
+when X" is a preference, and preferences are the findings reviewers drop first. That is
+measured, not assumed: seeded defects phrased as style preferences were reported by
+nobody, while defects with a visible consequence were reported by everybody — even when
+the reviewer was handed the exact rule.
 
-## Step 4 — Merge
+[go-style.md](../atom/references/go-style.md) is the reference behind priorities 3 and 4.
+Use it to explain a finding, not as a checklist to walk: thirty rules handed to a
+reviewer produce worse coverage than seven.
+
+Formatting is **not** reviewed. `gofmt` settled it, the gate confirmed it, and review
+attention spent on whitespace is attention not spent on priority 1.
+
+> **Where the real instruction lives.** This table guides *your* triage. The sentences
+> actually sent to the models are `REVIEW_PROMPT` and the toolchain block in
+> `tools/atom/review.py`. Changing this table alone changes nothing the models see —
+> if you want different findings, change the prompt and re-measure.
+
+## Step 5 — Merge
 
 Findings are deduplicated by file, line and substance, then merged into one report at
 `specs/{project}/phase-NN-{slug}/review.md`.
@@ -82,7 +131,7 @@ probably real. Something one model flagged may be the one that understood the co
 single-model findings at Blocker or Major severity get read individually, never
 dismissed for lacking consensus.
 
-## Step 5 — Triage with the developer
+## Step 6 — Triage with the developer
 
 Go through Blockers and Majors together. For each: fix now, defer to `findings.md`
 with a reason, or reject with a reason.
@@ -93,7 +142,7 @@ quietly dropped is a lost bug.
 
 Every fix re-runs `atom check`. Every deferral and rejection is recorded.
 
-## Step 6 — Report
+## Step 7 — Report
 
 Present the merged report, the triage outcome, and what remains open.
 
@@ -101,6 +150,7 @@ Present the merged report, the triage outcome, and what remains open.
 
 ## Done when
 
+- [ ] The toolchain gate passed before any model was called
 - [ ] At least two **different** models reviewed, none of them the author of the code
 - [ ] Every changed file reviewed with its surrounding context
 - [ ] Findings merged, deduplicated, severity-ranked

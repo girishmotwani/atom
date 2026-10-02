@@ -498,6 +498,7 @@ def render_review_markdown(outcome: "ReviewOutcome") -> str:
 
     lines: list[str] = ["# Code review", ""]
     lines.extend(_review_header_lines(outcome))
+    lines.extend(_review_toolchain_lines(outcome))
     lines.extend(_review_finding_lines(outcome))
 
     return "\n".join(lines).rstrip() + "\n"
@@ -702,6 +703,58 @@ def _review_header_lines(outcome: "ReviewOutcome") -> list[str]:
         lines.append("")
 
     return lines
+
+
+def _review_toolchain_lines(outcome: "ReviewOutcome") -> list[str]:
+    """Record what the pre-review toolchain proved or did not check."""
+
+    evidence = outcome.toolchain
+    lines = ["## Toolchain evidence", ""]
+
+    if not evidence.was_run:
+        reason = evidence.skip_reason or "no reason was recorded"
+        lines.append(f"Toolchain did not run: {reason}")
+        lines.append("nothing was excluded from the review prompt.")
+        lines.append("")
+        return lines
+
+    lines.append("| Command | Verdict |")
+    lines.append("| --- | --- |")
+    for result in evidence.gate_results:
+        command = _toolchain_command_for_gate(result.name)
+        verdict = _toolchain_verdict(result)
+        lines.append(f"| `{command}` | {verdict} |")
+    lines.append("")
+    return lines
+
+
+def _toolchain_command_for_gate(name: str) -> str:
+    """Match report command names to the prompt's compact verdict list."""
+
+    return {
+        "build": "go build ./...",
+        "vet": "go vet ./...",
+        "fmt": "gofmt -l .",
+        "test": "go test ./...",
+        "race": "go test -race ./...",
+        "staticcheck": "staticcheck ./...",
+        "errcheck": "errcheck ./...",
+        "govulncheck": "govulncheck ./...",
+    }.get(name, name)
+
+
+def _toolchain_verdict(result) -> str:
+    """Render skipped advisory tools as unchecked rather than clean."""
+
+    if result.status is GateStatus.SKIPPED and "not installed" in result.summary.lower():
+        return "not installed - not checked"
+    if result.status is GateStatus.SKIPPED:
+        return f"SKIPPED - {result.summary}"
+    if result.status is GateStatus.WARNING:
+        return f"WARNING - {result.summary}"
+    if result.status is GateStatus.FAILED:
+        return f"FAILED - {result.summary}"
+    return result.status.name
 
 
 def _review_finding_lines(outcome: "ReviewOutcome") -> list[str]:

@@ -36,7 +36,7 @@ from atom.report import (
     render_status_text,
     render_text,
 )
-from atom.review import DEFAULT_REVIEW_MODELS, run_review
+from atom.review import DEFAULT_REVIEW_MODELS, ToolchainGateFailed, run_review
 from atom.runner import SubprocessRunner
 from atom.scaffold import ScaffoldError, SlugError, scaffold_spike
 from atom.ship import DEFAULT_BASE_BRANCH, PrAction, ShipRefused, run_ship
@@ -178,6 +178,14 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
     review_parser.add_argument(
         "--json", action="store_true", dest="as_json",
         help="Emit machine-readable JSON instead of markdown.",
+    )
+    review_parser.add_argument(
+        "--skip-toolchain",
+        action="store_true",
+        help=(
+            "Do not run Go toolchain checks before review; nothing will be "
+            "excluded from the models' attention."
+        ),
     )
 
 
@@ -462,6 +470,7 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
             concurrency=arguments.concurrency,
             window=arguments.window,
             disable_mcp_servers=arguments.disable_mcp_servers,
+            skip_toolchain=arguments.skip_toolchain,
         )
     except ValueError as error:
         # Nonsensical settings are refused rather than clamped (A8): `--runs 0`
@@ -481,6 +490,17 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
             "this is not a clean review.",
             file=sys.stderr,
         )
+        return EXIT_CHECK_FAILED
+    except ToolchainGateFailed as error:
+        print(
+            "atom review: required Go toolchain gates failed; review was not run.",
+            file=sys.stderr,
+        )
+        for result in error.failures:
+            print(f"atom review: {result.name}: {result.summary}", file=sys.stderr)
+            if result.details.strip():
+                for line in result.details.rstrip().splitlines():
+                    print(f"  {line}", file=sys.stderr)
         return EXIT_CHECK_FAILED
 
     # The report goes to stdout on both paths so `atom review > review.md`

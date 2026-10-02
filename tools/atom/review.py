@@ -16,15 +16,18 @@ See `specs/atom-cli/phase-04-review/design-spec.md` for B129-B131.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
 
+from atom.check import NotAGoModuleError, run_check
 from atom.diff import CapturedDiff, DiffRequest, capture_diff
 from atom.extract import ExtractionReport, extract_all
+from atom.gates import GateResult, advisory_gates, default_gates
 from atom.invoke import InvocationReport, RunOutcome, invoke_models
 from atom.merge import DEFAULT_PROXIMITY_WINDOW, MergedFinding, merge_findings
 from atom.runner import CommandRunner
+from atom.toolchain import ToolchainEvidence
 
 # The two models Atom measured head to head, not a UI choice. The pairing is
 # evidence-backed: across 70 calls against a fixture with four planted defects,
@@ -52,7 +55,7 @@ DEFAULT_REVIEW_MODELS = ("gpt-5.4", "gemini-3.8-flash")
 # harmlessly, would silently invalidate every number in the POC report, because
 # output format compliance is exactly the thing prompt wording moves.
 REVIEW_PROMPT = """You are reviewing a Go diff. Report real problems only.
-
+{toolchain}
 Respond with a JSON array. Every element must be an object with exactly these keys:
   "file": string, the path from the diff
   "line": integer, the line number in the new file
@@ -67,6 +70,15 @@ Here is the diff:
 """
 
 
+class ToolchainGateFailed(Exception):
+    """Raised when required Go gates fail before model review can begin."""
+
+    def __init__(self, failures: Sequence[GateResult]) -> None:
+        self.failures = tuple(failures)
+        names = ", ".join(result.name for result in self.failures)
+        super().__init__(f"Required toolchain gates failed: {names}")
+
+
 @dataclass(frozen=True)
 class ReviewOutcome:
     """Everything one `atom review` produced, including what it failed to."""
@@ -75,6 +87,11 @@ class ReviewOutcome:
     invocation: InvocationReport
     extraction: ExtractionReport
     findings: tuple[MergedFinding, ...]
+    toolchain: ToolchainEvidence = field(
+        default_factory=lambda: ToolchainEvidence(
+            gate_results=(), was_run=False, skip_reason="toolchain evidence was not collected"
+        )
+    )
 
     @property
     def is_partial(self) -> bool:
@@ -234,6 +251,7 @@ def run_review(
     concurrency: int,
     window: int = DEFAULT_PROXIMITY_WINDOW,
     disable_mcp_servers: Sequence[str] = (),
+    skip_toolchain: bool = False,
 ) -> ReviewOutcome:
     """Capture a diff, ask every model about it, and merge what comes back.
 
@@ -244,11 +262,20 @@ def run_review(
     parse is recorded, and the review continues with whatever answered (B129).
     """
 
+    toolchain = _collect_toolchain_evidence(
+        working_directory, runner, skip_toolchain=skip_toolchain
+    )
+    if toolchain.blocking_failures:
+        raise ToolchainGateFailed(toolchain.blocking_failures)
+
     diff = capture_diff(request, runner, working_directory)
 
     invocation = invoke_models(
         models=models,
-        prompt=REVIEW_PROMPT.format(diff=diff.text),
+        prompt=REVIEW_PROMPT.format(
+            toolchain=_prompt_toolchain_text(toolchain),
+            diff=diff.text,
+        ),
         runner=runner,
         working_directory=working_directory,
         runs=runs,
@@ -266,6 +293,7 @@ def run_review(
         invocation=invocation,
         extraction=extraction,
         findings=(),
+        toolchain=toolchain,
     )
 
     return ReviewOutcome(
@@ -275,4 +303,41 @@ def run_review(
         findings=merge_findings(
             extraction.findings, outcome.runs_per_model, window=window
         ),
+        toolchain=toolchain,
     )
+
+
+def _collect_toolchain_evidence(
+    working_directory: Path,
+    runner: CommandRunner,
+    skip_toolchain: bool,
+) -> ToolchainEvidence:
+    """Run required and advisory Go gates before model review consumes the diff."""
+
+    if skip_toolchain:
+        return ToolchainEvidence(
+            gate_results=(),
+            was_run=False,
+            skip_reason="toolchain checks were skipped by request",
+        )
+
+    try:
+        required_report = run_check(
+            working_directory, default_gates(enable_race=True), runner
+        )
+        advisory_report = run_check(working_directory, advisory_gates(), runner)
+    except NotAGoModuleError as error:
+        return ToolchainEvidence(gate_results=(), was_run=False, skip_reason=str(error))
+
+    return ToolchainEvidence(
+        gate_results=required_report.gate_results + advisory_report.gate_results,
+        was_run=True,
+        skip_reason="",
+    )
+
+
+def _prompt_toolchain_text(toolchain: ToolchainEvidence) -> str:
+    """Return the placeholder text while preserving empty-substitution identity."""
+
+    block = toolchain.as_prompt_block()
+    return f"{block}\n"

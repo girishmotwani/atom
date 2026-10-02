@@ -947,3 +947,16 @@ one. Git history still holds the originals, so this scrub is a repository-hygien
 measure and not a security one -- anything genuinely sensitive would need the
 history rewritten, which is why the credential scan run alongside this mattered
 more than the name scrub. It found nothing.
+
+---
+
+## 34. No implementation findings from the toolchain preflight addition
+
+The new preflight work added mechanical evidence to `atom review` rather than changing
+the model merge semantics. The main risk was silent suppression: a static exclusion
+paragraph could tell models not to report ignored errors even when `errcheck` was not
+installed. The tests now pin the inverse case directly:
+`test_prompt_block_does_not_exclude_ignored_errors_when_errcheck_was_skipped` and
+`test_prompt_block_says_nothing_is_excluded_when_toolchain_did_not_run`.
+
+No additional code-quality finding was discovered while implementing this feature.
