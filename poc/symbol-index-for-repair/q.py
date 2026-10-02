@@ -25,8 +25,10 @@ look identical here, so treat the output as leads to check, not as proof.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Long result lists are counterproductive -- they crowd out the caller's own
@@ -34,6 +36,34 @@ from pathlib import Path
 MAX_RESULTS = 40
 
 INDEX_PATH = Path(__file__).resolve().parent / "index.json"
+
+
+def record_usage(outcome: str) -> None:
+    """Append one line per invocation so an experiment can measure real tool use.
+
+    Without this, the only evidence that the agent used the index is the agent
+    saying so in prose, which is not evidence at all. Logging is observational:
+    it never changes what the caller sees, it is off unless the environment
+    names a destination, and any failure to write is swallowed so that a broken
+    log target can never break the tool itself.
+    """
+
+    destination = os.environ.get("ATOM_INDEX_USAGE_LOG")
+    if not destination:
+        return
+    try:
+        entry = {
+            "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            # The snapshot directory is named for the commit under test, so the
+            # working directory is enough to attribute a call to a repair.
+            "snapshot": Path.cwd().name,
+            "argv": sys.argv[1:],
+            "outcome": outcome,
+        }
+        with open(destination, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
 
 
 def is_exported(symbol: str) -> bool:
@@ -181,12 +211,17 @@ def command_neighbours(index: dict, argument: str) -> int:
 
 def main() -> int:
     if len(sys.argv) < 3:
+        record_usage("no-arguments")
         print(__doc__)
         return 2
 
     command = sys.argv[1]
     argument = sys.argv[2]
-    index = load_index()
+    try:
+        index = load_index()
+    except SystemExit:
+        record_usage("no-index")
+        raise
 
     handlers = {
         "symbols-in": command_symbols_in,
@@ -197,10 +232,13 @@ def main() -> int:
     }
     handler = handlers.get(command)
     if handler is None:
+        record_usage("unknown-command")
         print(f"unknown command: {command}\n", file=sys.stderr)
         print(__doc__)
         return 2
-    return handler(index, argument)
+    exit_code = handler(index, argument)
+    record_usage(f"ok exit={exit_code}")
+    return exit_code
 
 
 if __name__ == "__main__":

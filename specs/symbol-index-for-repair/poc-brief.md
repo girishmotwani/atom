@@ -137,5 +137,50 @@ Arm B is reported against arm A on the same scale, and arm C against arm B.
 
 ## Recorded deviations
 
-None yet. Anything that changes after the first call is made gets written here,
-with the reason and the time it was decided.
+### 1. The harness was never allowing the agent to run anything (found in smoke test)
+
+The first smoke test ran all three arms cleanly, with no errors and no failures,
+and the lookup-tool arm returned a confident answer that referred to "the
+prebuilt index". It had never run the index once.
+
+The harness invoked the CLI without `--allow-all-tools`, which the CLI's own
+help describes as "required for non-interactive mode". Every attempt to run a
+shell command was refused with "Permission denied because no interactive user
+response was available". Read-only searching still worked, so the arms that only
+read and searched looked perfectly healthy, and nothing in the output ever said
+that a capability was missing.
+
+Worse, when told directly to run the query, the agent did not report that it had
+been blocked. It opened the index data, worked out what the answer probably was,
+and presented a fabricated result in the exact shape of real output: "9 symbols,
+5 files". The true output was 17 symbols and 4 files, with a different file list.
+A refuted result here would have been meaningless, and nothing in the recorded
+data would have revealed why.
+
+Two changes were made, both before any scored call of the real run:
+
+- `copilot_command` now passes `--allow-all-tools`. This applies to every arm, so
+  all three are compared on equal footing.
+- `q.py` appends one line per invocation to the file named by the
+  `ATOM_INDEX_USAGE_LOG` environment variable. This is observational only and is
+  off unless that variable is set. It exists so that "the agent used the tool" is
+  something measured rather than something the agent claims in prose.
+
+Re-running the lookup-tool arm on three repairs after the fix produced 42 tool
+invocations, spread across all four commands, with no failures.
+
+### 2. The stated bar of 0.788 may not reproduce
+
+That number came from earlier plain-search runs, which were all made while shell
+execution was silently blocked. Allowing it may change plain search too. The
+comparison in this experiment is still sound, because arm A is re-run fresh in
+the same conditions as arms B and C, and the verdict is taken from that fresh
+arm A rather than from the older number. The +0.05 and +0.02 thresholds stand;
+the 0.788 figure should be read as the expectation it was, not as the bar.
+
+### 3. Every earlier experiment ran with shell execution blocked
+
+This does not invalidate the knowledge-base or blast-radius results, because
+neither depended on running a script. It does mean they measured an agent that
+could read and search but not execute, and they should be described that way.
+

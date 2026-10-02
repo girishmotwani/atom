@@ -402,9 +402,24 @@ def build_knowledge_base_section(knowledge_base_text: str) -> str:
 
 
 def copilot_command(model: str) -> list[str]:
-    """Build the Copilot command, resolving package shims with `shutil.which()`."""
+    """Build the Copilot command, resolving package shims with `shutil.which()`.
 
-    command = ["copilot", "--silent", "--model", model, "--no-custom-instructions", "--disable-builtin-mcps"]
+    `--allow-all-tools` is required for non-interactive use. Without it the CLI
+    tries to ask a human before running a shell command, finds nobody there, and
+    refuses -- so any arm that depends on running a script silently measures
+    nothing. Read-only search still works without the flag, which is why earlier
+    arms appeared healthy while the lookup-tool arm was dead on arrival.
+    """
+
+    command = [
+        "copilot",
+        "--silent",
+        "--model",
+        model,
+        "--no-custom-instructions",
+        "--disable-builtin-mcps",
+        "--allow-all-tools",
+    ]
     resolved = shutil.which(command[0])
     if resolved is not None:
         command[0] = resolved
