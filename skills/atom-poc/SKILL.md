@@ -24,6 +24,7 @@ Read, in this order:
 1. [poc-discipline.md](../atom/references/poc-discipline.md) — **the authority for this skill**
 2. [anti-rationalization.md](../atom/references/anti-rationalization.md)
 3. [verification.md](../atom/references/verification.md)
+4. [treatment-evidence.md](../atom/references/treatment-evidence.md) — **required if the spike compares arms**
 
 You need an approved brief. If there isn't one, go back to `atom-discover`. Building a
 spike without an agreed question produces a program nobody can grade.
@@ -94,6 +95,33 @@ never reconstructed from memory. If you lost it, run it again.
 
 If it measures something, run it more than once. A single timing sample is noise.
 
+### Comparison spikes: prove the treatment was applied
+
+Skip this if the spike has one arm. It is mandatory the moment the spike compares
+arms and intends to credit the difference to a treatment.
+
+Work through the three checks in
+[treatment-evidence.md](../atom/references/treatment-evidence.md) **before reading any
+result**:
+
+| # | Check | How |
+|---|---|---|
+| 1 | The treatment reached the model | Render each arm's prompt, compare sizes |
+| 2 | Any required action actually happened | Count entries in the treatment's own usage log |
+| 3 | The treated arm behaved differently at all | Compare a behavioural measure against control |
+
+A treatment carried in the prompt arrives by construction and check 1 settles it. A
+treatment the agent has to **do something** to use — run a script, query an index,
+call an API — can fail silently, completing the run with no error while measuring
+nothing. Those treatments must log their own use.
+
+> **The agent's account of what it did is not evidence.** An agent that was blocked
+> may describe the action in the past tense and produce output in the right shape for
+> a tool it never ran.
+
+If a check fails, the arm has proven nothing. Fix the cause, record the correction as
+a deviation, and rerun — do not reinterpret the numbers you already have.
+
 ## Step 5 — Reach a verdict
 
 Three outcomes. **All three are successes.**
@@ -157,6 +185,7 @@ knowledge forward, not the source.
 - [ ] Question restated verbatim from the brief
 - [ ] Spike scaffolded as its own module under `poc/{slug}/`
 - [ ] Spike **executed**, with real output captured
+- [ ] For comparison spikes: treatment evidence collected for every arm before results were read
 - [ ] Verdict reached against the brief's stated success criteria
 - [ ] `poc-report.md` complete, with verbatim evidence and explicit non-coverage
 - [ ] `findings.md` updated during the work

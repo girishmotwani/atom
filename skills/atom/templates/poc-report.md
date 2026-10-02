@@ -23,6 +23,41 @@ spike_path: "poc/{poc-slug}"
 
 **{Confirmed-or-Refuted-or-Inconclusive}.** {one_line_justification}
 
+## Evidence of Treatment
+
+<!-- GUIDANCE: Comparison spikes only. Delete this whole section for a single-arm spike. See treatment-evidence.md. Fill this in BEFORE reading any result -- it establishes that each arm actually received what it was supposed to receive. A treatment that never reached the model produces a clean, confident, meaningless result that is indistinguishable from a genuine null. -->
+
+Arms compared: {arm_names}
+
+**Check 1 — the treatment reached the model.** Rendered prompt size per arm:
+
+```text
+{paste_verbatim_rendered_prompt_sizes_per_arm}
+```
+
+**Check 2 — any required action actually happened.** Delete if no arm required the
+agent to run, query, or call anything:
+
+- Treatment requiring an action: {treatment_requiring_action_or_none}
+- How its use was recorded: {usage_record_mechanism}
+- Invocations observed: {invocation_count} across {case_count} cases
+- Operations used: {operations_used}
+- Failed or refused attempts: {failed_attempt_count}
+
+**Check 3 — the treated arm behaved differently at all.** A behavioural measure
+compared against control, independent of whether the treatment helped:
+
+| Arm | {behavioural_measure} | Outcome measure |
+|---|---|---|
+| {control_arm} | {control_behaviour} | {control_outcome} |
+| {treatment_arm} | {treatment_behaviour} | {treatment_outcome} |
+
+Interpretation: {behavioural_difference_interpretation}
+
+Checks that failed, and what was changed: {failed_checks_and_corrections_or_none}
+
+When the checks were run, relative to the calls: {checks_timing_before_or_after_calls}
+
 ## Evidence
 
 <!-- GUIDANCE: Paste real command output verbatim in fenced code blocks. Never paraphrase, retype, round numbers, or reconstruct from memory. If you did not capture the output, re-run the command and paste the new output. Include the exact command used. -->
@@ -130,3 +165,4 @@ Conditions before continuing:
 - [ ] Run context is recorded.
 - [ ] Any inconclusive gap is named directly.
 - [ ] The report does not claim evidence outside the pasted output.
+- [ ] Comparison spikes only: all three treatment-evidence checks passed before results were read, and no arm's use of a treatment is asserted on the agent's own say-so.

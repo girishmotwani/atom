@@ -75,6 +75,24 @@ atom poc run <slug>      # go vet + go build + go run, captures output
 
 ---
 
+## Comparison POCs
+
+A spike that compares arms carries a failure an ordinary spike does not: the
+treatment may never have reached the model. There is no error when this happens —
+every arm completes and the result looks exactly like a genuine null.
+
+Before reading any result from a comparison spike, work through
+[treatment-evidence.md](treatment-evidence.md). The short version:
+
+- A treatment carried **in the prompt** arrives by construction. Render the prompt and
+  record its size.
+- A treatment the agent must **do something** to use — run a script, query an index,
+  call an API — can fail silently and must log its own use.
+- **The agent's account of what it did is not evidence.** A blocked agent may describe
+  the action in the past tense and fabricate output in the right shape.
+
+---
+
 ## Evaluating It
 
 A POC has three possible outcomes. **All three are successes.**
