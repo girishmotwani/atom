@@ -1,9 +1,9 @@
 ---
-name: atom-init
+name: init
 description: 'Onboard a Go repository to Atom: create .atom/, detect toolchain, verify a green baseline. Keywords: init, onboard, setup, install atom, bootstrap, add atom to this repo.'
 ---
 
-# atom-init
+# /atom:init
 
 One-time setup for a Go repository.
 
@@ -36,8 +36,8 @@ Verifies:
 |---|---|---|
 | `go` ≥ 1.21 | everything | hard stop |
 | `gofmt` | formatting gate | hard stop (ships with Go) |
-| `git` | `atom-ship` | warn; pipeline still runs |
-| `gh` | pull requests | warn; `atom-ship` degrades to a manual push |
+| `git` | `/atom:ship` | warn; pipeline still runs |
+| `gh` | pull requests | warn; `/atom:ship` degrades to a manual push |
 | `python` ≥ 3.10 | Atom's own tooling | hard stop |
 
 Report every missing tool at once. Discovering them one hard stop at a time wastes the
@@ -109,7 +109,7 @@ Tell the developer:
 - The baseline result, stated plainly
 - What was created
 - The recommended model setup — see [model-guidance.md](../atom/references/model-guidance.md)
-- The next step: `atom-discover`
+- The next step: `/atom:discover`
 
 ---
 
@@ -125,4 +125,4 @@ Tell the developer:
 
 ## Next
 
-`atom-discover`.
+`/atom:discover`.

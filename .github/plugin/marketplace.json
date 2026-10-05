@@ -3,13 +3,13 @@
   "owner": { "name": "Atom" },
   "metadata": {
     "description": "Atom - agentic development framework for Go.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
-      "name": "atom-go",
+      "name": "atom",
       "description": "POC first, then spec, then TDD. Go-focused agentic development.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "."
     }
   ]

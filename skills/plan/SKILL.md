@@ -1,9 +1,9 @@
 ---
-name: atom-plan
+name: plan
 description: 'Break proven work into ordered, independently shippable phases based on POC evidence. Keywords: plan, phases, break down, roadmap, decompose, milestones, sequencing.'
 ---
 
-# atom-plan
+# /atom:plan
 
 Turns a **confirmed** project-level POC into an ordered set of phases, each small
 enough to design, build and ship on its own.
@@ -144,4 +144,4 @@ a plan that stopped being consulted.
 
 ## Next
 
-`atom-poc` for phase 1 — or `atom-spec` if phase 1's skip was justified and approved.
+`/atom:poc` for phase 1 — or `/atom:spec` if phase 1's skip was justified and approved.

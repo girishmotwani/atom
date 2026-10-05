@@ -36,40 +36,40 @@ catch yourself reasoning "this is simple enough that a POC is unnecessary", see
   problem statement / MRD
         │
         ▼
-  atom-discover   interview the developer → POC Brief
+  /atom:discover   interview the developer → POC Brief
         │  ◆ gate
         ▼
-  atom-poc        throwaway Go spike, executed → POC Report
+  /atom:poc        throwaway Go spike, executed → POC Report
         │  ◆ gate
         ▼
-  atom-plan       phase breakdown → Phase Plan
+  /atom:plan       phase breakdown → Phase Plan
         │  ◆ gate
         ▼
   ┌─ per phase ────────────────────────────────┐
-  │   atom-poc     spike this phase's risk     │
+  │   /atom:poc     spike this phase's risk     │
   │        ◆ gate                              │
-  │   atom-spec    high-level design spec      │
+  │   /atom:spec    high-level design spec      │
   │        ◆ gate                              │
-  │   atom-tdd     red → green → refactor      │
+  │   /atom:tdd     red → green → refactor      │
   │        ◆ gate                              │
-  │   atom-review  multi-model review          │
+  │   /atom:review  multi-model review          │
   └────────────────────────────────────────────┘
         │
         ▼
-  atom-ship       commit + pull request
+  /atom:ship       commit + pull request
 ```
 
 | Skill | Purpose |
 |---|---|
-| `atom-init` | Onboard a Go repository to Atom |
-| `atom-discover` | Turn a vague problem into a concrete POC Brief, by asking |
-| `atom-poc` | Build, run and evaluate a throwaway Go spike |
-| `atom-plan` | Break proven work into ordered, independently shippable phases |
-| `atom-spec` | Write the high-level design spec for one phase |
-| `atom-tdd` | Implement one phase test-first |
-| `atom-review` | Multi-model review of a diff |
-| `atom-ship` | Commit, push, open a pull request |
-| `atom-build` | End-to-end orchestrator chaining all of the above |
+| `/atom:init` | Onboard a Go repository to Atom |
+| `/atom:discover` | Turn a vague problem into a concrete POC Brief, by asking |
+| `/atom:poc` | Build, run and evaluate a throwaway Go spike |
+| `/atom:plan` | Break proven work into ordered, independently shippable phases |
+| `/atom:spec` | Write the high-level design spec for one phase |
+| `/atom:tdd` | Implement one phase test-first |
+| `/atom:review` | Multi-model review of a diff |
+| `/atom:ship` | Commit, push, open a pull request |
+| `/atom:build` | End-to-end orchestrator chaining all of the above |
 
 Each skill lives in `skills/<name>/SKILL.md`.
 

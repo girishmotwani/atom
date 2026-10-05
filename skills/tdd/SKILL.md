@@ -1,9 +1,9 @@
 ---
-name: atom-tdd
+name: tdd
 description: 'Implement one phase test-first in Go: red, green, refactor, against an approved design spec. Keywords: TDD, test driven, test first, implement, red green refactor, build the phase, write the code.'
 ---
 
-# atom-tdd
+# /atom:tdd
 
 The **BUILD** beat. Implements one phase from its approved design spec, test-first.
 
@@ -14,7 +14,7 @@ The **BUILD** beat. Implements one phase from its approved design spec, test-fir
 ## Never use when
 
 - No approved spec exists. Implementing an unapproved design means the developer
-  reviews finished code instead of a reversible decision. Go to `atom-spec`.
+  reviews finished code instead of a reversible decision. Go to `/atom:spec`.
 
 ## Before you start
 
@@ -37,7 +37,7 @@ Map every numbered behaviour in the design spec to at least one test case, using
 
 A behaviour with no test is either not going to be implemented, or was not specified
 precisely enough to test. Both are problems to resolve **now**, before writing code —
-go back to `atom-spec` rather than papering over it.
+go back to `/atom:spec` rather than papering over it.
 
 Add the cases the spec did not enumerate: error paths, boundaries, zero values, empty
 inputs, cancelled contexts. Uncovered error branches are where real coverage gaps
@@ -182,4 +182,4 @@ left in `findings.md`, and one specific question.
 
 ## Next
 
-`atom-review` — multi-model review of the diff.
+`/atom:review` — multi-model review of the diff.

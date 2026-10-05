@@ -55,7 +55,7 @@ a finding, and it belongs in the phase's `findings.md`.
 
 Finish with the next step as a literal slash command:
 
-- Green and code is ready for a second opinion → `/atom-review`
-- Green and the phase is complete → `/atom-ship`
-- Not green, mid-implementation → `/atom-tdd` to drive the fix test-first
+- Green and code is ready for a second opinion → `/atom:review`
+- Green and the phase is complete → `/atom:ship`
+- Not green, mid-implementation → `/atom:tdd` to drive the fix test-first
 - Unsure where this sits in the workflow → `/atom-status`

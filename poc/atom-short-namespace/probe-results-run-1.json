@@ -1,0 +1,37 @@
+[
+  {
+    "prompt": "/atom:poc",
+    "exit_code": 0,
+    "stdout": "ATOM_NS_SKILL_OK",
+    "stderr": "",
+    "claim": "N1"
+  },
+  {
+    "prompt": "/atom",
+    "exit_code": 0,
+    "stdout": "ATOM_NS_ROUTER_OK",
+    "stderr": "",
+    "claim": "N2"
+  },
+  {
+    "prompt": "/start",
+    "exit_code": 0,
+    "stdout": "ATOM_NS_START_OK",
+    "stderr": "",
+    "claim": "N3"
+  },
+  {
+    "prompt": "/atom:start",
+    "exit_code": 0,
+    "stdout": "ATOM_NS_START_OK",
+    "stderr": "",
+    "claim": "N4"
+  },
+  {
+    "prompt": "/atom:atom",
+    "exit_code": 0,
+    "stdout": "ATOM_NS_ROUTER_OK",
+    "stderr": "",
+    "claim": "N5"
+  }
+]

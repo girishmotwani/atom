@@ -1,9 +1,9 @@
 ---
-name: atom-build
+name: build
 description: 'End-to-end orchestrator: problem statement to shipped phases, chaining discover, POC, plan, and per-phase POC/spec/TDD/review/ship. Keywords: build, build this, end to end, full pipeline, take it from here, run atom.'
 ---
 
-# atom-build
+# /atom:build
 
 Runs the whole Atom pipeline, from a problem statement to shipped phases.
 
@@ -27,19 +27,19 @@ workflow in the framework, so it is the one most likely to compact mid-run.
 ## The pipeline
 
 ```
-  atom-discover ──▶ ◆ ──▶ atom-poc ──▶ ◆ ──▶ atom-plan ──▶ ◆
+  /atom:discover ──▶ ◆ ──▶ /atom:poc ──▶ ◆ ──▶ /atom:plan ──▶ ◆
                                 │
                     (refuted) ◀─┘
                                               │
   ┌─── per phase ──────────────────────────────▼─────────────┐
   │                                                          │
-  │   atom-poc ──▶ ◆ ──▶ atom-spec ──▶ ◆ ──▶ atom-tdd ──▶ ◆   │
+  │   /atom:poc ──▶ ◆ ──▶ /atom:spec ──▶ ◆ ──▶ /atom:tdd ──▶ ◆   │
   │       │                                        │         │
-  │       └─ refuted ──▶ back to atom-plan         ▼         │
-  │                                          atom-review     │
+  │       └─ refuted ──▶ back to /atom:plan         ▼         │
+  │                                          /atom:review     │
   └────────────────────────────┬─────────────────────────────┘
                                ▼
-                          atom-ship
+                          /atom:ship
 
   ◆ = gate: present, end turn, wait
 ```
@@ -65,7 +65,7 @@ routinely changes phase N+1's design — running them in parallel discards that.
 
 ## Step 0 — Set up
 
-1. Run `atom-init` if `.atom/` is absent.
+1. Run `/atom:init` if `.atom/` is absent.
 2. Work on a branch, not on `main`.
 3. Create `specs/{project}/` with `findings.md` and `decisions.md`, both from their
    templates, both populated with their explicit empty statement.
@@ -73,7 +73,7 @@ routinely changes phase N+1's design — running them in parallel discards that.
 
 ## Step 1 — Project scope
 
-`atom-discover` → **gate** → `atom-poc` → **gate** → `atom-plan` → **gate**
+`/atom:discover` → **gate** → `/atom:poc` → **gate** → `/atom:plan` → **gate**
 
 Approving the plan authorises **phase 1 only**. Later phases re-gate individually,
 because phase 1 will change them.
@@ -84,11 +84,11 @@ For each phase in order:
 
 | Step | Skill | Gate | Notes |
 |---|---|---|---|
-| 1 | `atom-poc` | ◆ | Skippable only with a specific recorded justification |
-| 2 | `atom-spec` | ◆ | Never before the POC |
-| 3 | `atom-tdd` | ◆ | Never before the spec is approved |
-| 4 | `atom-review` | — | Models other than the one that wrote the code |
-| 5 | `atom-ship` | — | Push only on explicit instruction |
+| 1 | `/atom:poc` | ◆ | Skippable only with a specific recorded justification |
+| 2 | `/atom:spec` | ◆ | Never before the POC |
+| 3 | `/atom:tdd` | ◆ | Never before the spec is approved |
+| 4 | `/atom:review` | — | Models other than the one that wrote the code |
+| 5 | `/atom:ship` | — | Push only on explicit instruction |
 
 Then:
 

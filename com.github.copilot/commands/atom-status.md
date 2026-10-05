@@ -17,7 +17,7 @@ If the command is not found, the Atom Python package is not installed. Follow
 read the status.
 
 If there is no `.atom/` directory, this is not an Atom project. Say so and
-point at `/atom-init`, then stop.
+point at `/atom:init`, then stop.
 
 ## Step 2 — Explain it, do not just echo it
 
@@ -38,12 +38,12 @@ never skip ahead to a later beat because it looks more interesting.
 
 | What is missing | Next |
 |---|---|
-| No falsifiable question | `/atom-discover` |
-| Question but no spike | `/atom-poc` |
-| POC verdict but no design spec | `/atom-spec` |
-| Agreed spec but no code | `/atom-tdd` |
-| Code but no review | `/atom-review` |
-| Everything present | `/atom-ship` |
+| No falsifiable question | `/atom:discover` |
+| Question but no spike | `/atom:poc` |
+| POC verdict but no design spec | `/atom:spec` |
+| Agreed spec but no code | `/atom:tdd` |
+| Code but no review | `/atom:review` |
+| Everything present | `/atom:ship` |
 
 If the project is complete and there is nothing outstanding, say that
 explicitly rather than inventing work.

@@ -1,14 +1,14 @@
 """Tier 1 checks on the Copilot CLI plugin manifest shipped at the repo root.
 
 These assert facts about the real repository, not about a fixture. They exist
-because the failure they guard against is *silent*: when a slash command shares
-its name with a skill or with the plugin itself, Copilot CLI resolves the other
-thing and the command simply never runs. No warning is printed at install time.
+because plugin and skill names directly determine the slash-command surface,
+and naming regressions otherwise install successfully while exposing the wrong
+commands.
 
-Measured behaviour (see poc/copilot-plugin-surface/results.md):
+Measured behaviour (see poc/atom-short-namespace/results.md):
 
-  - command named the same as a skill  -> the skill wins
-  - command named the same as a plugin -> the command never runs
+  - plugin `atom` + skill `poc` -> `/atom:poc`
+  - an installed command named `atom` shadows `/atom:<skill>`
 """
 
 import json
@@ -21,6 +21,17 @@ SKILLS_ROOT = REPO_ROOT / "skills"
 COMMANDS_ROOT = REPO_ROOT / "com.github.copilot" / "commands"
 
 AGENT_PLUGINS_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+EXPECTED_SHORT_SKILLS = {
+    "build",
+    "discover",
+    "init",
+    "plan",
+    "poc",
+    "review",
+    "ship",
+    "spec",
+    "tdd",
+}
 
 # Agent Plugins 1.0 allows only these top-level manifest fields. Anything else
 # is reported and ignored by the CLI, which is easy to miss.
@@ -84,11 +95,19 @@ def test_no_command_shares_a_name_with_a_skill():
     )
 
 
+def test_the_plugin_owns_the_atom_command_namespace():
+    assert _plugin_manifest()["name"] == "atom"
+
+
 def test_no_command_shares_a_name_with_the_plugin():
     plugin_name = _plugin_manifest()["name"]
     assert plugin_name not in _command_names(), (
-        f"a command named {plugin_name!r} never runs; rename it"
+        f"the command shadows /{plugin_name}:<skill> after installation"
     )
+
+
+def test_the_atom_router_is_available_as_start():
+    assert "start" in _command_names()
 
 
 def test_no_skill_shares_a_name_with_the_plugin():
@@ -96,6 +115,10 @@ def test_no_skill_shares_a_name_with_the_plugin():
     assert plugin_name not in _skill_names(), (
         f"the skill {plugin_name!r} is shadowed by the plugin and will not load"
     )
+
+
+def test_the_plugin_exposes_exactly_the_compact_skill_names():
+    assert _skill_names() == EXPECTED_SHORT_SKILLS
 
 
 def test_the_marketplace_lists_the_plugin_by_its_manifest_name():

@@ -1,9 +1,9 @@
 ---
-name: atom-review
+name: review
 description: 'Multi-model review of a Go diff, merged into one deduplicated report with severities. Keywords: review, code review, multi-model review, review my changes, review the diff, critique.'
 ---
 
-# atom-review
+# /atom:review
 
 Reviews a diff with **two or more different models** and merges their findings into one
 report.
@@ -21,8 +21,8 @@ and running one instead is the rationalization this skill exists to prevent.
 
 ## When to use
 
-- After `atom-tdd` for a phase
-- Before `atom-ship`
+- After `/atom:tdd` for a phase
+- Before `/atom:ship`
 - Any time a diff is large enough that reading it once isn't enough
 
 ## Step 1 — Establish the diff
@@ -161,4 +161,4 @@ Present the merged report, the triage outcome, and what remains open.
 
 ## Next
 
-`atom-ship`, or the next phase's `atom-poc`.
+`/atom:ship`, or the next phase's `/atom:poc`.

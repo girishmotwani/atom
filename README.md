@@ -55,42 +55,42 @@ Atom's most valuable moment is an agent reporting *"I was wrong, here's the outp
   problem statement / MRD
         │
         ▼
-  atom-discover   interview the developer → POC Brief
+  /atom:discover   interview the developer → POC Brief
         │  ◆
         ▼
-  atom-poc        throwaway Go spike, executed → POC Report
+  /atom:poc        throwaway Go spike, executed → POC Report
         │  ◆
         ▼
-  atom-plan       phase breakdown → Phase Plan
+  /atom:plan       phase breakdown → Phase Plan
         │  ◆
         ▼
   ┌─ per phase ────────────────────────────────┐
-  │   atom-poc     spike this phase's risk     │
+  │   /atom:poc     spike this phase's risk     │
   │        ◆                                   │
-  │   atom-spec    high-level design spec      │
+  │   /atom:spec    high-level design spec      │
   │        ◆                                   │
-  │   atom-tdd     red → green → refactor      │
+  │   /atom:tdd     red → green → refactor      │
   │        ◆                                   │
-  │   atom-review  multi-model review          │
+  │   /atom:review  multi-model review          │
   └────────────────────────────────────────────┘
         │
         ▼
-  atom-ship       commit + pull request
+  /atom:ship       commit + pull request
 
   ◆ = gate: the agent presents, stops, and waits for you
 ```
 
 | Skill | Purpose |
 |---|---|
-| `atom-init` | Onboard a Go repository |
-| `atom-discover` | Vague problem → concrete, falsifiable POC Brief |
-| `atom-poc` | Build, run and evaluate a throwaway spike |
-| `atom-plan` | Break proven work into independently shippable phases |
-| `atom-spec` | High-level design spec for one phase |
-| `atom-tdd` | Implement one phase test-first |
-| `atom-review` | Multi-model review |
-| `atom-ship` | Commit and open a pull request |
-| `atom-build` | End-to-end orchestrator |
+| `/atom:init` | Onboard a Go repository |
+| `/atom:discover` | Vague problem → concrete, falsifiable POC Brief |
+| `/atom:poc` | Build, run and evaluate a throwaway spike |
+| `/atom:plan` | Break proven work into independently shippable phases |
+| `/atom:spec` | High-level design spec for one phase |
+| `/atom:tdd` | Implement one phase test-first |
+| `/atom:review` | Multi-model review |
+| `/atom:ship` | Commit and open a pull request |
+| `/atom:build` | End-to-end orchestrator |
 
 **New to Atom?** [docs/workflow.md](docs/workflow.md) walks through what happens at
 each step, what you are expected to do at the gates, and what ends up on disk.
@@ -170,10 +170,10 @@ Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands
 
 ```bash
 copilot plugin marketplace add girishmotwani/atom
-copilot plugin install atom-go@atom
+copilot plugin install atom@atom
 ```
 
-Check it landed. Expect twelve `atom` entries — the nine beats plus `/atom`,
+Check it landed. Expect twelve `atom` entries — the nine beats plus `/atom:start`,
 `/atom-status` and `/atom-check`:
 
 ```bash
@@ -184,18 +184,18 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 
 | Command | Beat |
 |---|---|
-| `/atom` | Describe what you want to build; Atom picks the right beat |
-| `/atom-discover` | Turn a vague goal into one falsifiable question |
-| `/atom-poc` | Build a disposable Go spike that answers it |
-| `/atom-spec` | Turn the POC's verdict into a design spec |
-| `/atom-tdd` | Derive the test spec, then red-green |
-| `/atom-review` | Multi-model review of the diff |
-| `/atom-ship` | Commit, branch, pull request |
-| `/atom-plan` | Break work too large for one pass into phases |
-| `/atom-init` | Scaffold project state in a Go repo |
+| `/atom:start` | Describe what you want to build; Atom picks the right beat |
+| `/atom:discover` | Turn a vague goal into one falsifiable question |
+| `/atom:poc` | Build a disposable Go spike that answers it |
+| `/atom:spec` | Turn the POC's verdict into a design spec |
+| `/atom:tdd` | Derive the test spec, then red-green |
+| `/atom:review` | Multi-model review of the diff |
+| `/atom:ship` | Commit, branch, pull request |
+| `/atom:plan` | Break work too large for one pass into phases |
+| `/atom:init` | Scaffold project state in a Go repo |
 | `/atom-status` | Show the current phase, what exists, what is missing |
 | `/atom-check` | Run every Go quality gate and explain failures |
-| `/atom-build` | Run the whole loop end to end |
+| `/atom:build` | Run the whole loop end to end |
 
 > Install from the marketplace, not directly from the repository URL. Copilot CLI has
 > deprecated direct repo, URL and local-path installs, and will only support
@@ -203,12 +203,12 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 
 ### Installing and updating as Atom evolves
 
-Installing copies Atom into `~/.copilot/installed-plugins/atom/atom-go`. That copy is a
+Installing copies Atom into `~/.copilot/installed-plugins/atom/atom`. That copy is a
 **snapshot, not a live link** — it has no `.git` inside it and does not track the source.
 New bits never arrive on their own, so this is the command that matters:
 
 ```bash
-copilot plugin update atom-go@atom      # one plugin
+copilot plugin update atom@atom         # one plugin
 copilot plugin update --all             # everything installed
 ```
 
@@ -223,7 +223,7 @@ That distinction gives two different workflows:
 
 | You are | Marketplace points at | To get new bits |
 |---|---|---|
-| **Using** Atom | `girishmotwani/atom` on GitHub | `copilot plugin update atom-go@atom` |
+| **Using** Atom | `girishmotwani/atom` on GitHub | `copilot plugin update atom@atom` |
 | **Developing** Atom | your local clone | same command — no push required |
 
 To develop against your own clone, point the marketplace at it with an **absolute** path
@@ -231,7 +231,7 @@ To develop against your own clone, point the marketplace at it with an **absolut
 
 ```bash
 copilot plugin marketplace add /absolute/path/to/atom
-copilot plugin update atom-go@atom
+copilot plugin update atom@atom
 ```
 
 Because the marketplace is a local directory, this picks up committed changes without
@@ -256,13 +256,13 @@ copilot plugin list                     # shows the installed version
 ### Run it
 
 That is the whole setup. Atom's other half — the `atom` command that runs the Go gates
-and tracks phase state — installs itself the first time a beat needs it, and `/atom`
+and tracks phase state — installs itself the first time a beat needs it, and `/atom:start`
 scaffolds a project the first time you point it at one. Neither is yours to do by hand.
 
 Start from a plain description of what you want to build:
 
 ```
-/atom add topic-based routing to the event bus
+/atom:start add topic-based routing to the event bus
 ```
 
 Atom works out where you are, picks the earliest beat whose output is missing, and
@@ -272,14 +272,14 @@ because the first thing Atom builds is a spike that could prove the idea wrong.
 A session then walks the beats, and you can check in at any point:
 
 ```
-/atom-discover        scope one falsifiable question
-/atom-poc             build the spike, grade it against the thresholds
-/atom-plan            break proven work into phases
-/atom-spec            design spec for this phase
-/atom-tdd             test spec, then red-green
+/atom:discover        scope one falsifiable question
+/atom:poc             build the spike, grade it against the thresholds
+/atom:plan            break proven work into phases
+/atom:spec            design spec for this phase
+/atom:tdd             test spec, then red-green
 /atom-check           are the Go gates green?
-/atom-review          second opinion on the diff
-/atom-ship            commit, branch, pull request
+/atom:review          second opinion on the diff
+/atom:ship            commit, branch, pull request
 
 /atom-status          where am I, and what is missing?
 ```
@@ -373,7 +373,7 @@ Fallbacks and role guidance in
 | Copilot CLI | ≥ 1.0.89 | the plugin and the `/atom` commands |
 | Go | ≥ 1.21 | everything |
 | Python | ≥ 3.10 | the `atom` CLI |
-| git | any | installing Atom, and `atom-ship` |
+| git | any | installing Atom, and `/atom:ship` |
 | gh | any | pull requests (optional) |
 
 Go is the **target** language. Python is the **tooling** language. Atom never asks you

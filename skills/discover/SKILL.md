@@ -1,9 +1,9 @@
 ---
-name: atom-discover
+name: discover
 description: 'Turn a vague problem statement or market requirements document into a concrete, falsifiable POC Brief by interviewing the developer. Keywords: discover, requirements, MRD, problem statement, what should we build, scope, kick off.'
 ---
 
-# atom-discover
+# /atom:discover
 
 The entry point. Takes a problem statement — an MRD, a ticket, a paragraph in chat —
 and produces a **POC Brief**: a contract for the one thing the first spike must prove.
@@ -133,4 +133,4 @@ authorise designing, planning phases, or writing production code.
 
 ## Next
 
-`atom-poc` — build and run the spike.
+`/atom:poc` — build and run the spike.

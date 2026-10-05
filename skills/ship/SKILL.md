@@ -1,15 +1,15 @@
 ---
-name: atom-ship
+name: ship
 description: 'Commit, push and open a pull request for a completed phase, with the pipeline artifacts linked. Keywords: ship, PR, pull request, commit, push, open a PR, submit.'
 ---
 
-# atom-ship
+# /atom:ship
 
 Gets a completed phase into review on GitHub.
 
 ## When to use
 
-- A phase passed `atom-tdd` and `atom-review` and was approved
+- A phase passed `/atom:tdd` and `/atom:review` and was approved
 
 ## Before you start
 
@@ -119,4 +119,4 @@ Give the developer the PR URL, what's in it, and what's still open in `findings.
 
 ## Next
 
-The next phase's `atom-poc` — or done, if that was the last phase.
+The next phase's `/atom:poc` — or done, if that was the last phase.

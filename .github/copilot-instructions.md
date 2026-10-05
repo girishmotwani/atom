@@ -19,15 +19,15 @@ checklist — do not reconstruct a skill from memory.
 
 | Trigger | Skill |
 |---|---|
-| "onboard", "set up atom" | [`atom-init`](../skills/atom-init/SKILL.md) |
-| "what should we build", a problem statement or MRD | [`atom-discover`](../skills/atom-discover/SKILL.md) |
-| "POC", "spike", "prove it", "try it" | [`atom-poc`](../skills/atom-poc/SKILL.md) |
-| "plan", "phases", "break this down" | [`atom-plan`](../skills/atom-plan/SKILL.md) |
-| "spec", "design", "architecture" | [`atom-spec`](../skills/atom-spec/SKILL.md) |
-| "implement", "TDD", "build the phase" | [`atom-tdd`](../skills/atom-tdd/SKILL.md) |
-| "review", "code review" | [`atom-review`](../skills/atom-review/SKILL.md) |
-| "ship", "PR", "pull request" | [`atom-ship`](../skills/atom-ship/SKILL.md) |
-| "build this", a whole feature end to end | [`atom-build`](../skills/atom-build/SKILL.md) |
+| "onboard", "set up atom" | [`/atom:init`](../skills/init/SKILL.md) |
+| "what should we build", a problem statement or MRD | [`/atom:discover`](../skills/discover/SKILL.md) |
+| "POC", "spike", "prove it", "try it" | [`/atom:poc`](../skills/poc/SKILL.md) |
+| "plan", "phases", "break this down" | [`/atom:plan`](../skills/plan/SKILL.md) |
+| "spec", "design", "architecture" | [`/atom:spec`](../skills/spec/SKILL.md) |
+| "implement", "TDD", "build the phase" | [`/atom:tdd`](../skills/tdd/SKILL.md) |
+| "review", "code review" | [`/atom:review`](../skills/review/SKILL.md) |
+| "ship", "PR", "pull request" | [`/atom:ship`](../skills/ship/SKILL.md) |
+| "build this", a whole feature end to end | [`/atom:build`](../skills/build/SKILL.md) |
 
 ## Discipline references
 

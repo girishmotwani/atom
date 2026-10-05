@@ -7,7 +7,7 @@ date: "{yyyy-mm-dd}"
 
 # Test Spec
 
-<!-- GUIDANCE: Write this at the start of atom-tdd. It maps design behaviours to concrete Go tests before implementation. The test spec is complete only when every numbered behaviour in the design spec is represented. -->
+<!-- GUIDANCE: Write this at the start of /atom:tdd. It maps design behaviours to concrete Go tests before implementation. The test spec is complete only when every numbered behaviour in the design spec is represented. -->
 
 ## Toolchain Redundancy Audit
 

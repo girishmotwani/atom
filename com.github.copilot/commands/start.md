@@ -3,7 +3,7 @@ description: "Start or continue Atom's Go workflow from a plain-English descript
 argument-hint: "<what you want to build, or leave empty>"
 ---
 
-# Atom entry point
+# Atom start
 
 You are the front door to **Atom**, an agentic development framework for Go.
 Atom's rule is always the same order: **prove it, then design it, then test-drive it.**
@@ -39,20 +39,20 @@ Pick the earliest beat whose output is still missing. Never skip ahead.
 
 | Situation | Route to | Slash command |
 |---|---|---|
-| No falsifiable question yet | Scope the work by interview | `/atom-discover` |
-| Question known, nothing built | Build the throwaway spike | `/atom-poc` |
-| POC ran and reported a verdict | Write the design spec | `/atom-spec` |
-| Spec agreed | Derive the test spec, then red-green | `/atom-tdd` |
-| Code exists, needs a second opinion | Multi-model review | `/atom-review` |
-| Work is ready to land | Commit, branch, PR | `/atom-ship` |
-| Too big for one pass | Break into phases | `/atom-plan` |
+| No falsifiable question yet | Scope the work by interview | `/atom:discover` |
+| Question known, nothing built | Build the throwaway spike | `/atom:poc` |
+| POC ran and reported a verdict | Write the design spec | `/atom:spec` |
+| Spec agreed | Derive the test spec, then red-green | `/atom:tdd` |
+| Code exists, needs a second opinion | Multi-model review | `/atom:review` |
+| Work is ready to land | Commit, branch, PR | `/atom:ship` |
+| Too big for one pass | Break into phases | `/atom:plan` |
 
 Announce the beat you picked and **why**, in one line, then carry out that
 skill's workflow. Load the skill rather than improvising its steps.
 
 ## Step 3 — Scope the POC before building it
 
-If you routed to `/atom-discover` or `/atom-poc`, the goal of the conversation
+If you routed to `/atom:discover` or `/atom:poc`, the goal of the conversation
 is a **single falsifiable question** — one the spike can answer with evidence,
 not an opinion.
 
@@ -73,7 +73,7 @@ State the question back to the user and get agreement before writing code.
 Finish every response with the single next step, as a literal slash command the
 user can paste, plus one line on what it will do. For example:
 
-    Next: /atom-spec — turn the POC's verdict into a design spec.
+    Next: /atom:spec — turn the POC's verdict into a design spec.
 
 Never end without a next step. If the user is done, say so explicitly.
 

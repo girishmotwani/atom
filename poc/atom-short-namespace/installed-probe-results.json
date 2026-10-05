@@ -1,0 +1,42 @@
+{
+  "setup": {
+    "marketplace add": {
+      "exit_code": 0,
+      "stdout": "Marketplace \"atom-ns-probe\" added successfully.",
+      "stderr": ""
+    },
+    "install": {
+      "exit_code": 0,
+      "stdout": "Plugin \"atom\" installed successfully. Installed 1 skill.\nEnabled \"atom@atom-ns-probe\". It is loaded live from C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-ns-market-fs16k0_m\\atom, so edits take effect on the next session \u2014 nothing was copied.",
+      "stderr": ""
+    },
+    "list": {
+      "exit_code": 0,
+      "stdout": "Built-in plugins:\n  \u2022 computer-use (v0.1.92) [disabled]\nLive Plugins (loaded from a local marketplace directory, never copied):\n  \u2022 atom@atom-ns-probe (v0.0.1) (enabled)\n      from C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-ns-market-fs16k0_m",
+      "stderr": ""
+    }
+  },
+  "probes": [
+    {
+      "claim": "N1-installed",
+      "prompt": "/atom:poc",
+      "exit_code": 0,
+      "stdout": "ATOM_NS_ROUTER_OK",
+      "stderr": ""
+    },
+    {
+      "claim": "N2-installed",
+      "prompt": "/atom",
+      "exit_code": 0,
+      "stdout": "ATOM_NS_ROUTER_OK",
+      "stderr": ""
+    },
+    {
+      "claim": "N3-installed",
+      "prompt": "/start",
+      "exit_code": 0,
+      "stdout": "I\u2019ll initialize with the authoritative CLI guidance and repository operating rules.\n\n**Ready.** I\u2019m GitHub Copilot CLI, powered by GPT-5.6 Sol, working in `atom-short-namespace`.\n\nDescribe the change you want, reference files with `@`, or use `/help` for available commands. Repository access to `AGENTS.md` currently requires interactive approval.",
+      "stderr": ""
+    }
+  ]
+}

@@ -99,8 +99,8 @@ A POC has three possible outcomes. **All three are successes.**
 
 | Outcome | Meaning | What happens next |
 |---|---|---|
-| **Confirmed** | The assumption held | Proceed to `atom-spec`, citing the evidence |
-| **Refuted** | The assumption was wrong | Excellent — you saved the design. Return to `atom-discover` with what you learned |
+| **Confirmed** | The assumption held | Proceed to `/atom:spec`, citing the evidence |
+| **Refuted** | The assumption was wrong | Excellent — you saved the design. Return to `/atom:discover` with what you learned |
 | **Inconclusive** | The POC didn't isolate the question | Sharpen the question and spike again. Do **not** proceed on a shrug |
 
 An inconclusive POC treated as a confirmation is worse than no POC at all, because it

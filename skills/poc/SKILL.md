@@ -1,9 +1,9 @@
 ---
-name: atom-poc
+name: poc
 description: 'Build, run and evaluate a throwaway Go spike that answers one falsifiable question. Produces a POC Report with verbatim evidence. Keywords: POC, proof of concept, spike, prototype, prove it, experiment, try it out.'
 ---
 
-# atom-poc
+# /atom:poc
 
 The **PROVE** beat. Builds a disposable Go program that answers exactly one question,
 runs it, and writes up what actually happened.
@@ -26,7 +26,7 @@ Read, in this order:
 3. [verification.md](../atom/references/verification.md)
 4. [treatment-evidence.md](../atom/references/treatment-evidence.md) — **required if the spike compares arms**
 
-You need an approved brief. If there isn't one, go back to `atom-discover`. Building a
+You need an approved brief. If there isn't one, go back to `/atom:discover`. Building a
 spike without an agreed question produces a program nobody can grade.
 
 ---
@@ -128,8 +128,8 @@ Three outcomes. **All three are successes.**
 
 | Verdict | Meaning | Next |
 |---|---|---|
-| **Confirmed** | The assumption held, and the output shows it | Proceed to `atom-spec` |
-| **Refuted** | The assumption was wrong | Back to `atom-discover` with what you learned |
+| **Confirmed** | The assumption held, and the output shows it | Proceed to `/atom:spec` |
+| **Refuted** | The assumption was wrong | Back to `/atom:discover` with what you learned |
 | **Inconclusive** | The spike didn't isolate the question | Sharpen and respike. Do **not** proceed |
 
 Grade against the brief's success criteria, not against how you feel about the code.
@@ -194,7 +194,7 @@ knowledge forward, not the source.
 
 ## Next
 
-- **Confirmed**, project-level → `atom-plan`
-- **Confirmed**, phase-level → `atom-spec`
-- **Refuted** → `atom-discover`
+- **Confirmed**, project-level → `/atom:plan`
+- **Confirmed**, phase-level → `/atom:spec`
+- **Refuted** → `/atom:discover`
 - **Inconclusive** → sharpen the question, respike

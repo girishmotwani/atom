@@ -1,14 +1,14 @@
 ---
-name: atom-spec
+name: spec
 description: 'Write the high-level design spec for one phase, grounded in that phase POC evidence. Keywords: spec, design, design doc, architecture, API design, describe the approach.'
 ---
 
-# atom-spec
+# /atom:spec
 
 The **DESCRIBE** beat. Writes the design spec for exactly one phase — after that
 phase's POC, never before.
 
-The spec's job is to be precise enough that `atom-tdd` can derive tests from it
+The spec's job is to be precise enough that `/atom:tdd` can derive tests from it
 without guessing.
 
 ## When to use
@@ -19,7 +19,7 @@ without guessing.
 ## Never use when
 
 - No POC has been run for this phase and no skip was approved. Specifying an unproven
-  design is the failure mode Atom exists to prevent. Go to `atom-poc`.
+  design is the failure mode Atom exists to prevent. Go to `/atom:poc`.
 
 ## Before you start
 
@@ -41,7 +41,7 @@ Write two lists before designing anything:
 
 Every significant decision in the spec must trace to the first list or be explicitly
 labelled as resting on the second. An unlabelled assumption reads as a fact to the
-next person, including to `atom-tdd`.
+next person, including to `/atom:tdd`.
 
 ## Step 2 — Design the public surface first
 
@@ -150,4 +150,4 @@ TDD, it re-gates.
 
 ## Next
 
-`atom-tdd` — implement this phase test-first.
+`/atom:tdd` — implement this phase test-first.

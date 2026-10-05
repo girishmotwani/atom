@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "atom-go",
-  "description": "Agentic development framework for Go: POC first, then spec, then TDD. Ships the atom-* skills as Copilot CLI slash commands.",
-  "version": "0.1.0",
+  "name": "atom",
+  "description": "Agentic development framework for Go: POC first, then spec, then TDD. Ships compact /atom:<skill> Copilot CLI commands.",
+  "version": "0.2.0",
   "license": "MIT",
   "repository": "https://github.com/girishmotwani/atom",
   "keywords": ["go", "golang", "tdd", "poc", "spike", "design-spec"]

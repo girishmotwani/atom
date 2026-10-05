@@ -66,7 +66,7 @@ sentence at the start.
 
 ### 0. Setup
 
-`atom-init` onboards the repository: detects your Go toolchain, creates `.atom/`, and
+`/atom:init` onboards the repository: detects your Go toolchain, creates `.atom/`, and
 records the baseline before changing anything. It runs `atom check --no-race` on the
 **untouched** tree, skipping race detection only for this initial baseline; this keeps
 a pre-existing failure from being mistaken for one the pipeline caused. Final
@@ -215,11 +215,11 @@ The slash command is the certain path when you want no ambiguity about which ski
 runs:
 
 ```
-/atom-build
+/atom:build
 ```
 
 For a single step rather than the whole pipeline, invoke that skill directly —
-`/atom-poc`, `/atom-review`, and so on.
+`/atom:poc`, `/atom:review`, and so on.
 
 ## Resuming
 
