@@ -121,8 +121,9 @@ signals when installed and never block. `--skip-toolchain` opts out.
 Every model call that reports a vet diagnostic or an ignored error is a call that did
 not look at whether the code is readable — which is the category Atom exists to
 protect and the one reviewers are already least willing to report. Measured: seeded
-defects phrased as style preferences were reported by nobody across repeated runs,
-while defects with a visible consequence were reported by everybody.
+defects that were pure matters of style preference were reported by nobody across
+repeated runs, while defects with a visible consequence were reported by everybody.
+What varied there was the defect itself, not how any rule describing it was worded.
 
 **The developer chose `-race` on every review**, accepting minutes of wall clock per
 review. The alternative — racing only on demand — makes the one gate nobody remembers
@@ -148,6 +149,59 @@ format compliance.** Recorded as an open cost rather than waved through.
 and the mechanism is verified end to end, but no experiment yet shows that freeing this
 attention produces more readability findings. That is the next thing to measure, and
 until it is measured this is a justified change, not a proven one.
+
+---
+
+### P4-7 — Seven consequence-phrased style rules are sent to every reviewing model
+
+**Decision.** `tools/atom/style.py` holds seven hand-picked Go style rules, and
+`run_review` inserts them into `REVIEW_PROMPT` on every review. A
+`include_style_rules` parameter turns them off; the CLI does not expose it.
+
+**Why this exists at all.** `skills/atom/references/go-style.md` held roughly thirty-six
+rules and was delivered to nobody. Searching `tools/` for any reference to it returned
+nothing: the review prompt described the output format and never mentioned style. A rule
+a reviewer never reads cannot change what the reviewer reports, so the document's effect
+on `atom review` was exactly zero. The developer caught this; it had been missed for the
+whole of the preceding design discussion, which planned to *rewrite* a document that was
+never delivered.
+
+**Why seven, and why hand-picked.** A curated seven beat thirty by 33% and a hundred by
+48%, while a random seven of the same length behaved like the hundred. Curation is the
+lever, not length. Model-selected sevens do not recover the effect, so the seven were
+chosen by the developer rather than by a model.
+
+**Why rules about consequences — and the half of that claim which is a guess.** Seeded
+defects that were pure matters of preference were reported 0 of 3 even when the reviewer
+held the exact rule; seeded defects with a visible consequence were reported 3 of 3. That
+experiment varied **the defect**, not the sentence describing it. It therefore supports
+rule *selection* — every rule here is about something that breaks, and a rule covering
+pure taste would not qualify — and says nothing about rule *phrasing*.
+
+Writing each rule as "this breaks" rather than "prefer this" is an inference from that
+result, not a result. Nothing here has ever varied wording while holding the defect
+fixed. A test fails if "prefer", "should", "try to" or "avoid" reappear in the rule text,
+which enforces consistency with an untested choice, not correctness.
+
+**What was deliberately left out.** Anything the toolchain gate already proves —
+formatting, vet diagnostics, discarded errors, data races on executed paths. Also test
+hygiene, which is about test quality rather than readable production code, and "one
+concept per file", which a diff cannot show. The goroutine-shutdown rule is the
+deliberate complement to `-race`: the leak the race detector cannot see.
+
+**Ordering is a preference, not a finding.** The five structural rules come first and the
+two naming-and-comment rules last, at the developer's request. Position within the list
+is unmeasured. The prompt's instruction sentence moved reported volume eightfold, but
+that was the instruction rather than the rules; nothing has tested position.
+
+**Open cost, same as P4-6.** Output format compliance has still not been re-measured, and
+the prompt is now longer again. The empty-substitution byte-identity test bounds the
+risk and does not remove it.
+
+**Open question this was built to answer.** Whether a *delivered* rule gets its defect
+reported where an undelivered one scored 0 of 3. The off switch exists so that comparison
+can be run. A second, separate question is whether the phrasing matters at all — that one
+needs its own experiment holding the defect fixed and varying only the sentence.
 
 ---
 

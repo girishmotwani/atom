@@ -33,7 +33,10 @@ Here is the diff:
 
 def test_empty_toolchain_placeholder_preserves_original_prompt_bytes():
     """The measured review prompt must not drift when no evidence is inserted."""
-    assert REVIEW_PROMPT.format(toolchain="", diff="{diff}") == ORIGINAL_REVIEW_PROMPT
+    assert (
+        REVIEW_PROMPT.format(toolchain="", style_rules="", diff="{diff}")
+        == ORIGINAL_REVIEW_PROMPT
+    )
 
 
 def test_run_review_blocks_before_models_when_required_gate_fails(tmp_path):

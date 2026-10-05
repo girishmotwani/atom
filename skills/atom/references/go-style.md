@@ -14,6 +14,48 @@ deviate on. The deviations below are about naming, structure and commentary.
 
 ---
 
+## Which of these a reviewer actually sees
+
+This document is written for people. Until recently it reached nobody else: the
+`atom review` prompt described the output format and said nothing about style, so
+every rule here had exactly zero influence on what a review reported.
+
+Seven of them are now sent to the models on every review. They live in
+`tools/atom/style.py`, and that file — not this one — is what a reviewer reads:
+
+1. Errors wrapped with the operation that failed
+2. Interfaces narrow, and declared where they are consumed
+3. No writable package-level state
+4. Whoever starts a goroutine states how it stops
+5. Exported surface kept minimal
+6. Names spell words
+7. Doc comments say why, not what
+
+Seven, not thirty, because of a measured result: a hand-picked seven beat thirty
+by 33% and a hundred by 48%, while a *random* seven of the same length behaved
+like the hundred. Choosing is the lever; shortening is not.
+
+They each describe something that breaks, for a reason that is half evidence and
+half guess. The evidence: seeded defects that were pure matters of preference were
+reported 0 times out of 3 *even when the reviewer had been handed the exact rule*,
+while seeded defects with a visible consequence were reported 3 out of 3. That
+experiment varied the defect, not the sentence describing it, so what it establishes
+is which defects are worth having a rule about — not how to word one.
+
+The wording itself is untested. No experiment here has varied rule phrasing while
+holding the defect fixed, so "name what breaks" is a reasonable inference rather
+than a measured result, and should be read as such.
+
+Anything in this document that `gofmt`, `go vet`, `staticcheck`, `errcheck` or the
+race detector already proves is deliberately absent from that list. `atom review`
+runs those tools first and tells the models what they settled, so repeating it
+would spend reviewer attention on an answered question.
+
+Every other rule below is guidance for a human writing Go in this repository. It
+is real, and it is not enforced by anything.
+
+---
+
 ## Naming
 
 Go's culture favours very short identifiers. Atom does not.

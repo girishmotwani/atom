@@ -27,6 +27,7 @@ from atom.gates import GateResult, advisory_gates, default_gates
 from atom.invoke import InvocationReport, RunOutcome, invoke_models
 from atom.merge import DEFAULT_PROXIMITY_WINDOW, MergedFinding, merge_findings
 from atom.runner import CommandRunner
+from atom.style import style_rules_block
 from atom.toolchain import ToolchainEvidence
 
 # The two models Atom measured head to head, not a UI choice. The pairing is
@@ -55,7 +56,7 @@ DEFAULT_REVIEW_MODELS = ("gpt-5.4", "gemini-3.8-flash")
 # harmlessly, would silently invalidate every number in the POC report, because
 # output format compliance is exactly the thing prompt wording moves.
 REVIEW_PROMPT = """You are reviewing a Go diff. Report real problems only.
-{toolchain}
+{toolchain}{style_rules}
 Respond with a JSON array. Every element must be an object with exactly these keys:
   "file": string, the path from the diff
   "line": integer, the line number in the new file
@@ -252,6 +253,7 @@ def run_review(
     window: int = DEFAULT_PROXIMITY_WINDOW,
     disable_mcp_servers: Sequence[str] = (),
     skip_toolchain: bool = False,
+    include_style_rules: bool = True,
 ) -> ReviewOutcome:
     """Capture a diff, ask every model about it, and merge what comes back.
 
@@ -260,6 +262,12 @@ def run_review(
     otherwise would produce a confident empty report. Everything after that
     point degrades instead: a run that fails is recorded, a reply nobody can
     parse is recorded, and the review continues with whatever answered (B129).
+
+    `include_style_rules` exists for measurement, not for callers. Whether
+    handing a reviewer seven consequence-phrased rules changes what it reports
+    is an open question, and answering it needs the same review run with the
+    rules absent. The CLI does not expose the switch, so the shipped behaviour
+    is always on.
     """
 
     toolchain = _collect_toolchain_evidence(
@@ -274,6 +282,7 @@ def run_review(
         models=models,
         prompt=REVIEW_PROMPT.format(
             toolchain=_prompt_toolchain_text(toolchain),
+            style_rules=_prompt_style_text(include_style_rules),
             diff=diff.text,
         ),
         runner=runner,
@@ -341,3 +350,16 @@ def _prompt_toolchain_text(toolchain: ToolchainEvidence) -> str:
 
     block = toolchain.as_prompt_block()
     return f"{block}\n"
+
+
+def _prompt_style_text(include_style_rules: bool) -> str:
+    """Return the style rules, or nothing at all when they are switched off.
+
+    The empty string is returned rather than a blank line so that turning the
+    rules off leaves the prompt byte-identical to the version whose output
+    format compliance was actually measured.
+    """
+
+    if not include_style_rules:
+        return ""
+    return f"\n{style_rules_block()}\n"
