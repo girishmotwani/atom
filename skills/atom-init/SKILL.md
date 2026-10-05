@@ -46,10 +46,12 @@ developer's time.
 ## Step 3 — Establish a green baseline
 
 ```bash
-atom check
+atom check --no-race
 ```
 
-**Run this before changing anything.**
+**Run this before changing anything.** This initial check establishes the untouched
+tree's baseline without race detection; it is not completion verification. Keep
+`atom check` with race detection enabled for final verification.
 
 If the tree is already failing, record the exact failure in `.atom/baseline.json` and
 tell the developer immediately. A pre-existing failure discovered three phases later
@@ -115,7 +117,7 @@ Tell the developer:
 
 - [ ] `go.mod` confirmed
 - [ ] Toolchain checked, all gaps reported together
-- [ ] `atom check` baseline captured before any change
+- [ ] `atom check --no-race` baseline captured before any change
 - [ ] `.atom/`, `specs/`, `poc/` created; `.gitignore` updated
 - [ ] Build and test commands confirmed by running them
 - [ ] Repository agent instructions reference Atom

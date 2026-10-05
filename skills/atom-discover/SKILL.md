@@ -40,8 +40,10 @@ Establish, from the code:
 - Conventions already in use — error handling, logging, configuration, concurrency
 - Anything already attempting to solve this problem
 
-Then run `atom check` to confirm the tree is green **before** you change anything. A
-pre-existing failure that you discover later will look like something you caused.
+Then run `atom check --no-race` to confirm the tree's baseline **before** you change
+anything. This initial untouched-tree check skips race detection; it does not replace
+the full `atom check` required for final verification. A pre-existing failure that
+you discover later will look like something you caused.
 
 Record the build/test commands — every downstream skill uses them rather than
 re-detecting.
@@ -122,7 +124,7 @@ authorise designing, planning phases, or writing production code.
 ## Done when
 
 - [ ] Repository explored; build and test commands confirmed by running them
-- [ ] `atom check` run on the untouched tree and its result recorded
+- [ ] `atom check --no-race` run on the untouched tree and its result recorded
 - [ ] Developer interviewed one question at a time
 - [ ] Exactly one falsifiable POC question chosen, with the alternatives named
 - [ ] `poc-brief.md` complete, including explicit non-scope

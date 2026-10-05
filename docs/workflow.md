@@ -67,9 +67,10 @@ sentence at the start.
 ### 0. Setup
 
 `atom-init` onboards the repository: detects your Go toolchain, creates `.atom/`, and
-verifies a green baseline. It runs `atom check` on the **untouched** tree and records
-the result, so a failure that was already there is never mistaken for one the pipeline
-caused.
+records the baseline before changing anything. It runs `atom check --no-race` on the
+**untouched** tree, skipping race detection only for this initial baseline; this keeps
+a pre-existing failure from being mistaken for one the pipeline caused. Final
+verification still uses full `atom check` with race detection.
 
 Work happens on a branch, not on `main`.
 

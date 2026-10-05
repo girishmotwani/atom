@@ -48,6 +48,11 @@ atom check
 Use lower-level commands when you are inside the TDD loop and need fast feedback.
 Use `atom check` when making a completion claim at a gate.
 
+For the initial baseline only, run `atom check --no-race` on the untouched tree before
+making changes. This skips race detection for that baseline; it does not change the
+CLI default or the verification required for completion. Final and phase-completion
+verification must use full `atom check` with race detection enabled.
+
 A good gate cites the exact output:
 
 ````text
