@@ -162,7 +162,9 @@ developer's). They exist so that judgement can be audited.
 ### Install the plugin — the only setup step
 
 Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into
-**every** repository you work in — there is nothing to copy or symlink into a project.
+**every** repository you work in. When you onboard a Go repository, `atom init` also
+copies a self-contained instruction and skill bundle into that repository, so later
+sessions do not need to read Atom's checkout or installed-plugin directory.
 
 > **Atom is in private testing, so the repository is not public yet.** The command below
 > clones it using your own git credentials, so it works only if you have been granted

@@ -22,6 +22,9 @@ atom = "atom.cli:main"
 where = ["."]
 include = ["atom*"]
 
+[tool.setuptools.package-data]
+atom = ["assets/**/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

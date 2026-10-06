@@ -27,7 +27,7 @@ The `atom` command has to exist before it can check anything else. Follow
 for a developer who has only installed the plugin.
 
 ```bash
-atom init --check
+atom check --no-race
 ```
 
 Verifies:
@@ -69,6 +69,7 @@ Creates:
 
 ```
 .atom/
+  atom/                  # self-contained local instructions and skills
   config.json       # module path, build/test commands, model roles, coverage target
   state.json        # pipeline + phase state
   events.jsonl      # structured event log
@@ -90,16 +91,16 @@ them rather than assumed from the file layout. Many repositories wrap Go in a
 
 If they can't be determined, ask.
 
-## Step 6 — Point the agent at the instructions
+## Step 6 — Install the local instructions
 
-Ensure the repository's agent instructions reference Atom's, so every session loads
-the discipline:
+`atom init` copies Atom's instructions, references, templates and skills into
+`.atom/atom/`. It also creates or updates
+`.github/copilot-instructions.md` with a relative link to that local bundle.
+Nothing in the target repository should point back to the Atom checkout or an
+installed-plugin directory.
 
-- `AGENTS.md`, or
-- `.github/copilot-instructions.md`
-
-Add a line pointing at Atom's [AGENTS.md](../../AGENTS.md) and its skills directory.
-If the repository already has instructions, **add to them** — do not overwrite.
+If the repository already has Copilot instructions, `atom init` preserves them and
+adds the managed local reference once.
 
 ## Step 7 — Report
 
@@ -120,7 +121,8 @@ Tell the developer:
 - [ ] `atom check --no-race` baseline captured before any change
 - [ ] `.atom/`, `specs/`, `poc/` created; `.gitignore` updated
 - [ ] Build and test commands confirmed by running them
-- [ ] Repository agent instructions reference Atom
+- [ ] Local Atom bundle installed under `.atom/atom/`
+- [ ] Repository agent instructions reference the local bundle
 - [ ] Developer briefed, including model guidance
 
 ## Next

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -21,6 +22,7 @@ from atom.invoke import (
     DEFAULT_RUNS,
     NoModelAvailable,
 )
+from atom.onboarding import OnboardingError, install_local_bundle
 from atom.merge import DEFAULT_PROXIMITY_WINDOW
 from atom.report import (
     render_json,
@@ -198,9 +200,8 @@ def _add_state_parsers(subparsers: argparse._SubParsersAction) -> None:
     )
     init_parser.add_argument(
         "--module",
-        required=True,
         dest="module_path",
-        help="The Go module path this project builds, e.g. example.com/thing.",
+        help="The Go module path this project builds; defaults to go.mod.",
     )
     init_parser.add_argument(
         "--force",
@@ -377,8 +378,10 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
         return EXIT_USAGE_ERROR
 
     try:
-        state = project.initialise(module_path=arguments.module_path)
-    except StateWriteFailed as error:
+        module_path = arguments.module_path or _read_module_path(project.root)
+        state = project.initialise(module_path=module_path)
+        installed_files = install_local_bundle(project.root)
+    except (StateWriteFailed, OnboardingError, ValueError) as error:
         # B83/B83a: never claim success for work whose record was not saved,
         # and never report the failure without a route out of it.
         print(f"atom init: {error}", file=sys.stderr)
@@ -387,6 +390,7 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
     print(f"Initialised {project.state_directory}")
     print(f"  module:    {state.module_path}")
     print(f"  approvals: {len(state.approvals)}")
+    print(f"  local instructions: {installed_files[-1]}")
     print()
     # B176: init no longer announces a phase. It used to print "phase: 1
     # (not started)", which was a claim about progress made by a command that
@@ -399,6 +403,23 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
     print("Atom starts by proving things, not describing them:")
     print("  atom poc new <slug> --question \"...\"")
     return EXIT_PASSED
+
+
+def _read_module_path(root: Path) -> str:
+    """Read the module directive from the target repository's go.mod."""
+
+    go_mod = root / "go.mod"
+    if not go_mod.is_file():
+        raise ValueError(
+            "atom init: no go.mod found; pass --module with the module path explicitly"
+        )
+
+    for line in go_mod.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^\s*module\s+(\S+)\s*$", line)
+        if match:
+            return match.group(1)
+
+    raise ValueError(f"atom init: no module directive found in {go_mod}")
 
 
 def _run_status_command(arguments: argparse.Namespace) -> int:
