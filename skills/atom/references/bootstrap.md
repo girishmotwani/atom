@@ -5,9 +5,8 @@ command does the deterministic work — the Go gates, `.atom/` state, phase
 tracking, shipping. Beats shell out to it directly, so it has to be reachable
 before a beat can do anything real.
 
-Installing the plugin does not install the command. And `atom init --check`,
-which verifies every other tool, cannot report on the one tool it is itself
-running from. So establish it here, first.
+Installing the plugin does not install the command. Establish it here, first;
+the actual toolchain and baseline checks happen during `/atom:init`.
 
 Work down these steps and **stop at the first one that succeeds**. In the normal
 case that is step 1, and costs a single command.
