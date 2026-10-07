@@ -188,6 +188,27 @@ Two artifacts are **always** produced, even when empty:
 
 These exist so the developer can audit your judgement. Omitting them hides it.
 
+### Writing artifacts
+
+Build the complete artifact content first, then send its UTF-8 bytes through standard
+input to `atom-write-artifact <repository-relative-path>`. On first use, ask the
+developer to approve only the `atom-write-artifact` command for this repository;
+subsequent artifact writes use that saved approval.
+
+Use this command only for `specs/**`, `poc/**`, and Atom's three replaceable runtime
+files: `.atom/config.json`, `.atom/state.json`, and `.atom/baseline.json`. The
+append-only `.atom/events.jsonl` audit log remains behind Atom's locked event-log API.
+The writer is never for production code, tests, `.github/**`, or `.atom/atom/**`.
+
+On Windows, use PowerShell 7 for the pipeline. If Windows PowerShell 5.1 is
+unavoidable, set `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)` before
+piping content so non-ASCII Markdown is not replaced with `?`. The writer normalizes
+native CRLF input to repository-standard LF.
+
+Never bypass an artifact-writer refusal with a generic editor, another shell command,
+or a different path. Surface the refusal and stop. Production code written during TDD
+continues to use the normal editing tools and their normal approval flow.
+
 ---
 
 ## Delegation

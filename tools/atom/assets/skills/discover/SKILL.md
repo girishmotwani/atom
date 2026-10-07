@@ -16,6 +16,12 @@ This skill does not design and does not code. It asks.
 - The developer has a requirement but no agreed scope
 - An earlier POC was **refuted** and the plan needs re-forming around what was learned
 
+## Writing artifacts
+
+Send complete POC briefs, findings, and decisions as UTF-8 standard input to
+`atom-write-artifact <relative-path>`. Treat any refusal or non-zero exit as a blocker;
+never bypass it with a generic editor or another shell command.
+
 ## Before you start
 
 Read, in this order:

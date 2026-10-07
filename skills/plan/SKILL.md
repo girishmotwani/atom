@@ -20,6 +20,12 @@ breakdown; they reshape it.
 Small, single-concern work does not need a plan. One phase is a legitimate answer —
 say so rather than manufacturing three.
 
+## Writing artifacts
+
+Send complete phase plans, findings, and decisions as UTF-8 standard input to
+`atom-write-artifact <relative-path>`. Treat any refusal or non-zero exit as a blocker;
+never bypass it with a generic editor or another shell command.
+
 ## Before you start
 
 Read:

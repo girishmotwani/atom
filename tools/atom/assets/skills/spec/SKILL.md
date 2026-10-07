@@ -21,6 +21,12 @@ without guessing.
 - No POC has been run for this phase and no skip was approved. Specifying an unproven
   design is the failure mode Atom exists to prevent. Go to `/atom:poc`.
 
+## Writing artifacts
+
+Send complete design specs, findings, and decisions as UTF-8 standard input to
+`atom-write-artifact <relative-path>`. Treat any refusal or non-zero exit as a blocker;
+never bypass it with a generic editor or another shell command.
+
 ## Before you start
 
 Read:

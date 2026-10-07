@@ -155,6 +155,36 @@ Two artifacts are always written, even when empty: `findings.md` (what you saw a
 chose not to fix) and `decisions.md` (every time your judgement replaced the
 developer's). They exist so that judgement can be audited.
 
+Those artifacts are also the *only* thing Atom writes outside a throwaway spike.
+Atom sends their complete UTF-8 content through one narrowly approved executable:
+
+```powershell
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+@'
+# Design
+
+The complete artifact goes here.
+'@ | atom-write-artifact specs/design.md
+```
+
+Copilot asks once before the first `atom-write-artifact` invocation in a repository.
+Approve that command—not the broader `atom` executable—and later artifact writes are
+silent. Source-code edits keep their normal approval flow.
+
+It will write `specs/**`, `poc/**` and the replaceable `.atom/config.json`,
+`.atom/state.json`, and `.atom/baseline.json` runtime files, and nothing else — not
+source, tests, `.github/`, `.atom/atom/`, or the append-only `.atom/events.jsonl` audit
+log. It refuses `..` traversal, absolute paths outside the repository, and any
+destination reached through a symlink or Windows junction. A refusal must never be
+bypassed with another command or the generic editor. The point is that the developer
+never has to approve a general-purpose file editor for the whole repository just so
+Atom can save a spec.
+
+PowerShell 7 already sends native-process input as UTF-8. The explicit
+`$OutputEncoding` line also protects Windows PowerShell 5.1, whose ASCII default would
+silently replace non-ASCII Markdown with `?`. The writer normalizes native CRLF input
+to repository-standard LF.
+
 ---
 
 ## Getting started
@@ -334,11 +364,13 @@ atom --help
 
 A virtual environment has to be activated in each new terminal.
 
-**`atom` installs, then reports "not found".** `pip install --user` puts it in a
-directory Windows does not search, and a terminal that was already open copied its
-environment at launch, so it cannot see a later PATH change. Run `python -m atom.cli`
-instead — it is equivalent — or add the directory to your **user** PATH and open a new
-terminal.
+**`atom` or `atom-write-artifact` installs, then reports "not found".**
+`pip install --user` puts both executables in a directory Windows may not search, and a
+terminal that was already open copied its environment at launch, so it cannot see a
+later PATH change. Add that Scripts directory to your **user** PATH and open a new
+terminal. `python -m atom.cli` is useful for diagnosing the main CLI, but do not replace
+`atom-write-artifact` with `python -m atom.artifact_cli`: Copilot would approve the
+broader `python` executable instead of the deliberately narrow writer command.
 
 Do not use `setx PATH "%PATH%;..."` to do that. `%PATH%` expands to the *merged* machine
 and user value and `setx` truncates at 1024 characters, so on a typical workstation it

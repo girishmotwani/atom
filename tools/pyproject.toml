@@ -17,6 +17,7 @@ dev = ["pytest>=7.4", "pytest-cov>=4.1"]
 
 [project.scripts]
 atom = "atom.cli:main"
+atom-write-artifact = "atom.artifact_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
