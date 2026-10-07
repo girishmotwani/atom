@@ -196,6 +196,13 @@ Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands
 copies a self-contained instruction and skill bundle into that repository, so later
 sessions do not need to read Atom's checkout or installed-plugin directory.
 
+Onboarding also maintains a marked `.gitignore` block for Atom's machine-local
+`.atom/baseline.json`, `.atom/events.jsonl`, and `.atom/events.lock` files. Shared
+configuration, gate approvals, and the local instruction bundle remain tracked.
+Repositories that already committed one of the generated files need a one-time
+`git rm --cached <path>` for that specific file; onboarding never changes the Git
+index automatically.
+
 > **Atom is in private testing, so the repository is not public yet.** The command below
 > clones it using your own git credentials, so it works only if you have been granted
 > access — see [if setup goes wrong](#if-setup-goes-wrong) if it fails.
