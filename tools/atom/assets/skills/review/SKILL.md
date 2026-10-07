@@ -25,6 +25,12 @@ and running one instead is the rationalization this skill exists to prevent.
 - Before `/atom:ship`
 - Any time a diff is large enough that reading it once isn't enough
 
+## Writing artifacts
+
+Send complete review reports, findings, and decisions as UTF-8 standard input to
+`atom-write-artifact <relative-path>`. Treat any refusal or non-zero exit as a blocker;
+never bypass it with a generic editor or another shell command.
+
 ## Step 1 — Establish the diff
 
 ```bash

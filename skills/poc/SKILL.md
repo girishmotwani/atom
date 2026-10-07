@@ -17,6 +17,13 @@ technical risk.
 - A phase in the plan has an open technical risk
 - Any moment someone is about to design around an unverified assumption
 
+## Writing artifacts
+
+Send complete POC reports, findings, decisions, and throwaway spike documentation as
+UTF-8 standard input to `atom-write-artifact <relative-path>`. Treat any refusal or
+non-zero exit as a blocker; never bypass it with a generic editor or another shell
+command.
+
 ## Before you start
 
 Read, in this order:

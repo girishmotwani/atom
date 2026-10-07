@@ -612,13 +612,10 @@ def test_a_flat_layout_is_accepted_without_comment(tmp_path):
     assert report.problems == []
 
 
-def test_the_real_repository_resolves_to_the_atom_cli_project():
-    # The best fixture this rule will ever have: this repository's own specs/
-    # tree, resolved from the test file's location rather than the cwd. It holds
-    # exactly one project directory (specs/atom-cli) beside loose files
-    # (architecture.md, design-spec.md) that must be ignored without comment
-    # (B159). This is the exact shape B158a was written for -- a default that did
-    # not work here is the class of bug this phase exists to fix.
+def test_real_repository_reports_multiple_projects_and_atom_cli_history_remains_readable():
+    # The real repository now contains more than one Atom project. Resolution
+    # must report that ambiguity and choose the lexically first one, while the
+    # long-running atom-cli project's phase history remains directly readable.
     from atom.phases import Derivation, discover_phases
     from atom.status import StatusReport, _resolve_project_dir
 
@@ -631,10 +628,13 @@ def test_the_real_repository_resolves_to_the_atom_cli_project():
     )
     resolved = _resolve_project_dir(real_specs, report)
 
-    assert resolved == real_specs / "atom-cli"
-    assert report.problems == [], "one project directory is unambiguous (B159)"
+    assert resolved == real_specs / "artifact-writer"
+    ambiguity = [problem for problem in report.problems if "more than one project" in problem]
+    assert ambiguity
+    assert "artifact-writer" in ambiguity[0]
+    assert "atom-cli" in ambiguity[0]
 
-    names = [phase.name for phase in discover_phases(resolved)]
+    names = [phase.name for phase in discover_phases(real_specs / "atom-cli")]
     for expected in (
         "phase-01-check",
         "phase-02-poc",

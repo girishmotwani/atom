@@ -16,6 +16,14 @@ The **BUILD** beat. Implements one phase from its approved design spec, test-fir
 - No approved spec exists. Implementing an unapproved design means the developer
   reviews finished code instead of a reversible decision. Go to `/atom:spec`.
 
+## Writing artifacts
+
+Send complete test specs, findings, decisions, and reviewable TDD evidence as UTF-8
+standard input to `atom-write-artifact <relative-path>`. Treat any refusal or non-zero
+exit as a blocker; never bypass it with a generic editor or another shell command.
+This command is never used for production code or tests; those retain the normal
+editing and approval flow.
+
 ## Before you start
 
 Read:
