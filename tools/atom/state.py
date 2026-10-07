@@ -12,8 +12,9 @@ that are *declared* rather than *derived*.
 * **Declared facts** cannot be observed from disk, so they must be written down.
   Following B73 (Phase 3), the two declarations live in two files with
   deliberately different lifetimes:
-    - ``.atom/config.json`` holds the Go module path -- configuration the
-      developer chose, written once at ``init`` and read-only in practice.
+    - ``.atom/config.json`` holds the Go module path and the commands Atom
+      exercised during onboarding -- configuration written once at ``init``
+      and read-only in practice.
     - ``.atom/state.json`` holds the record that a human approved a gate --
       consent that leaves no other trace, and that accumulates over time.
 
@@ -39,6 +40,10 @@ STATE_DIRECTORY_NAME = ".atom"
 CONFIG_FILE_NAME = "config.json"
 STATE_FILE_NAME = "state.json"
 EVENTS_FILE_NAME = "events.jsonl"
+BASELINE_FILE_NAME = "baseline.json"
+
+DEFAULT_BUILD_COMMAND = "go build ./..."
+DEFAULT_TEST_COMMAND = "go test ./..."
 
 # The on-disk schema version of state.json. Version 1 carried "phase" and
 # "status" fields for the state machine this phase deletes; version 2 drops them
@@ -119,6 +124,7 @@ class Project:
         self.config_path = self.state_directory / CONFIG_FILE_NAME
         self.state_path = self.state_directory / STATE_FILE_NAME
         self.events_path = self.state_directory / EVENTS_FILE_NAME
+        self.baseline_path = self.state_directory / BASELINE_FILE_NAME
         self.event_log = EventLog(self.events_path)
 
     @property
@@ -138,13 +144,19 @@ class Project:
         """Create ``.atom/`` with a fresh config and an empty approvals record.
 
         Initialising is configuration, not a claim about progress (B176). It
-        writes the module path to config.json exactly as Phase 3 did, and a
+        writes the module path and verified command defaults to config.json, and a
         state.json holding an empty approvals list -- never a phase or a status.
         """
         self.state_directory.mkdir(parents=True, exist_ok=True)
 
-        # config.json is unchanged from Phase 3: what the developer chose (B73).
-        write_json(self.config_path, {"module_path": module_path})
+        write_json(
+            self.config_path,
+            {
+                "module_path": module_path,
+                "build_command": DEFAULT_BUILD_COMMAND,
+                "test_command": DEFAULT_TEST_COMMAND,
+            },
+        )
 
         state = ProjectState(module_path=module_path, approvals=[])
         write_json(self.state_path, state.to_dict())
@@ -219,7 +231,7 @@ class Project:
         )
 
     def load_config(self) -> dict[str, Any]:
-        """Read config.json, the developer's chosen module path (B73).
+        """Read config.json, the module path and onboarding commands (B73).
 
         Kept separate from load() because config and state fail separately: a
         broken config is a different problem, reported on its own, from a broken

@@ -1,0 +1,349 @@
+Onboarding interaction ledger
+==============================
+
+USER INPUT 1: typed `/atom:init` and pressed Enter (initial prompt).
+
+APPROVAL 1: pressed Enter to select `1. Yes`.
+VISIBLE PROMPT:
+Check Atom command entry points
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ $atom = Get-Command atom -ErrorAction SilentlyContinue; $writer = Get-Command atom-write-artifact -ErrorAction SilentlyContinue; if ($atom) { & atom --help } else     │
+│ { Write-Output 'ATOM_NOT_FOUND' }; if ($writer) { & atom-write-artifact --help } else { Write-Output 'WRITER_NOT_FOUND' }                                              │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Do you want to run this command?
+
+Current selection: 1. Yes
+  2. No, and tell Copilot what to do differently (Esc to stop)
+
+↑/↓ to navigate · enter to select · esc to cancel
+
+APPROVAL 2: pressed Enter to select `1. Yes`.
+VISIBLE PROMPT:
+Check Atom Python module entry points
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ $python = Get-Command python -ErrorAction SilentlyContinue; if (-not $python) { Write-Output 'PYTHON_NOT_FOUND'; exit 0 }; & python -m atom.cli --help; Write-Output   │
+│ "ATOM_MODULE_EXIT=$LASTEXITCODE"; & python -m atom.artifact_cli --help; Write-Output "WRITER_MODULE_EXIT=$LASTEXITCODE"                                                │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Do you want to run this command?
+
+Current selection: 1. Yes
+  2. No, and tell Copilot what to do differently (Esc to stop)
+
+↑/↓ to navigate · enter to select · esc to cancel
+
+APPROVAL 3: pressed Enter to select `1. Yes`.
+VISIBLE PROMPT:
+& python -m atom.cli init
+
+Run deterministic Atom onboarding
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ & python -m atom.cli init                                                                                                                                              │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Do you want to run this command?
+
+Current selection: 1. Yes
+  2. No, and tell Copilot what to do differently (Esc to stop)
+
+↑/↓ to navigate · enter to select · esc to cancel
+
+EXPERIMENT CLEANUP: typed `/exit` after Copilot completed its onboarding response; not part of onboarding workflow.
+
+Full cleaned Copilot CLI transcript
+===================================
+
+ Home: current tab: Current, Sessions, Issues, Pull requests, GistsGetting started
+Copilot v1.0.93-4 uses AI.    Use the tabs above to explore your sessions and pull requests
+ Check for mistakes./init — Initialize Copilot instructions for this repository
+ /experimental/model — Switch models across providers, or use Auto~\work\atom\.temp\onboarding-ux-fixtureCreate on: This machine ctrl+e change
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Start of Prompt Indicator
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Loading: 2 pluginshydrafusion
+
+, 14 skills[⎇ master]Company announcement: Need help with Agency? In a local Agency session, use  /agency:agency-support ; otherwise run  agency support  or join the support community:
+  https://aka.ms/agency/support
+
+Tip: /experimental
+   Show available experimental features, or enable/disable experimental mode
+
+  No copilot-instructions.md found. Run /init to generate.HydraFMMMMMDiscover Auto
+Let Copilot choose the best available model for each task, 10% off right now.
+ Click here or enter /model auto to switch
+ ctrl+x → m switch for this session, 1 MCP server2s3  — still waiting on extensions
+
+ ← open sidebar · Interactive · Manual Approval · / commands · ? help · tab next tab
+  Working esc interrupt                                                             /atom:init23:22First pass 
+│
+│   Starting first pass…
+│                  Session: 0 AIC usedSession: 0.23skill(init) 31 │   Thought
+│
+│   I’ll confirm the Go module and the repository’s Atom bootstrap instructions, then run the deterministic onboarding command and verify the recorded artifacts.
+ │
+│
+│   Search "go.mod"
+ │
+│   Search "**/bootstrap.md" in ~\work\atom\skills
+ │
+│   Search ".atom/**"
+ │
+│   Search ".github/copilot-instructions.md"
+ │
+│   Search ".gitignore"
+ │1 file foundNo matches foundNo matches foundNo matches found1 file found7 │   Read go.mod
+ │
+│   Read bootstrap.md
+ │3 lines read80 lines read46 │   Thought
+│
+│   Shell Check Atom command entry points
+ │    $atom = Get-Command atom -ErrorAction SilentlyContinue; $writer = Get-Command atom-write-artifact -ErrorAction SilentlyContinue; if ($atom) { & atom --help } els…
+ │
+
+
+
+Check Atom command entry points
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ $atom = Get-Command atom -ErrorAction SilentlyContinue; $writer = Get-Command atom-write-artifact -ErrorAction SilentlyContinue; if ($atom) { & atom --help } else│
+│ { Write-Output 'ATOM_NOT_FOUND' }; if ($writer) { & atom-write-artifact --help } else { Write-Output 'WRITER_NOT_FOUND' }                      │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Do you want to run this command?
+
+Current selection: 1. Yes
+  2. No, and tell Copilot what to do differently (Esc to stop)
+
+↑/↓ to navigate · enter to select · esc to cancel
+
+
+Shell Check Atom command entry points
+   $atom = Get-Command atom -ErrorAction SilentlyContinue; $writer = Get-Command atom-write-artifact -ErrorAction SilentlyContinue; if ($atom) { & atom --help } else {…
+
+[USER APPROVAL 1: pressed Enter to select "1. Yes"]
+
+MMMMMMMGetting started
+Copilot v1.0.93-4 uses AI.    Use the tabs above to explore your sessions and pull requests
+ Check for mistakes./init — Initialize Copilot instructions for this repository
+ /experimental/model — Switch models across providers, or use Auto
+
+ Discover Auto~\work\atom\.temp\onboarding-ux-fixture [⎇ master]Session: 0.46 AIC used
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Start of Prompt Indicator
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Working esc interrupt                          HydraFusion2 lines…2 lines…5s52 6s
+
+
+ │   Shell Check Atom Python module entry points
+ │    $python = Get-Command python -ErrorAction SilentlyContinue; if (-not $python) { Write-Output 'PYTHON_NOT_FOUND'; exit 0 }; & python -m atom.cli --help; Write-Out…
+ │
+
+
+
+
+
+
+Check Atom Python module entry points
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ $python = Get-Command python -ErrorAction SilentlyContinue; if (-not $python) { Write-Output 'PYTHON_NOT_FOUND'; exit 0 }; & python -m atom.cli --help; Write-Output   │
+│ "ATOM_MODULE_EXIT=$LASTEXITCODE"; & python -m atom.artifact_cli --help; Write-Output "WRITER_MODULE_EXIT=$LASTEXITCODE"                                                │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Do you want to run this command?
+
+Current selection: 1. Yes
+2. No, and tell Copilot what to do differently (Esc to stop)
+
+↑/↓ to navigate · enter to select · esc to cancel
+
+Shell Check Atom Python module entry points
+   $python = Get-Command python -ErrorAction SilentlyContinue; if (-not $python) { Write-Output 'PYTHON_NOT_FOUND'; exit 0 }; & python -m atom.cli --help; Write-Output…
+
+[USER APPROVAL 2: pressed Enter to select "1. Yes"]
+
+MMMMMMMDiscover Auto
+Let Copilot choose the best available model for each task, 10% off right now.
+ Click here or enter /model auto to switch
+ ctrl+x → m switch for this session
+
+  Company announcement: Need help with Agency? In a local Agency session, use  /agency:agency-support ; otherwise run  agency support  or join the support community:~\work\atom\.temp\onboarding-ux-fixture [⎇ master]Session: 0.52 AIC used
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Start of Prompt Indicator
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Working esc interrupt                          HydraFusion7s20 lines…8s8 28 lines…9s10s1s5s9 
+
+
+
+
+
+Run deterministic Atom onboarding
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ & python -m atom.cli init│
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Do you want to run this command?
+
+Current selection: 1. Yes
+  2. No, and tell Copilot what to do differently (Esc to stop)
+
+↑/↓ to navigate · enter to select · esc to cancel
+
+
+
+
+
+
+
+
+
+
+│
+│   The Go module is present ( example.com/existing ). The Atom package is installed, but its Windows entry-point scripts are not on  PATH ; I’ll use the working
+ │   Python module forms for onboarding.
+ │
+│
+│   Shell Run deterministic Atom onboarding
+ │    & python -m atom.cli initShell Run deterministic Atom onboarding
+   & python -m atom.cli init2s6s
+
+[USER APPROVAL 3: pressed Enter to select "1. Yes"]
+
+MMMMMMTip: /experimental
+   Show available experimental features, or enable/disable experimental mode
+
+  No copilot-instructions.md found. Run /init to generate.
+
+  /atom:init23:22~\work\atom\.temp\onboarding-ux-fixture [⎇ master]Session: 0.59 AIC used
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Start of Prompt Indicator
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Working esc interrupt                          HydraFusion3s7s4s8s5s9s6s10s5s7s1s5s6s8s2s6s7s9s3s7s8s20s4s8s9s1s5s9s24 lines…24 lines…2s6s10s3s7s1s4s8s2s67 
+
+
+
+
+
+
+
+
+
+│   Read config.json
+ │
+│   Read baseline.json
+ │
+│   Read manifest.json
+ │
+│   Read copilot-instructions.md
+ │
+│   Read .gitignore
+ │
+
+5 lines read50 lines read8 lines read2 lines read6 lines readDiscovered AGENTS.md from .atom/atom/5s9s3s6s20s4s7s1s5s Session: 0.88s2s6s
+
+
+
+│   Thought
+│
+│   Read model-guidance.md
+ │176 lines read9s3s7s30s4s8s1s5s9s2s6s20sSession: 0.92
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Getting started
+Copilot v1.0.93-4 uses AI.    Use the tabs above to explore your sessions and pull requests
+ Check for mistakes./init — Initialize Copilot instructions for this repository
+ /experimental                 /model — Switch models across providers, or use Auto
+
+ Discover Auto
+ Let Copilot choose the best available model for each task, 10% off right now.
+ Click here or enter /model auto to switch
+ ctrl+x → m switch for this session
+
+  Company announcement: Need help with Agency? In a local Agency session, use  /agency:agency-support ; otherwise run  agency support  or join the support community:
+  https://aka.ms/agency/support
+
+  Tip: /experimental
+   Show available experimental features, or enable/disable experimental mode
+
+  No copilot-instructions.md found. Run /init to generate.
+
+  /atom:init                                  23:22
+
+  First pass complete 
+
+  Critiquing… 
+
+Evaluating the first pass…3s7s1s4s8s2s1.225s9s3s
+
+
+
+
+skill(init) I’ll confirm the Go module and the repository’s Atom bootstrap instructions, then run the deterministic onboarding command and verify the recorded artifacts.
+
+  Search "go.mod"
+  Search "**/bootstrap.md" in ~\work\atom\skills
+  Search ".atom/**"
+  Search ".github/copilot-instructions.md"
+  Search ".gitignore"1 file foundNo matches foundNo matches foundNo matches found%] 1 file foundRead go.mod 3 lines read
+  Read bootstrap.mdM   80 lines readShell Check Atom Python module entry points 28 lines…
+   $python = Get-Command python -ErrorAction SilentlyContinue; if (-not $python) { Write-Output 'PYTHON_NOT_FOUND'; exit 0 }; & python -m atom.cli --help; Write-Output…
+4s
+The Go module is present ( example.com/existing ). The Atom package is installed, but its Windows entry-point scripts are not on  PATH ; I’ll use the working Python
+  module forms for onboarding.24 lines…
+Read config.json
+  Read baseline.json
+  Read manifest.json
+  Read copilot-instructions.md 2 lines read
+  Read .gitignore6 lines read5 lines read8 lines read50 lines read
+Read model-guidance.md 176 lines read
+
+
+
+
+
+
+
+
+
+
+
+
+
+was accepted · authored by gpt-5.6-luna · approved by gpt-5.6-terraAtom onboarding completed successfully. Go module  example.com/existing  was confirmed, and the working tree passed the untouched baseline:
+
+  • Build: passed —  go build ./... 
+• Vet: passed —  go vet ./... 
+• Format: passed;  greeting.go  and  greeting_test.go  differ only in CRLF/LF line endings
+  • Tests: passed —  go test ./... 
+• Race: skipped because the onboarding baseline disables the race detector
+
+  Created and verified  .atom/ ,  specs/ ,  poc/ , the local Atom bundle at  .atom/atom/ ,  .atom/config.json ,  .atom/baseline.json ,
+   .github/copilot-instructions.md , and the managed  .gitignore  block. The recorded module and commands match the baseline. Atom’s command scripts are not on  PATH ,
+  so this session used  python -m atom.cli  and  python -m atom.artifact_cli .
+
+  Recommended model setup: use HydraFusion in Copilot CLI when available ( /update ,  /experimental on ,  /model ). The next step is  /atom:discover .
+
+ ← open sidebar · Interactive · Manual Approval · / commands · ? help · tab next tab
+
+Changes    +0 -0
+AI Credits 1.22 (1m 8s)  
+Tokens     ↑ 202.6k (186.0k cached, 15.6k written) • ↓ 1.4k (276 reasoning)
+Resume     copilot --resume=92317211-14b4-430a-9c95-82751128b00d9s
+  
+  Changes    +0 -0
+  AI Credits 1.22 (1m 10s)
+  Tokens     ↑ 202.6k (186.0k cached, 15.6k written) • ↓ 1.4k (276 reasoning)
+  Resume     copilot --resume=92317211-14b4-430a-9c95-82751128b00d
+

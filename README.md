@@ -193,8 +193,10 @@ to repository-standard LF.
 
 Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into
 **every** repository you work in. When you onboard a Go repository, `atom init` also
-copies a self-contained instruction and skill bundle into that repository, so later
-sessions do not need to read Atom's checkout or installed-plugin directory.
+captures the untouched no-race baseline, creates `specs/` and `poc/`, records the
+build and test commands it exercised, and copies a self-contained instruction and
+skill bundle into that repository. Later sessions do not need to read Atom's checkout
+or installed-plugin directory.
 
 Onboarding also maintains a marked `.gitignore` block for Atom's machine-local
 `.atom/baseline.json`, `.atom/events.jsonl`, and `.atom/events.lock` files. Shared
@@ -239,6 +241,55 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 > Install from the marketplace, not directly from the repository URL. Copilot CLI has
 > deprecated direct repo, URL and local-path installs, and will only support
 > `plugin@marketplace` in a future release.
+
+### Onboard a Go repository
+
+Open a Copilot CLI session in the repository you want to onboard and type one command:
+
+```
+/atom:init
+```
+
+That is the only thing you type. Everything else is Atom's job.
+
+**What you will be asked to approve.** Onboarding runs shell commands, and Copilot
+asks before each one. A captured run on a previously un-onboarded Go repository needed
+**three approvals, no denials, and no file-write prompts at all**:
+
+| # | Approval | Why it appears |
+|---|---|---|
+| 1 | Check `atom` / `atom-write-artifact` entry points | Finds out whether Atom's commands are on your `PATH` |
+| 2 | Check `python -m atom.cli` / `python -m atom.artifact_cli` | Fallback discovery, only reached when step 1 finds nothing |
+| 3 | `atom init` | The single command that performs onboarding |
+
+The first two are pure discovery. If your Python scripts directory is already on
+`PATH`, step 2 does not happen. The ledger for the captured run is in
+[specs/onboarding-workflow/interactions.md](specs/onboarding-workflow/interactions.md).
+
+**You are never asked to approve writes to Atom's own state.** `.atom/state.json`,
+`.atom/baseline.json`, `.atom/config.json` and the event log are written inside the
+`atom init` command you already approved, so they never surface as separate prompts.
+
+**What one `atom init` leaves behind:**
+
+```
+.atom/config.json        module path, plus the build and test commands it just exercised
+.atom/state.json         pipeline and phase state
+.atom/baseline.json      the untouched no-race gate result, captured before anything changed
+.atom/events.jsonl       structured event log
+.atom/atom/              self-contained instruction and skill bundle
+.github/copilot-instructions.md
+specs/                   design artifacts
+poc/                     throwaway spikes
+.gitignore               a marked block for the machine-local files above
+```
+
+**A red baseline does not stop onboarding.** `atom init` records the result it found
+and moves on, so you can onboard a repository whose gates are already failing and see
+exactly what was broken before Atom touched it.
+
+**Confirm it worked** by reading `.atom/baseline.json` and `.atom/config.json`, or by
+running `/atom-status`. Both are read-only.
 
 ### Installing and updating as Atom evolves
 

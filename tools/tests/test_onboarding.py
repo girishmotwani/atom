@@ -8,9 +8,46 @@ from pathlib import Path
 
 import pytest
 
+from atom import cli
+from atom.check import CheckReport
 from atom.cli import main
+from atom.gates import GateResult, GateStatus
 from atom import onboarding
 from atom.onboarding import GITIGNORE_BLOCK_END, GITIGNORE_BLOCK_START
+
+
+@pytest.fixture(autouse=True)
+def deterministic_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep onboarding unit tests fast while preserving the baseline contract."""
+
+    def passing_check(directory: Path, gates, runner) -> CheckReport:
+        results = tuple(
+            GateResult(
+                name=gate.name,
+                status=(
+                    GateStatus.SKIPPED
+                    if gate.name == "race"
+                    else GateStatus.PASSED
+                ),
+                summary=(
+                    "Race detector disabled for this run"
+                    if gate.name == "race"
+                    else f"{gate.name} passed"
+                ),
+                details="",
+                required=gate.required,
+                duration_seconds=0.0,
+            )
+            for gate in gates
+        )
+        return CheckReport(
+            directory=directory,
+            gate_results=results,
+            warnings=(),
+            total_duration_seconds=0.0,
+        )
+
+    monkeypatch.setattr(cli, "run_check", passing_check)
 
 
 def test_init_infers_module_and_installs_local_instructions(
@@ -19,9 +56,38 @@ def test_init_infers_module_and_installs_local_instructions(
     (tmp_path / "go.mod").write_text(
         "module example.com/target\n\ngo 1.23.0\n", encoding="utf-8"
     )
+    (tmp_path / "target.go").write_text(
+        "package target\n\nfunc Value() string { return \"ok\" }\n",
+        encoding="utf-8",
+    )
     monkeypatch.chdir(tmp_path)
 
     assert main(["init"]) == 0
+
+    config = json.loads(
+        (tmp_path / ".atom" / "config.json").read_text(encoding="utf-8")
+    )
+    assert config == {
+        "build_command": "go build ./...",
+        "module_path": "example.com/target",
+        "test_command": "go test ./...",
+    }
+    baseline = json.loads(
+        (tmp_path / ".atom" / "baseline.json").read_text(encoding="utf-8")
+    )
+    assert baseline["passed"] is True
+    assert {gate["name"] for gate in baseline["gates"]} == {
+        "build",
+        "fmt",
+        "race",
+        "test",
+        "vet",
+    }
+    assert next(gate for gate in baseline["gates"] if gate["name"] == "race")[
+        "status"
+    ] == "skipped"
+    assert (tmp_path / "specs").is_dir()
+    assert (tmp_path / "poc").is_dir()
 
     bundle = tmp_path / ".atom" / "atom"
     assert json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))[
@@ -37,6 +103,28 @@ def test_init_infers_module_and_installs_local_instructions(
     assert "Read [Atom's local instructions](../.atom/atom/AGENTS.md)" in instructions
     assert "C:\\Users\\" not in instructions
     assert "verification.md" not in instructions
+
+
+def test_init_skill_delegates_baseline_and_scaffold_to_one_cli_command() -> None:
+    repository_root = Path(__file__).parents[2]
+    source = (repository_root / "skills" / "init" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    packaged = (
+        repository_root
+        / "tools"
+        / "atom"
+        / "assets"
+        / "skills"
+        / "init"
+        / "SKILL.md"
+    ).read_text(encoding="utf-8")
+
+    assert source == packaged
+    assert "atom init" in source
+    assert "runs the untouched no-race baseline before writing Atom files" in source
+    assert "atom check --no-race" not in source
+    assert "Do not run `git status`, recursive shell scans" in source
 
 
 def test_init_updates_existing_instructions_once(tmp_path: Path, monkeypatch) -> None:

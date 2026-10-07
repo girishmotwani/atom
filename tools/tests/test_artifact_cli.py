@@ -35,6 +35,50 @@ def test_main_empty_stdin_creates_empty_artifact(
     assert (tmp_path / "specs" / "empty.md").read_bytes() == b""
 
 
+def test_module_execution_runs_main_entry_point(
+    tmp_path: Path, monkeypatch
+) -> None:
+    import subprocess
+    import sys
+
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    monkeypatch.chdir(repository)
+
+    process = subprocess.run(
+        [sys.executable, "-m", "atom.artifact_cli", "specs/from_module.md"],
+        input=b"# module\n",
+        capture_output=True,
+    )
+
+    assert process.returncode == 0, process.stderr.decode()
+    assert (repository / "specs" / "from_module.md").read_text(
+        encoding="utf-8"
+    ) == "# module\n"
+
+
+def test_bootstrap_documents_hidden_artifact_writer_fallback() -> None:
+    repository_root = Path(__file__).parents[2]
+    source = (
+        repository_root / "skills" / "atom" / "references" / "bootstrap.md"
+    ).read_text(encoding="utf-8")
+    packaged = (
+        repository_root
+        / "tools"
+        / "atom"
+        / "assets"
+        / "skills"
+        / "atom"
+        / "references"
+        / "bootstrap.md"
+    ).read_text(encoding="utf-8")
+
+    assert source == packaged
+    assert "atom-write-artifact --help" in source
+    assert "python -m atom.artifact_cli --help" in source
+    assert "python -m atom.artifact_cli <relative-path>" in source
+
+
 def test_main_normalizes_native_shell_line_endings_to_lf(
     tmp_path: Path, monkeypatch
 ) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -45,7 +46,7 @@ from atom.ship import DEFAULT_BASE_BRANCH, PrAction, ShipRefused, run_ship
 from atom.spike import NotASpikeError, run_spike
 from atom.state import Project
 from atom.status import collect_status
-from atom.storage import StateWriteFailed
+from atom.storage import StateWriteFailed, write_json
 
 # Exit codes are part of the contract, because `atom check` is designed to be used
 # directly in a gate. 0 and 1 are verdicts about the code; 2 means the command
@@ -196,7 +197,7 @@ def _add_state_parsers(subparsers: argparse._SubParsersAction) -> None:
 
     init_parser = subparsers.add_parser(
         "init",
-        help="Create .atom/ and start the project at the first phase.",
+        help="Capture the baseline and install Atom's complete project scaffold.",
     )
     init_parser.add_argument(
         "--module",
@@ -362,7 +363,7 @@ def _run_poc_list(arguments: argparse.Namespace, poc_root: Path) -> int:
 
 
 def _run_init_command(arguments: argparse.Namespace) -> int:
-    """Create a new Atom project in the current directory."""
+    """Capture the untouched baseline and create a complete Atom project."""
 
     project = Project(Path.cwd())
 
@@ -379,8 +380,19 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
 
     try:
         module_path = arguments.module_path or _read_module_path(project.root)
+        baseline = None
+        if (project.root / "go.mod").is_file():
+            baseline = run_check(
+                project.root,
+                default_gates(enable_race=False),
+                SubprocessRunner(),
+            )
         state = project.initialise(module_path=module_path)
         installed_files = install_local_bundle(project.root)
+        (project.root / "specs").mkdir(exist_ok=True)
+        (project.root / POC_DIRECTORY_NAME).mkdir(exist_ok=True)
+        if baseline is not None:
+            write_json(project.baseline_path, json.loads(render_json(baseline)))
     except (StateWriteFailed, OnboardingError, ValueError) as error:
         # B83/B83a: never claim success for work whose record was not saved,
         # and never report the failure without a route out of it.
@@ -391,6 +403,15 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
     print(f"  module:    {state.module_path}")
     print(f"  approvals: {len(state.approvals)}")
     print(f"  local instructions: {installed_files[-1]}")
+    print(f"  specs:     {project.root / 'specs'}")
+    print(f"  poc:       {project.root / POC_DIRECTORY_NAME}")
+    if baseline is not None:
+        print(f"  baseline:  {project.baseline_path}")
+        print()
+        print("Untouched baseline (race detector skipped):")
+        print(render_text(baseline, use_colour=False))
+    else:
+        print("  baseline:  not captured (no go.mod)")
     print()
     # B176: init no longer announces a phase. It used to print "phase: 1
     # (not started)", which was a claim about progress made by a command that
