@@ -106,6 +106,24 @@ so a break is attributable.
 Refactor the tests as well. Duplicated setup costs as much in a test file as anywhere
 else.
 
+### Comment pass — explain the decisions the code cannot
+
+Before leaving REFACTOR, read every changed Go file once more and add the explanation
+the syntax cannot carry:
+
+- Every exported symbol gets a doc comment saying **why** it exists and what contract
+  callers depend on — not a restatement of its name or signature.
+- Every non-obvious decision gets an inline comment giving its reason: a validation
+  that fails closed, a path transformation, a security or containment check, an
+  ordering or concurrency constraint, a deliberate rejection of a plausible
+  alternative. Say what breaks without it.
+- Obvious code stays uncommented. A comment that narrates an assignment or a return
+  rots into a lie, and that is worse than silence.
+
+A green suite proves the behaviour. It does not record the reasoning a maintainer
+needs to change that behaviour safely, and that reasoning is only in your head right
+now. This pass is part of BUILD, not polish afterwards.
+
 ## Step 3 — Go specifics
 
 Follow [go-style.md](../atom/references/go-style.md). In tests specifically:
@@ -174,6 +192,8 @@ left in `findings.md`, and one specific question.
 - [ ] Every test was watched failing, for the right reason, before its code existed
 - [ ] Error paths, boundaries and cancellation covered
 - [ ] Concurrent code tested under `-race`
+- [ ] Every exported symbol has a doc comment saying why it exists, and every
+      non-obvious decision has a comment giving its reason; obvious code is uncommented
 - [ ] No test weakened; any test change justified in `decisions.md`
 - [ ] `atom check` fully green, output pasted verbatim
 - [ ] Design spec reconciled to what was built

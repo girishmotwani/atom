@@ -29,7 +29,7 @@ Seven of them are now sent to the models on every review. They live in
 4. Whoever starts a goroutine states how it stops
 5. Exported surface kept minimal
 6. Names spell words
-7. Doc comments say why, not what
+7. Doc comments say why, not what, and non-obvious logic states its reason
 
 Seven, not thirty, because of a measured result: a hand-picked seven beat thirty
 by 33% and a hundred by 48%, while a *random* seven of the same length behaved

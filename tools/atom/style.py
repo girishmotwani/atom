@@ -78,8 +78,13 @@ STYLE_RULES = """These seven things no tool can check. Each one names what break
    each reader pays again.
 
 7. A doc comment that restates the signature goes stale without
-   anyone noticing and then actively misleads. Say why the thing
-   exists, or say nothing."""
+   anyone noticing and then actively misleads. An exported symbol
+   carrying no doc comment, or a non-obvious branch carrying no
+   stated reason, forces every later reader to reconstruct the
+   intent from the code -- and the maintainer who reconstructs it
+   wrong deletes a guard believing it was incidental. Say why the
+   thing exists and what breaks without it; leave obvious code
+   uncommented."""
 
 
 def style_rules_block() -> str:
