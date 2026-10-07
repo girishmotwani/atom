@@ -78,7 +78,16 @@ specs/              # pipeline artifacts
 poc/                # throwaway spikes
 ```
 
-Adds to `.gitignore`: `.atom/events.jsonl`, `.atom/state.json`.
+Maintains a marked block in `.gitignore` for machine-local runtime data:
+`.atom/baseline.json`, `.atom/events.jsonl`, and `.atom/events.lock`. Existing ignore
+rules are preserved. `.atom/config.json`, `.atom/state.json`, and `.atom/atom/**`
+remain tracked because they are shared project configuration, approvals, and
+instructions.
+
+Ignore rules do not untrack files already committed. If Git already tracks one of
+these generated files, tell the developer to remove that specific path from the index
+with `git rm --cached <path>` after confirming it is safe; never run the command
+silently or untrack the whole `.atom/` directory.
 
 `specs/` and `poc/` are **committed** — they are the reviewable record of how the code
 came to look the way it does.
