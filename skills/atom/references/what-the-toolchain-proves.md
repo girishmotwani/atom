@@ -35,7 +35,8 @@ toolchain objects to it. That is precisely why it needs a test.
 
 Every candidate property falls into one of three buckets. The boundaries were
 measured against a real toolchain, not recalled — see
-[`poc/compiler-guarantees/`](../../../poc/compiler-guarantees/) for the spike and
+[`poc/compiler-guarantees/`](https://github.com/girishmotwani/atom/tree/main/poc/compiler-guarantees)
+for the spike and
 `results.json` for raw output.
 
 | Bucket | Meaning | What to do |
