@@ -32,6 +32,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("atom-write-artifact: stdin is not valid UTF-8", file=sys.stderr)
         return 1
     content = content.replace("\r\n", "\n").replace("\r", "\n")
+    # Windows PowerShell prepends a UTF-8 BOM when it pipes into a native
+    # command, so a leading mark is shell framing rather than something the
+    # author wrote. Only the first one is removed -- a later U+FEFF is content.
+    content = content.removeprefix("\ufeff")
 
     try:
         written = write_artifacts(root, {arguments.target: content})
