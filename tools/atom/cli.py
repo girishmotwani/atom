@@ -16,6 +16,7 @@ from atom.diff import (
     TooManyDiffSourcesSelected,
     select_source,
 )
+from atom.buildsystem import detect
 from atom.gates import default_gates
 from atom.index import list_spikes
 from atom.invoke import (
@@ -380,6 +381,7 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
 
     try:
         module_path = arguments.module_path or _read_module_path(project.root)
+        build_system = detect(project.root)
         baseline = None
         if (project.root / "go.mod").is_file():
             baseline = run_check(
@@ -387,7 +389,11 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
                 default_gates(enable_race=False),
                 SubprocessRunner(),
             )
-        state = project.initialise(module_path=module_path)
+        state = project.initialise(
+            module_path=module_path,
+            build_command=" ".join(build_system.build_command),
+            test_command=" ".join(build_system.test_command),
+        )
         installed_files = install_local_bundle(project.root)
         (project.root / "specs").mkdir(exist_ok=True)
         (project.root / POC_DIRECTORY_NAME).mkdir(exist_ok=True)
@@ -405,6 +411,9 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
     print(f"  local instructions: {installed_files[-1]}")
     print(f"  specs:     {project.root / 'specs'}")
     print(f"  poc:       {project.root / POC_DIRECTORY_NAME}")
+    print(f"  build:     {' '.join(build_system.build_command)}")
+    print(f"  test:      {' '.join(build_system.test_command)}")
+    print(f"             {build_system.reason}")
     if baseline is not None:
         print(f"  baseline:  {project.baseline_path}")
         print()

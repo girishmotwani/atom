@@ -50,6 +50,45 @@ def deterministic_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "run_check", passing_check)
 
 
+def test_init_records_the_makefile_commands_it_will_actually_run(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """A repository that declares its own build must not be told it runs go build."""
+
+    monkeypatch.setattr("atom.buildsystem.shutil.which", lambda name: "/usr/bin/make")
+    (tmp_path / "go.mod").write_text(
+        "module example.com/target\n\ngo 1.23.0\n", encoding="utf-8"
+    )
+    (tmp_path / "Makefile").write_text(
+        "build:\n\tgo build -tags prod ./...\ntest:\n\tgo test -count=1 ./...\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+
+    config = json.loads((tmp_path / ".atom" / "config.json").read_text(encoding="utf-8"))
+    assert config["build_command"] == "make build"
+    assert config["test_command"] == "make test"
+
+
+def test_init_records_a_partial_makefile_one_gate_at_a_time(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr("atom.buildsystem.shutil.which", lambda name: "/usr/bin/make")
+    (tmp_path / "go.mod").write_text(
+        "module example.com/target\n\ngo 1.23.0\n", encoding="utf-8"
+    )
+    (tmp_path / "Makefile").write_text("build:\n\tgo build ./...\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+
+    config = json.loads((tmp_path / ".atom" / "config.json").read_text(encoding="utf-8"))
+    assert config["build_command"] == "make build"
+    assert config["test_command"] == "go test ./..."
+
+
 def test_init_infers_module_and_installs_local_instructions(
     tmp_path: Path, monkeypatch
 ) -> None:
