@@ -297,7 +297,19 @@ def _remove_empty_directories(directories: Iterable[Path]) -> None:
 
     for directory in reversed(tuple(directories)):
         try:
-            directory.rmdir()
+            # Every path here was created by this write as a real directory, so
+            # a link standing in its place was swapped in afterwards -- exactly
+            # the race the guard refused. POSIX `rmdir` will not remove a
+            # symlink, so an rmdir-only cleanup would leave the attacker's link
+            # behind; Windows junctions, by contrast, need `rmdir` and reject
+            # `unlink`. Both are tried so neither platform leaks one.
+            if _is_reparse_point(directory):
+                try:
+                    os.unlink(directory)
+                except OSError:
+                    directory.rmdir()
+            else:
+                directory.rmdir()
         except OSError:
             # A non-empty directory may now belong to a concurrent successful
             # writer. Cleanup must never remove somebody else's artifact.

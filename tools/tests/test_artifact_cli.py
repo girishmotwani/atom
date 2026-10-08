@@ -35,6 +35,50 @@ def test_main_empty_stdin_creates_empty_artifact(
     assert (tmp_path / "specs" / "empty.md").read_bytes() == b""
 
 
+def test_module_execution_runs_main_entry_point(
+    tmp_path: Path, monkeypatch
+) -> None:
+    import subprocess
+    import sys
+
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    monkeypatch.chdir(repository)
+
+    process = subprocess.run(
+        [sys.executable, "-m", "atom.artifact_cli", "specs/from_module.md"],
+        input=b"# module\n",
+        capture_output=True,
+    )
+
+    assert process.returncode == 0, process.stderr.decode()
+    assert (repository / "specs" / "from_module.md").read_text(
+        encoding="utf-8"
+    ) == "# module\n"
+
+
+def test_bootstrap_documents_hidden_artifact_writer_fallback() -> None:
+    repository_root = Path(__file__).parents[2]
+    source = (
+        repository_root / "skills" / "atom" / "references" / "bootstrap.md"
+    ).read_text(encoding="utf-8")
+    packaged = (
+        repository_root
+        / "tools"
+        / "atom"
+        / "assets"
+        / "skills"
+        / "atom"
+        / "references"
+        / "bootstrap.md"
+    ).read_text(encoding="utf-8")
+
+    assert source == packaged
+    assert "atom-write-artifact --help" in source
+    assert "python -m atom.artifact_cli --help" in source
+    assert "python -m atom.artifact_cli <relative-path>" in source
+
+
 def test_main_normalizes_native_shell_line_endings_to_lf(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -49,6 +93,43 @@ def test_main_normalizes_native_shell_line_endings_to_lf(
     assert main(["specs/line-endings.md"]) == 0
     assert (tmp_path / "specs" / "line-endings.md").read_bytes() == (
         b"first\nsecond\nthird\n"
+    )
+
+
+def test_main_strips_the_byte_order_mark_windows_shells_prepend(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """A BOM arriving on stdin is shell framing, never artifact content.
+
+    Windows PowerShell prepends a UTF-8 BOM when piping to a native command,
+    so without this the first heading of every artifact written that way is
+    silently corrupted by an invisible U+FEFF.
+    """
+
+    from atom.artifact_cli import main
+
+    monkeypatch.chdir(tmp_path)
+    piped = b"\xef\xbb\xbf# Report\n\nbody\n"
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(piped)))
+
+    assert main(["specs/bom.md"]) == 0
+    assert (tmp_path / "specs" / "bom.md").read_bytes() == b"# Report\n\nbody\n"
+
+
+def test_main_strips_only_the_first_byte_order_mark(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Only the leading mark is framing; a later U+FEFF is content."""
+
+    from atom.artifact_cli import main
+
+    monkeypatch.chdir(tmp_path)
+    piped = "\ufeffone \ufeff two\n".encode("utf-8")
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(piped)))
+
+    assert main(["specs/inner-bom.md"]) == 0
+    assert (tmp_path / "specs" / "inner-bom.md").read_text(encoding="utf-8") == (
+        "one \ufeff two\n"
     )
 
 

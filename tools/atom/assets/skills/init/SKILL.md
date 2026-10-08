@@ -20,52 +20,25 @@ Atom is Go-scoped. It needs a `go.mod`.
 If there isn't one, stop and ask the developer whether to create a module or whether
 Atom is the wrong tool here. Do not invent a module path.
 
-## Step 2 — Check the toolchain
+## Step 2 — Bootstrap the command
 
-The `atom` command has to exist before it can check anything else. Follow
-[bootstrap.md](../atom/references/bootstrap.md) first — it installs the command
-for a developer who has only installed the plugin.
+Follow [bootstrap.md](../atom/references/bootstrap.md). It establishes working forms
+for both `atom` and `atom-write-artifact` without replacing an installed package.
 
-```bash
-atom check --no-race
-```
-
-Verifies:
-
-| Tool | Needed for | If missing |
-|---|---|---|
-| `go` ≥ 1.21 | everything | hard stop |
-| `gofmt` | formatting gate | hard stop (ships with Go) |
-| `git` | `/atom:ship` | warn; pipeline still runs |
-| `gh` | pull requests | warn; `/atom:ship` degrades to a manual push |
-| `python` ≥ 3.10 | Atom's own tooling | hard stop |
-
-Report every missing tool at once. Discovering them one hard stop at a time wastes the
-developer's time.
-
-## Step 3 — Establish a green baseline
-
-```bash
-atom check --no-race
-```
-
-**Run this before changing anything.** This initial check establishes the untouched
-tree's baseline without race detection; it is not completion verification. Keep
-`atom check` with race detection enabled for final verification.
-
-If the tree is already failing, record the exact failure in `.atom/baseline.json` and
-tell the developer immediately. A pre-existing failure discovered three phases later
-looks like something you caused, and costs real time to disprove.
-
-Do not fix the baseline as part of init unless the developer asks. Report it.
-
-## Step 4 — Scaffold
+## Step 3 — Run deterministic onboarding
 
 ```bash
 atom init
 ```
 
-Creates:
+This one command performs the operations that must agree:
+
+- runs the untouched no-race baseline before writing Atom files;
+- records the exact result in `.atom/baseline.json`, including failures;
+- infers the module path and records the verified build/test commands;
+- creates the project scaffold and installs the local instruction bundle.
+
+It creates:
 
 ```
 .atom/
@@ -77,6 +50,10 @@ Creates:
 specs/              # pipeline artifacts
 poc/                # throwaway spikes
 ```
+
+If the printed baseline is failing, tell the developer immediately. Do not repair the
+repository during onboarding unless asked. A pre-existing failure discovered three
+phases later looks like something Atom caused.
 
 Maintains a marked block in `.gitignore` for machine-local runtime data:
 `.atom/baseline.json`, `.atom/events.jsonl`, and `.atom/events.lock`. Existing ignore
@@ -92,15 +69,13 @@ silently or untrack the whole `.atom/` directory.
 `specs/` and `poc/` are **committed** — they are the reviewable record of how the code
 came to look the way it does.
 
-## Step 5 — Record the commands
+## Step 4 — Confirm the recorded commands
 
-Write the real build and test commands into `.atom/config.json`, confirmed by running
-them rather than assumed from the file layout. Many repositories wrap Go in a
-`Makefile` or a task runner, and guessing produces failures three skills later.
+Read `.atom/config.json` and confirm the module, build command, and test command match
+the baseline that `atom init` printed. Do not rewrite the file through a generic edit
+tool; a mismatch is an onboarding defect to report.
 
-If they can't be determined, ask.
-
-## Step 6 — Install the local instructions
+## Step 5 — Confirm the local instructions
 
 `atom init` copies Atom's instructions, references, templates and skills into
 `.atom/atom/`. It also creates or updates
@@ -111,12 +86,26 @@ installed-plugin directory.
 If the repository already has Copilot instructions, `atom init` preserves them and
 adds the managed local reference once.
 
-## Step 7 — Report
+### Keep verification approval-free
+
+After a successful `atom init`, verify onboarding by reading these named files:
+
+- `.atom/config.json`
+- `.atom/baseline.json`
+- `.atom/atom/manifest.json`
+- `.github/copilot-instructions.md`
+- `.gitignore`
+
+Do not run `git status`, recursive shell scans, or another Atom command on the normal
+success path. The init output plus these file reads prove the contract without asking
+the developer for more shell approvals. Run a follow-up command only when the init
+output or one of these files exposes a specific discrepancy.
+
+## Step 6 — Report
 
 Tell the developer:
 
-- Toolchain status, including anything missing
-- The baseline result, stated plainly
+- The baseline result, stated plainly, including every failed gate
 - What was created
 - The recommended model setup — see [model-guidance.md](../atom/references/model-guidance.md)
 - The next step: `/atom:discover`
@@ -126,10 +115,10 @@ Tell the developer:
 ## Done when
 
 - [ ] `go.mod` confirmed
-- [ ] Toolchain checked, all gaps reported together
-- [ ] `atom check --no-race` baseline captured before any change
+- [ ] `atom init` completed
+- [ ] No-race baseline captured before any Atom file was written
 - [ ] `.atom/`, `specs/`, `poc/` created; `.gitignore` updated
-- [ ] Build and test commands confirmed by running them
+- [ ] Build and test commands in config match the commands exercised by the baseline
 - [ ] Local Atom bundle installed under `.atom/atom/`
 - [ ] Repository agent instructions reference the local bundle
 - [ ] Developer briefed, including model guidance

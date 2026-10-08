@@ -51,7 +51,10 @@ broken = []
 checked = 0
 
 for md in sorted(REPO.rglob("*.md")):
-    if ".git" in md.parts:
+    # `build/` holds a stale copy of the packaged assets left behind by a local
+    # wheel build. It is gitignored and absent from CI, so checking it reports
+    # failures nobody can act on and that CI cannot reproduce.
+    if ".git" in md.parts or "build" in md.parts:
         continue
     source = md.read_text(encoding="utf-8")
     prose = strip_code(source)

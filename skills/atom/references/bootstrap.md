@@ -1,9 +1,10 @@
-# Bootstrap — make sure the `atom` command exists
+# Bootstrap — make sure Atom's commands exist
 
 Atom is two halves. The plugin carries the workflow you are reading; the `atom`
 command does the deterministic work — the Go gates, `.atom/` state, phase
-tracking, shipping. Beats shell out to it directly, so it has to be reachable
-before a beat can do anything real.
+tracking, shipping. The `atom-write-artifact` command is the narrow write boundary
+for pipeline artifacts and Atom state. Beats shell out to these commands directly,
+so both need a reachable form before a beat can do anything real.
 
 Installing the plugin does not install the command. Establish it here, first;
 the actual toolchain and baseline checks happen during `/atom:init`.
@@ -11,29 +12,37 @@ the actual toolchain and baseline checks happen during `/atom:init`.
 Work down these steps and **stop at the first one that succeeds**. In the normal
 case that is step 1, and costs a single command.
 
-## Step 1 — Is the command there?
+## Step 1 — Are the entry points there?
 
 ```bash
 atom --help
+atom-write-artifact --help
 ```
 
-If that succeeds, use `atom` for the rest of the session. Stop reading.
+Use each entry point that succeeds. If both succeed, stop reading. If either is not
+found, continue to step 2 for that command only.
 
-## Step 2 — Is the package there but hidden?
+## Step 2 — Is the package there but its entry points hidden?
 
 ```bash
 python -m atom.cli --help
+python -m atom.artifact_cli --help
 ```
 
 Do this **before** installing anything. A `not found` from step 1 does not mean
-the package is missing — more often it is installed and the entry-point script
-is simply not on PATH. `pip install --user` puts it in a directory Windows does
-not search; a terminal that was already open cannot see a PATH change made after
-it launched; a developer's editable install has the same symptom.
+the package is missing — more often it is installed and the entry-point scripts are
+simply not on PATH. `pip install --user` puts them in a directory Windows does not
+search; a terminal that was already open cannot see a PATH change made after it
+launched; a developer's editable install has the same symptom.
 
-If this succeeds, the package is present and working. Use `python -m atom.cli`
-wherever these skills say `atom`, for the rest of the session, and tell the
-developer once that you are doing so.
+For each successful module check, use its module form for the rest of the session:
+
+- Use `python -m atom.cli` wherever these skills say `atom`.
+- Use `python -m atom.artifact_cli <relative-path>` wherever these skills say
+  `atom-write-artifact <relative-path>`.
+
+Tell the developer once that the package is installed but its entry points are not on
+PATH.
 
 **Do not install over it.** That would replace a working package — possibly the
 developer's own editable checkout of Atom — with a fetched copy, and would not
@@ -54,8 +63,9 @@ credentials. A `Repository not found` failure here is a **permissions** problem
 despite reading like a typo — the developer needs access. Say so and stop rather
 than retrying.
 
-Then re-run step 1, and if it is still not found, step 2. One of them will now
-work; use whichever does.
+Then re-run both checks in step 1, and use the corresponding check in step 2 for any
+entry point that is still not found. Each command must have a working entry-point or
+module form before continuing.
 
 ## What not to do
 
@@ -63,6 +73,8 @@ work; use whichever does.
   machine and user value, and `setx` truncates at 1024 characters. On a typical
   workstation that silently destroys part of the PATH it was asked to extend.
   `python -m atom.cli` is equivalent and costs nothing.
-- **Do not continue without the command.** A beat that cannot run `atom check`
-  has no evidence. Improvising the gates produces a confident answer with
-  nothing behind it, which is worse than stopping and saying so.
+- **Do not continue without both command boundaries.** A beat that cannot run
+  `atom check` has no evidence. A beat that cannot run the guarded artifact writer
+  cannot persist its required artifacts safely. Improvising either boundary produces
+  a confident answer with nothing behind it, which is worse than stopping and saying
+  so.
