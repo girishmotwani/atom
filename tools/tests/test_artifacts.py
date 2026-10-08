@@ -222,6 +222,38 @@ def test_link_appearing_after_validation_is_caught_before_the_write(
     assert not os.path.lexists(repository / "specs" / "raced")
 
 
+def test_cleanup_removes_a_link_planted_where_it_created_a_directory(
+    repository: Path, tmp_path_factory: pytest.TempPathFactory, monkeypatch
+) -> None:
+    """POSIX ``rmdir`` refuses a symlink, so rmdir-only cleanup leaves it behind.
+
+    Windows removes a directory junction with ``rmdir``, which hides this on the
+    platform the guard was written on. The refusal is simulated here so the gap
+    is caught everywhere rather than only on the CI leg that happens to be POSIX.
+    """
+
+    import atom.artifacts as artifacts
+
+    outside = tmp_path_factory.mktemp("outside")
+    planted = repository / "specs" / "raced"
+    if not make_junction(planted, outside):
+        pytest.skip("this platform would not create a directory junction")
+
+    real_rmdir = os.rmdir
+
+    def posix_rmdir(path, *args, **kwargs):
+        if artifacts._is_reparse_point(Path(path)):
+            raise NotADirectoryError(20, "Not a directory", str(path))
+        return real_rmdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "rmdir", posix_rmdir)
+
+    artifacts._remove_empty_directories([planted])
+
+    assert not os.path.lexists(planted)
+    assert list(outside.iterdir()) == []
+
+
 def test_a_file_in_place_of_a_directory_is_refused(repository: Path) -> None:
     (repository / "specs" / "project").write_text("not a directory\n", encoding="utf-8")
 

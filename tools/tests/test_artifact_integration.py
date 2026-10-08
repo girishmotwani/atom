@@ -5,8 +5,15 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
+
+try:
+    # `tomllib` only entered the standard library in 3.11. The `tomli` backport
+    # is pinned as a dev dependency so the 3.10 leg of the matrix still asserts
+    # this packaging contract rather than skipping it.
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - depends on the interpreter
+    import tomli as tomllib
 
 import pytest
 
