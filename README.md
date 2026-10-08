@@ -228,11 +228,11 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 | `/atom:start` | Describe what you want to build; Atom picks the right beat |
 | `/atom:discover` | Turn a vague goal into one falsifiable question |
 | `/atom:poc` | Build a disposable Go spike that answers it |
+| `/atom:plan` | Break proven work into independently shippable phases |
 | `/atom:spec` | Turn the POC's verdict into a design spec |
 | `/atom:tdd` | Derive the test spec, then red-green |
 | `/atom:review` | Multi-model review of the diff |
 | `/atom:ship` | Commit, branch, pull request |
-| `/atom:plan` | Break work too large for one pass into phases |
 | `/atom:init` | Scaffold project state in a Go repo |
 | `/atom-status` | Show the current phase, what exists, what is missing |
 | `/atom-check` | Run every Go quality gate and explain failures |
@@ -258,12 +258,14 @@ asks before each one. A captured run on a previously un-onboarded Go repository 
 
 | # | Approval | Why it appears |
 |---|---|---|
-| 1 | Check `atom` / `atom-write-artifact` entry points | Finds out whether Atom's commands are on your `PATH` |
-| 2 | Check `python -m atom.cli` / `python -m atom.artifact_cli` | Fallback discovery, only reached when step 1 finds nothing |
-| 3 | `atom init` | The single command that performs onboarding |
+| 1 | `atom init` | The single command that performs onboarding |
+| 2 | Check `atom` / `atom-write-artifact` entry points | Discovery — finds out whether Atom's commands are on your `PATH` |
+| 3 | Check `python -m atom.cli` / `python -m atom.artifact_cli` | Discovery fallback, only reached when the entry-point check finds nothing |
 
-The first two are pure discovery. If your Python scripts directory is already on
-`PATH`, step 2 does not happen. The ledger for the captured run is in
+`atom init` is the approval that matters; it is the one that does the work. The other
+two are discovery probes Copilot runs first to locate Atom's commands, and if your
+Python scripts directory is already on `PATH`, the third never appears. The ledger for
+the captured run, in the order the prompts actually arrived, is in
 [specs/onboarding-workflow/interactions.md](specs/onboarding-workflow/interactions.md).
 
 **You are never asked to approve writes to Atom's own state.** `.atom/state.json`,
