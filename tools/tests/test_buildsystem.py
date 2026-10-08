@@ -116,6 +116,26 @@ class TestChoosingCommands:
         assert chosen.test_command == ("make", "test")
         assert chosen.makefile == tmp_path / "Makefile"
 
+    @pytest.mark.parametrize("name", ["GNUmakefile", "makefile", "Makefile"])
+    def test_the_reported_name_is_the_one_actually_on_disk(
+        self, tmp_path: Path, name: str
+    ) -> None:
+        """On a case-insensitive filesystem a probe for one spelling opens another.
+
+        macOS and Windows both answer ``(root / "makefile").is_file()`` with True when
+        the real file is ``Makefile``, so probing names in order reports a path that
+        does not exist under that spelling. The developer is told Atom is reading a
+        file they cannot find.
+        """
+
+        (tmp_path / name).write_text("build:\n\tgo build ./...\n", encoding="utf-8")
+
+        chosen = detect(tmp_path, make_is_available=lambda: True)
+
+        assert chosen.makefile is not None
+        assert chosen.makefile.name == name
+        assert name in chosen.reason
+
     def test_each_gate_is_decided_on_its_own_target(self, tmp_path: Path) -> None:
         """A Makefile that builds but does not test must not fake a test target."""
 

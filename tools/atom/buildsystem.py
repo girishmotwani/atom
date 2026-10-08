@@ -43,12 +43,33 @@ class BuildSystem:
 
 
 def find_makefile(root: Path) -> Path | None:
-    """Return the makefile GNU make would read in ``root``, if there is one."""
+    """Return the makefile GNU make would read in ``root``, if there is one.
+
+    The directory is listed rather than probed name by name: on a case-insensitive
+    filesystem (macOS and Windows both, by default) ``(root / "makefile").is_file()``
+    is True when the real file is ``Makefile``, which would make Atom report a path
+    that does not exist under that spelling. Matching real entries keeps the reported
+    name the one the developer can actually open.
+    """
+
+    try:
+        entries = {entry.name for entry in root.iterdir() if entry.is_file()}
+    except OSError:
+        # Detection runs inside a gate; an unreadable directory must fall back to the
+        # Go defaults, not raise an exception a gate would misreport as a code failure.
+        return None
 
     for name in MAKEFILE_NAMES:
-        candidate = root / name
-        if candidate.is_file():
-            return candidate
+        if name in entries:
+            return root / name
+
+    # Only reached on a case-insensitive filesystem, where at most one spelling of a
+    # given name can exist, so the first case-insensitive hit is unambiguous.
+    folded = {entry.casefold(): entry for entry in entries}
+    for name in MAKEFILE_NAMES:
+        actual = folded.get(name.casefold())
+        if actual is not None:
+            return root / actual
     return None
 
 
