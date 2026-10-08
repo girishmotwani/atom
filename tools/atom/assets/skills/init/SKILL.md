@@ -36,6 +36,7 @@ This one command performs the operations that must agree:
 - runs the untouched no-race baseline before writing Atom files;
 - records the exact result in `.atom/baseline.json`, including failures;
 - infers the module path and records the verified build/test commands;
+- prefers the repository's own `make build` / `make test` when a Makefile defines them;
 - creates the project scaffold and installs the local instruction bundle.
 
 It creates:
@@ -74,6 +75,14 @@ came to look the way it does.
 Read `.atom/config.json` and confirm the module, build command, and test command match
 the baseline that `atom init` printed. Do not rewrite the file through a generic edit
 tool; a mismatch is an onboarding defect to report.
+
+A repository with a Makefile will show `make build` and `make test` rather than the Go
+defaults, and `atom init` prints the reason it chose them. This is expected, not a
+defect: the project's own build usually carries tags, ldflags or generation steps that
+`go build ./...` would silently skip. Targets are resolved one at a time, so a Makefile
+with only `build` correctly leaves the test command Go-native. If `make` is not
+installed, Atom says so and stays on the Go defaults rather than running a command that
+cannot work.
 
 ## Step 5 — Confirm the local instructions
 

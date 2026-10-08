@@ -31,6 +31,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from atom.buildsystem import DEFAULT_BUILD_COMMAND as GO_BUILD_COMMAND
+from atom.buildsystem import DEFAULT_TEST_COMMAND as GO_TEST_COMMAND
 from atom.eventlog import EventLog
 from atom.storage import StateFileCorrupt, StateFileMissing, read_json, write_json
 
@@ -42,8 +44,10 @@ STATE_FILE_NAME = "state.json"
 EVENTS_FILE_NAME = "events.jsonl"
 BASELINE_FILE_NAME = "baseline.json"
 
-DEFAULT_BUILD_COMMAND = "go build ./..."
-DEFAULT_TEST_COMMAND = "go test ./..."
+# Derived from the gate commands rather than restated, so the config can never
+# name a command different from the one the build and test gates actually run.
+DEFAULT_BUILD_COMMAND = " ".join(GO_BUILD_COMMAND)
+DEFAULT_TEST_COMMAND = " ".join(GO_TEST_COMMAND)
 
 # The on-disk schema version of state.json. Version 1 carried "phase" and
 # "status" fields for the state machine this phase deletes; version 2 drops them
@@ -140,12 +144,21 @@ class Project:
         """
         return self.config_path.exists() and self.state_path.exists()
 
-    def initialise(self, *, module_path: str) -> ProjectState:
+    def initialise(
+        self,
+        *,
+        module_path: str,
+        build_command: str = DEFAULT_BUILD_COMMAND,
+        test_command: str = DEFAULT_TEST_COMMAND,
+    ) -> ProjectState:
         """Create ``.atom/`` with a fresh config and an empty approvals record.
 
         Initialising is configuration, not a claim about progress (B176). It
-        writes the module path and verified command defaults to config.json, and a
-        state.json holding an empty approvals list -- never a phase or a status.
+        writes the module path and the commands the gates will actually run to
+        config.json, and a state.json holding an empty approvals list -- never a
+        phase or a status. The commands are passed in rather than assumed
+        because a repository with a Makefile builds itself its own way, and a
+        config that named a command Atom does not run would be decoration.
         """
         self.state_directory.mkdir(parents=True, exist_ok=True)
 
@@ -153,8 +166,8 @@ class Project:
             self.config_path,
             {
                 "module_path": module_path,
-                "build_command": DEFAULT_BUILD_COMMAND,
-                "test_command": DEFAULT_TEST_COMMAND,
+                "build_command": build_command,
+                "test_command": test_command,
             },
         )
 

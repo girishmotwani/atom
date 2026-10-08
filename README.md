@@ -274,6 +274,7 @@ The first two are pure discovery. If your Python scripts directory is already on
 
 ```
 .atom/config.json        module path, plus the build and test commands it just exercised
+                         (`make build` / `make test` when a Makefile defines them)
 .atom/state.json         pipeline and phase state
 .atom/baseline.json      the untouched no-race gate result, captured before anything changed
 .atom/events.jsonl       structured event log
@@ -283,6 +284,16 @@ specs/                   design artifacts
 poc/                     throwaway spikes
 .gitignore               a marked block for the machine-local files above
 ```
+
+**A repository's own Makefile wins.** If `make` is installed and the Makefile defines a
+`build` or `test` target, `atom init` and `atom check` run `make build` / `make test`
+instead of the Go defaults — a project that declares how it is built usually encodes
+build tags, ldflags or code generation that `go build ./...` would skip. Each target is
+decided on its own, so a Makefile that builds but does not test delegates only the build.
+Vet, format and the race detector stay Go-native: there is no conventional target for
+them, and the format gate reads its verdict from `gofmt`'s stdout rather than an exit
+code, so delegating it would hide the filenames it exists to report. `atom init` prints
+the commands it chose and why, and records them in `.atom/config.json`.
 
 **A red baseline does not stop onboarding.** `atom init` records the result it found
 and moves on, so you can onboard a repository whose gates are already failing and see

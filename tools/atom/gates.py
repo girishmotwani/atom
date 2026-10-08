@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from atom.buildsystem import detect
 from atom.runner import CommandOutcome, CommandResult, CommandRunner
 
 
@@ -49,9 +50,10 @@ class BuildGate:
     command = ("go", "build", "./...")
 
     def evaluate(self, runner: CommandRunner, directory: Path) -> GateResult:
-        """Run go build ./... and preserve compiler output for failures."""
+        """Run the project's build command and preserve compiler output for failures."""
 
-        return _evaluate_exit_code_gate(runner, directory, self.name, self.command, self.required)
+        command = detect(directory).build_command
+        return _evaluate_exit_code_gate(runner, directory, self.name, command, self.required)
 
 
 class VetGate:
@@ -172,9 +174,10 @@ class TestGate:
     command = ("go", "test", "./...")
 
     def evaluate(self, runner: CommandRunner, directory: Path) -> GateResult:
-        """Run go test ./..., reporting SKIPPED only when no package has tests."""
+        """Run the project's test command, reporting SKIPPED only when nothing has tests."""
 
-        return _evaluate_go_test_gate(runner, directory, self.name, self.command, self.required)
+        command = detect(directory).test_command
+        return _evaluate_go_test_gate(runner, directory, self.name, command, self.required)
 
 
 class RaceGate:
@@ -277,14 +280,26 @@ def _non_empty_lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
+# How `go test` opens each line it writes about a package or a test.
+_GO_TEST_RESULT_PREFIXES = frozenset({"ok", "?", "FAIL", "PASS", "---"})
+
+
 def _reports_only_packages_without_tests(output: str) -> bool:
     """Return true when go test reported packages, and all of them lacked tests."""
 
-    lines = _non_empty_lines(output)
-    if not lines:
+    # Only go's own package result lines can answer "did anything actually run".
+    # When the command is delegated to a Makefile, stdout also carries make's
+    # echo of the recipe, and counting that as evidence of a test run is what
+    # would let an untested tree report PASSED instead of SKIPPED.
+    package_results = [
+        line
+        for line in _non_empty_lines(output)
+        if line.split(maxsplit=1)[0] in _GO_TEST_RESULT_PREFIXES
+    ]
+    if not package_results:
         return False
 
-    return all("[no test files]" in line for line in lines)
+    return all("[no test files]" in line for line in package_results)
 
 
 def _evaluate_go_test_gate(
