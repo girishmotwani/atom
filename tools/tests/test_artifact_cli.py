@@ -77,6 +77,9 @@ def test_bootstrap_documents_hidden_artifact_writer_fallback() -> None:
     assert "atom-write-artifact --help" in source
     assert "python -m atom.artifact_cli --help" in source
     assert "python -m atom.artifact_cli <relative-path>" in source
+    assert "Do not locate or read Atom's Python source" in source
+    assert "Do not use `atom.__file__`, `inspect`, or filesystem searches" in source
+    assert "An editable install may execute code from an Atom checkout" in source
 
 
 def test_main_normalizes_native_shell_line_endings_to_lf(

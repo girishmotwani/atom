@@ -12,6 +12,21 @@ the actual toolchain and baseline checks happen during `/atom:init`.
 Work down these steps and **stop at the first one that succeeds**. In the normal
 case that is step 1, and costs a single command.
 
+## Use the command interface, not the implementation
+
+Do not locate or read Atom's Python source while onboarding another repository.
+Resolve commands only through the entry-point and module checks below, run from
+the target repository. Use their `--help` output for supported options.
+Do not use `atom.__file__`, `inspect`, or filesystem searches to find `cli.py`,
+the Atom checkout, or installed package internals. Do not change into the Atom
+checkout or invoke a Python source file by absolute path.
+
+An editable install may execute code from an Atom checkout; Python resolves that
+internally. That does not require the agent to read the checkout or request
+file-tool access to it. A successful help check is enough to establish that the
+command works. If a command fails, report its output instead of opening its
+implementation unless the developer explicitly requests debugging Atom itself.
+
 ## Step 1 — Are the entry points there?
 
 ```bash

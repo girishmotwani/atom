@@ -25,6 +25,16 @@ Atom is the wrong tool here. Do not invent a module path.
 Follow [bootstrap.md](../atom/references/bootstrap.md). It establishes working forms
 for both `atom` and `atom-write-artifact` without replacing an installed package.
 
+Do not locate or read Atom's Python source while onboarding another repository.
+Use the command forms established by bootstrap from the target module directory;
+use `--help` when an option is unclear, not the implementation in an external
+checkout or installed package.
+
+Existing `.atom/` files do not require an implementation audit. Read the named local
+files in steps 4 and 5 and report any discrepancy. If `atom init` refuses because
+state already exists, preserve it and report the refusal; do not add `--force`
+without the developer's explicit approval to discard that state.
+
 ## Step 3 — Run deterministic onboarding
 
 ```bash
