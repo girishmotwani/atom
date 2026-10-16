@@ -25,6 +25,11 @@ Atom is the wrong tool here. Do not invent a module path.
 Follow [bootstrap.md](../atom/references/bootstrap.md). It establishes working forms
 for both `atom` and `atom-write-artifact` without replacing an installed package.
 
+On Windows, bootstrap offers the one-time `setup-path` opt-in when entry points are
+hidden. After successful setup, use its printed absolute executable commands in this
+session. Do not re-probe command names or ask again to locate the same executables.
+If the developer declines, keep the working module forms instead.
+
 Do not locate or read Atom's Python source while onboarding another repository.
 Use the command forms established by bootstrap from the target module directory;
 use `--help` when an option is unclear, not the implementation in an external

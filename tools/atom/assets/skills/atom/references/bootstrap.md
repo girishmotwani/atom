@@ -50,7 +50,8 @@ simply not on PATH. `pip install --user` puts them in a directory Windows does n
 search; a terminal that was already open cannot see a PATH change made after it
 launched; a developer's editable install has the same symptom.
 
-For each successful module check, use its module form for the rest of the session:
+Unless the developer opts into the Windows setup below, use each successful module
+form for the rest of the session:
 
 - Use `python -m atom.cli` wherever these skills say `atom`.
 - Use `python -m atom.artifact_cli <relative-path>` wherever these skills say
@@ -63,12 +64,37 @@ PATH.
 developer's own editable checkout of Atom — with a fetched copy, and would not
 fix the PATH anyway.
 
+### Optional one-time Windows user-PATH setup
+
+When the package works but its entry points are hidden, offer this opt-in once.
+Explain that it adds the installed command directory to the current user's PATH,
+preserves existing entries, and leaves system PATH unchanged. Obtain consent once;
+an explicit request to update PATH already supplies that consent.
+
+```bash
+python -m atom.cli setup-path
+```
+
+The command locates both installed executables, updates user PATH only if needed,
+and notifies Windows. It prints the absolute, quoted commands to use immediately:
+the current Copilot process still has its old PATH.
+
+Use those printed executable commands for the remainder of the session, including
+the dedicated artifact writer. Do not re-probe command names, search for Scripts
+directories, read package source, or ask separately which Python scheme to use.
+New terminals launched with the refreshed environment can use the command names.
+Normal command approvals still apply; this is not a permission bypass.
+
+If setup fails, report its exact output, including any saved-but-not-notified state.
+Do not report successful PATH setup or reinstall over the working package. If the
+developer declines this optional step, retain the module forms above.
+
 ## Step 3 — Install it
 
 Only if both checks above failed.
 
 ```bash
-pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
+pip install "git+https://github.com/gimotwan_microsoft/atom.git#subdirectory=tools"
 ```
 
 Say what you are doing and why, in one line, before you run it.

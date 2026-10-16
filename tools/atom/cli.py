@@ -25,6 +25,7 @@ from atom.invoke import (
     NoModelAvailable,
 )
 from atom.onboarding import OnboardingError, install_local_bundle
+from atom.pathsetup import PathSetupError, setup_user_path
 from atom.merge import DEFAULT_PROXIMITY_WINDOW
 from atom.report import (
     render_json,
@@ -75,6 +76,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if arguments.command == "init":
         return _run_init_command(arguments)
+
+    if arguments.command == "setup-path":
+        return _run_setup_path_command()
 
     if arguments.command == "status":
         return _run_status_command(arguments)
@@ -127,8 +131,36 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_state_parsers(subparsers)
     _add_review_parser(subparsers)
     _add_ship_parser(subparsers)
+    subparsers.add_parser(
+        "setup-path",
+        help="Add Atom's installed commands to the Windows user PATH (opt-in).",
+        description=(
+            "Add Atom's installed commands to the Windows user PATH. "
+            "This explicit opt-in leaves system PATH and project state unchanged."
+        ),
+    )
 
     return parser
+
+
+def _run_setup_path_command() -> int:
+    try:
+        result = setup_user_path()
+    except PathSetupError as error:
+        print(f"atom setup-path: {error}", file=sys.stderr)
+        return EXIT_CHECK_FAILED
+
+    action = "Added to" if result.changed else "Already present in"
+    print(f"{action} user PATH: {result.scripts_directory}")
+    print("Use these commands in the current session:")
+    for name in ("atom.exe", "atom-write-artifact.exe"):
+        executable = str(result.scripts_directory / name).replace("'", "''")
+        print(f"  & '{executable}'")
+    print(
+        "The current parent process PATH is unchanged. "
+        "New terminals from an environment-aware launcher can use the command names."
+    )
+    return EXIT_PASSED
 
 
 def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:

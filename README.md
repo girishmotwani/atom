@@ -210,7 +210,7 @@ index automatically.
 > access — see [if setup goes wrong](#if-setup-goes-wrong) if it fails.
 
 ```bash
-copilot plugin marketplace add girishmotwani/atom
+copilot plugin marketplace add gimotwan_microsoft/atom
 copilot plugin install atom@atom
 ```
 
@@ -326,7 +326,7 @@ That distinction gives two different workflows:
 
 | You are | Marketplace points at | To get new bits |
 |---|---|---|
-| **Using** Atom | `girishmotwani/atom` on GitHub | `copilot plugin update atom@atom` |
+| **Using** Atom | `gimotwan_microsoft/atom` on GitHub | `copilot plugin update atom@atom` |
 | **Developing** Atom | your local clone | same command — no push required |
 
 To develop against your own clone, point the marketplace at it with an **absolute** path
@@ -429,7 +429,7 @@ python -m venv .venv                # optional; deleting .venv undoes everything
 source .venv/bin/activate           # macOS / Linux
 .venv\Scripts\Activate.ps1          # Windows
 
-pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
+pip install "git+https://github.com/gimotwan_microsoft/atom.git#subdirectory=tools"
 atom --help
 ```
 
@@ -438,10 +438,25 @@ A virtual environment has to be activated in each new terminal.
 **`atom` or `atom-write-artifact` installs, then reports "not found".**
 `pip install --user` puts both executables in a directory Windows may not search, and a
 terminal that was already open copied its environment at launch, so it cannot see a
-later PATH change. Add that Scripts directory to your **user** PATH and open a new
-terminal. `python -m atom.cli` is useful for diagnosing the main CLI, but do not replace
-`atom-write-artifact` with `python -m atom.artifact_cli`: Copilot would approve the
-broader `python` executable instead of the deliberately narrow writer command.
+later PATH change. On Windows, opt into a one-time setup using the working Python
+package:
+
+```powershell
+python -m atom.cli setup-path
+```
+
+This finds both installed executables, adds their Scripts directory to your **user**
+PATH without changing existing entries or system PATH, and notifies Windows.
+It is safe to run again: an equivalent existing entry is not rewritten.
+The current parent process still has its old PATH, so use the absolute PowerShell
+commands printed by setup for the rest of this session. A new terminal launched
+with the refreshed environment can use `atom` and `atom-write-artifact` by name.
+Ordinary `atom init` never opts into this persistent change automatically.
+
+Without the opt-in, bootstrap can use `python -m atom.cli` and
+`python -m atom.artifact_cli` as temporary fallbacks. Approving the dedicated writer
+executable is narrower than approving `python`, so prefer the writer path printed by
+setup rather than broadening executable permissions.
 
 Do not use `setx PATH "%PATH%;..."` to do that. `%PATH%` expands to the *merged* machine
 and user value and `setx` truncates at 1024 characters, so on a typical workstation it
