@@ -166,6 +166,9 @@ def test_init_skill_delegates_baseline_and_scaffold_to_one_cli_command() -> None
     assert "Do not run `git status`, recursive shell scans" in source
     assert "Do not locate or read Atom's Python source" in source
     assert "Existing `.atom/` files do not require an implementation audit" in source
+    assert "read-only no-op" in source
+    assert "does not refresh the baseline" in source
+    assert "may be absent on a clone" in source
 
 
 def test_init_updates_existing_instructions_once(tmp_path: Path, monkeypatch) -> None:
@@ -233,7 +236,9 @@ def test_init_ignores_only_generated_atom_runtime_files(
     ).stdout
     monkeypatch.chdir(tmp_path)
 
-    assert main(["init"]) == 0
+    # This fixture deliberately has only a retained runtime log, not a complete
+    # onboarding record. Resetting partial setup now requires explicit consent.
+    assert main(["init", "--force"]) == 0
 
     ignored = subprocess.run(
         [

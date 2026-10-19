@@ -11,6 +11,8 @@ from pathlib import Path
 
 from importlib.resources import as_file, files
 
+from atom.storage import StateFileError, read_json
+
 ASSET_ROOT = files("atom") / "assets"
 LOCAL_BUNDLE_DIRECTORY = Path(".atom") / "atom"
 LOCAL_INSTRUCTIONS_PATH = Path(".github") / "copilot-instructions.md"
@@ -42,7 +44,82 @@ INSTRUCTIONS_LINE = (
 
 
 class OnboardingError(RuntimeError):
-    """The local Atom instruction bundle could not be installed."""
+    """The local Atom instruction bundle could not be installed or validated."""
+
+
+def validate_local_bundle(root: Path) -> None:
+    """Check shared onboarding without repairing or upgrading an existing bundle."""
+
+    manifest_path = root / MANIFEST_PATH
+    if not manifest_path.is_file():
+        raise OnboardingError(f"{manifest_path}: missing or not a regular file")
+    try:
+        manifest = read_json(manifest_path)
+    except StateFileError as error:
+        raise OnboardingError(str(error)) from error
+    entries = manifest.get("files")
+    if (
+        manifest.get("managed_by") != "atom init"
+        or manifest.get("source") != "atom-cli package"
+        or not isinstance(entries, list)
+        or not all(isinstance(entry, str) for entry in entries)
+        or "AGENTS.md" not in entries
+        or "skills/" not in entries
+    ):
+        raise OnboardingError(f"{manifest_path}: not a usable Atom bundle manifest")
+
+    bundle = root / LOCAL_BUNDLE_DIRECTORY
+    _read_required_text(root / LOCAL_AGENTS_PATH)
+    # Stable entrypoints, not the installed package's current inventory: a
+    # repeat must not demand a bundle upgrade when a later release adds files.
+    for skill in ("init", "discover", "poc", "plan", "spec", "tdd", "review", "ship"):
+        _read_required_text(bundle / "skills" / skill / "SKILL.md")
+    for reference in (
+        "anti-rationalization.md",
+        "poc-discipline.md",
+        "tdd-discipline.md",
+        "go-style.md",
+        "human-gates.md",
+        "verification.md",
+        "model-guidance.md",
+    ):
+        _read_required_text(bundle / "skills" / "atom" / "references" / reference)
+
+    instructions_path = root / LOCAL_INSTRUCTIONS_PATH
+    instructions = _read_required_text(instructions_path)
+    local_reference = f"](../{LOCAL_AGENTS_PATH.as_posix()})"
+    if MANAGED_MARKER not in instructions or local_reference not in instructions:
+        raise OnboardingError(
+            f"{instructions_path}: missing the managed local Atom instruction reference"
+        )
+
+    gitignore_path = root / GITIGNORE_PATH
+    lines = _read_required_text(gitignore_path).splitlines()
+    bounds = _managed_gitignore_bounds(lines)
+    if bounds is None:
+        raise OnboardingError(f"{gitignore_path}: missing the Atom managed block")
+    start, end = bounds
+    missing = [
+        rule
+        for rule in GITIGNORE_BLOCK_LINES[2:-1]
+        if rule not in lines[start + 1 : end]
+    ]
+    if missing:
+        raise OnboardingError(
+            f"{gitignore_path}: Atom managed block is missing {', '.join(missing)}"
+        )
+
+
+def _read_required_text(path: Path) -> str:
+    if not path.is_file():
+        raise OnboardingError(f"{path}: missing or not a regular file")
+    try:
+        contents = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise OnboardingError(f"could not read {path}: {error}") from error
+    if not contents.strip():
+        raise OnboardingError(f"{path}: file is empty")
+    return contents
 
 
 def install_local_bundle(root: Path) -> list[Path]:
@@ -121,6 +198,28 @@ def _install_gitignore_rules(root: Path) -> None:
     newline = "\r\n" if "\r\n" in contents else "\n"
     block = newline.join(GITIGNORE_BLOCK_LINES) + newline
     lines = contents.splitlines(keepends=True)
+    bounds = _managed_gitignore_bounds(lines)
+
+    if bounds is None:
+        if not contents:
+            updated = block
+        elif contents.endswith(("\n\n", "\r\n\r\n")):
+            updated = contents + block
+        elif contents.endswith("\r\n") or contents.endswith("\n"):
+            updated = contents + newline + block
+        else:
+            updated = contents + newline + newline + block
+    else:
+        start, end = bounds
+        updated = "".join(lines[:start]) + block + "".join(lines[end + 1 :])
+
+    if updated == contents:
+        return
+
+    _replace_text_atomically(path, updated)
+
+
+def _managed_gitignore_bounds(lines: list[str]) -> tuple[int, int] | None:
     start_lines = [
         index
         for index, line in enumerate(lines)
@@ -131,36 +230,14 @@ def _install_gitignore_rules(root: Path) -> None:
         for index, line in enumerate(lines)
         if line.rstrip("\r\n") == GITIGNORE_BLOCK_END
     ]
-
     if not start_lines and not end_lines:
-        if not contents:
-            updated = block
-        elif contents.endswith(("\n\n", "\r\n\r\n")):
-            updated = contents + block
-        elif contents.endswith("\r\n") or contents.endswith("\n"):
-            updated = contents + newline + block
-        else:
-            updated = contents + newline + newline + block
-    elif (
-        len(start_lines) == 1
-        and len(end_lines) == 1
-        and start_lines[0] < end_lines[0]
-    ):
-        updated = (
-            "".join(lines[: start_lines[0]])
-            + block
-            + "".join(lines[end_lines[0] + 1 :])
-        )
-    else:
-        raise OnboardingError(
-            "Atom managed .gitignore markers are missing, duplicated, or out of order; "
-            "repair the managed block and run `atom init --force`."
-        )
-
-    if updated == contents:
-        return
-
-    _replace_text_atomically(path, updated)
+        return None
+    if len(start_lines) == len(end_lines) == 1 and start_lines[0] < end_lines[0]:
+        return start_lines[0], end_lines[0]
+    raise OnboardingError(
+        "Atom managed .gitignore markers are missing, duplicated, or out of order; "
+        "repair the managed block and run `atom init --force`."
+    )
 
 
 def _replace_text_atomically(path: Path, contents: str) -> None:

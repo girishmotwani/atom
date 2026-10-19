@@ -136,11 +136,11 @@ class Project:
         """True when both halves of the project's record are present.
 
         Config and state are checked separately (B73) because one existing
-        without the other is a half-finished init, not a working project. This
-        is the guard behind ``atom init --force``: re-initialising over an
-        existing project would discard its recorded approvals. Note it is a
-        separate question from load() succeeding -- an *absent* state file is not
-        an error to read (B174), but it does mean the project is not set up.
+        without the other is a half-finished init, not a working project.
+        Presence does not prove validity: ``atom init`` separately validates any
+        existing setup, including partial records, before accepting a no-op.
+        Note it is a separate question from load() succeeding -- an absent state
+        file is not an error to read (B174), but it does mean the project is not set up.
         """
         return self.config_path.exists() and self.state_path.exists()
 

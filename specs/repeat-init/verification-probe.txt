@@ -1,0 +1,77 @@
+Publication redaction: local Windows profile prefixes in this historical evidence were replaced with <LOCAL_PROFILE>. Original evidence remains private; this copy is not byte-identical to the captured transcript.
+
+CASE: first initialization
+COMMAND: python -m atom.cli init
+EXIT: 0
+STDOUT:
+Initialised <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\.atom
+  module:    example.com/repeat-init
+  approvals: 0
+  local instructions: <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\.github\copilot-instructions.md
+  specs:     <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\specs
+  poc:       <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\poc
+  build:     go build ./...
+  test:      go test ./...
+             no makefile; using Go defaults
+  baseline:  <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\.atom\baseline.json
+
+Untouched baseline (race detector skipped):
+atom check <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete
+
+  PASS  build  go build ./... passed (0.4s)
+  PASS  vet    go vet ./... passed (33.0s)
+  PASS  fmt    1 file(s) differ only in line endings, not formatting: target.go. gofmt expects LF; set core.autocrlf=input or commit a .gitattributes entry to stop the checkout rewriting them. (0.1s)
+  SKIP  test   No packages contain test files (3.1s)
+  SKIP  race   Race detector disabled for this run (0.0s)
+
+  PASSED in 36.6s
+
+Atom derives where you are from specs/. To see it:
+  atom status
+
+Atom starts by proving things, not describing them:
+  atom poc new <slug> --question "..."
+STDERR:
+
+CASE: valid repeat 1
+COMMAND: python -m atom.cli init
+EXIT: 0
+STDOUT:
+Already initialised <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\.atom; no changes made.
+STDERR:
+
+SNAPSHOT entries=56 unchanged=True
+CHANGED: []
+APPROVALS: 1
+CASE: valid repeat 2
+COMMAND: python -m atom.cli init
+EXIT: 0
+STDOUT:
+Already initialised <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\complete\.atom; no changes made.
+STDERR:
+
+SNAPSHOT entries=56 unchanged=True
+CHANGED: []
+APPROVALS: 1
+CASE: missing config.json
+COMMAND: python -m atom.cli init
+EXIT: 2
+STDOUT:
+
+STDERR:
+atom init: <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\missing-config.json\.atom\config.json: missing or not a regular file
+No changes made. Repair or restore the named files, or explicitly pass --force to re-initialise and discard recorded approvals.
+SNAPSHOT entries=55 unchanged=True
+CHANGED: []
+APPROVALS: 1
+CASE: missing state.json
+COMMAND: python -m atom.cli init
+EXIT: 2
+STDOUT:
+
+STDERR:
+atom init: <LOCAL_PROFILE>\AppData\Local\Temp\atom-repeat-init-5v5bsa5u\missing-state.json\.atom\state.json: missing or not a regular file
+No changes made. Repair or restore the named files, or explicitly pass --force to re-initialise and discard recorded approvals.
+SNAPSHOT entries=55 unchanged=True
+CHANGED: []
+APPROVALS: 0

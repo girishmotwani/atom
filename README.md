@@ -301,8 +301,21 @@ the commands it chose and why, and records them in `.atom/config.json`.
 and moves on, so you can onboard a repository whose gates are already failing and see
 exactly what was broken before Atom touched it.
 
+**Repeating `atom init` is read-only when setup is valid and matching.** It returns 0
+with an explicit no-op message, without rerunning the baseline, resetting approvals,
+refreshing instructions, appending events, or changing files and timestamps. Custom
+build/test commands are preserved. Machine-local baseline and event files, and empty
+`specs/` and `poc/` directories, may be absent on a fresh clone.
+
+Conflicting module requests and incomplete or corrupt shared setup return a nonzero
+error without changes. Restore or repair the named files; do not use `--force` as a
+repeat-call workaround. Explicit `atom init --force` deliberately reinstalls setup and
+discards recorded approvals.
+
 **Confirm it worked** by reading `.atom/baseline.json` and `.atom/config.json`, or by
-running `/atom-status`. Both are read-only.
+running `/atom-status`. Both are read-only. After a no-op, the baseline may be absent;
+the command has validated the shared setup structurally, not captured a new baseline
+or upgraded the local bundle.
 
 ### Installing and updating as Atom evolves
 
