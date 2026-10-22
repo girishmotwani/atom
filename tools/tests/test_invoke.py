@@ -29,6 +29,24 @@ WORKDIR = Path("/repo")
 PROMPT = "Review this diff."
 
 
+def test_runner_error_is_not_usable_model_evidence():
+    model = "fixture-model"
+    probe = probe_command_for(model)
+    review = review_command(model, PROMPT)
+    runner = FakeRunner({
+        probe: command_result(probe, WORKDIR),
+        review: command_result(
+            review, WORKDIR, CommandOutcome.RUNNER_ERROR, None,
+            "[]", "atom: Windows cleanup incomplete: native refusal",
+        ),
+    })
+    report = invoke_models([model], PROMPT, runner, WORKDIR, runs=1)
+    assert report.runs[0].outcome is RunOutcome.FAILED
+    assert report.runs[0].response_text == ""
+    assert "native refusal" in report.runs[0].detail
+    assert report.is_partial
+
+
 def _script(models, *, stdout="[]", exit_code=0, outcome=CommandOutcome.COMPLETED):
     """Script both the probe and the review call for each model."""
 
@@ -575,5 +593,4 @@ class _StdinRecordingRunner:
             return CommandResult(tuple(command), working_directory, CommandOutcome.COMPLETED, 0, "ok", "", 0.01)
         self.stdin_texts.append(stdin_text)
         return CommandResult(tuple(command), working_directory, CommandOutcome.COMPLETED, 0, "[]", "", 0.01)
-
 

@@ -6,11 +6,26 @@ import os
 import subprocess
 import sys
 import time
+from dataclasses import asdict
 
 import pytest
 
 from atom import runner as runner_module
 from atom.runner import CommandOutcome, CommandResult, SubprocessRunner
+
+
+def test_runner_error_cannot_succeed_or_change_result_shape(tmp_path):
+    outcome = next(
+        (value for value in CommandOutcome if value.value == "runner_error"), None
+    )
+    assert outcome is not None, "lifecycle failure needs a distinct non-success outcome"
+    result = CommandResult(("tool",), tmp_path, outcome, None, "reply", "failed", 0.1)
+
+    assert result.succeeded is False
+    assert tuple(asdict(result)) == (
+        "command", "working_directory", "outcome", "exit_code",
+        "stdout", "stderr", "duration_seconds",
+    )
 
 
 def test_command_result_succeeded_only_for_completed_zero(tmp_path):
@@ -269,6 +284,7 @@ class TestTheGuaranteesSurviveWhenTheKillDoesNot:
     a fallback path that is never checked.
     """
 
+    @pytest.mark.skipif(os.name == "nt", reason="Popen/group fault; native equivalent in test_windows_process")
     def test_an_abandoned_drain_says_so_instead_of_reporting_silence(
         self, tmp_path, monkeypatch
     ):
@@ -321,6 +337,7 @@ class TestTheGuaranteesSurviveWhenTheKillDoesNot:
             "the command printed nothing"
         )
 
+    @pytest.mark.skipif(os.name == "nt", reason="Popen interrupt; native equivalent in test_windows_process")
     def test_an_interrupt_takes_the_process_tree_down_with_it(self, tmp_path, monkeypatch):
         """Ctrl-C must not leave the command running unattended.
 

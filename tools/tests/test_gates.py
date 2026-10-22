@@ -21,6 +21,19 @@ from atom.runner import CommandOutcome
 from tests.conftest import FakeRunner, command_result
 
 
+def test_runner_error_is_failed_gate_evidence(tmp_path):
+    command = ("go", "build", "./...")
+    runner = FakeRunner({
+        command: command_result(
+            command, tmp_path, CommandOutcome.RUNNER_ERROR, None,
+            "apparently good output", "atom: Windows cleanup incomplete: native refusal",
+        )
+    })
+    result = BuildGate().evaluate(runner, tmp_path)
+    assert result.status is GateStatus.FAILED
+    assert "native refusal" in result.details
+
+
 @pytest.mark.parametrize(
     ("gate", "command", "behaviour"),
     [

@@ -41,6 +41,18 @@ func Decode(input string) int {
 """
 
 
+def test_runner_error_cannot_confirm_a_spike(command_spike):
+    failure = CommandResult(
+        ("fixture",), command_spike, CommandOutcome.RUNNER_ERROR, None,
+        "Confirmed-looking stdout", "atom: Windows cleanup incomplete: native refusal", 0.1,
+    )
+    result = run_spike(command_spike, ScriptedRunner({"execute": failure}))
+    assert result.verdict is not Verdict.CONFIRMED
+    assert result.failed_stage is Stage.EXECUTE
+    assert not result.stages[-1].produced_an_answer
+    assert "native refusal" in result.stages[-1].stderr
+
+
 class ScriptedRunner:
     """Match commands by prefix, because the build path is a temp file.
 
@@ -626,4 +638,3 @@ def test_library_spike_panicking_is_also_crashed(command_spike: Path, library_sp
     result = run_spike(library_spike, ScriptedRunner({"test": _failed(2, stderr=GO_PANIC_STDERR)}))
 
     assert result.verdict is Verdict.CRASHED
-

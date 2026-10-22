@@ -26,6 +26,22 @@ from atom.runner import CommandOutcome
 from tests.conftest import FakeRunner, command_result
 
 
+@pytest.mark.parametrize("outcome", [CommandOutcome.RUNNER_ERROR, CommandOutcome.TIMED_OUT])
+def test_runner_failure_details_survive_diff_rejection(tmp_path, outcome):
+    request = select_source(working=True)
+    command = git_command_for(request)
+    runner = FakeRunner({
+        command: command_result(
+            command, tmp_path, outcome, None, MULTI_FILE_DIFF,
+            "atom: Windows cleanup incomplete: native refusal",
+        )
+    })
+    with pytest.raises(DiffUnavailable, match="native refusal") as caught:
+        capture_diff(request, runner, tmp_path)
+    if outcome is CommandOutcome.TIMED_OUT:
+        assert MULTI_FILE_DIFF not in str(caught.value)
+
+
 # A three-file diff. Deliberately includes a rename, a context line that looks
 # like a change, and both additions and removals, because each of those is a
 # way a naive size count goes wrong.

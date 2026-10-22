@@ -20,11 +20,12 @@ _DRAIN_GRACE_SECONDS = 2.0
 
 
 class CommandOutcome(enum.Enum):
-    """Explains whether a command ran, timed out, or could not be started."""
+    """Distinguishes tool evidence from failed execution lifecycles."""
 
     COMPLETED = "completed"
     TIMED_OUT = "timed_out"
     TOOL_MISSING = "tool_missing"
+    RUNNER_ERROR = "runner_error"
 
 
 @dataclass(frozen=True)
@@ -100,10 +101,19 @@ class SubprocessRunner:
         page. Every tool Atom drives emits UTF-8, and a decode error here would
         destroy an entire review over one stray byte; replacement keeps the rest
         readable and confines the damage to the byte that caused it.
+
+        Windows runs own their descendants through a private Job Object before
+        execution. Remaining owned children stop even on success; this is not a
+        background-service launcher. Ownership or cleanup failures cannot become
+        successful command evidence.
         """
 
         started_at = time.perf_counter()
         command_tuple = tuple(command)
+        if os.name == "nt":
+            return _run_windows(
+                command_tuple, working_directory, timeout_seconds, stdin_text, started_at
+            )
         try:
             process = _launch(
                 _resolve_for_launch(command_tuple),
@@ -173,6 +183,72 @@ class SubprocessRunner:
             raise
 
 
+def _run_windows(
+    command: tuple[str, ...],
+    working_directory: Path,
+    timeout_seconds: float,
+    stdin_text: str | None,
+    started_at: float,
+) -> CommandResult:
+    from ._windows_process import _WindowsProcess
+
+    process = _WindowsProcess()
+    outcome = CommandOutcome.COMPLETED
+    diagnostic = ""
+    # Keep the guard installed through receipt/diagnosis and the first cleanup
+    # instruction, not only during individual native acquisitions.
+    with process.defer_interrupts():
+        try:
+            try:
+                process.start(_resolve_for_launch(command), working_directory)
+                if process.interrupted:
+                    raise KeyboardInterrupt
+                process.communicate(
+                    stdin_text if stdin_text is not None else "", timeout_seconds
+                )
+            except (FileNotFoundError, NotADirectoryError):
+                outcome = CommandOutcome.TOOL_MISSING
+                diagnostic = _diagnose_missing_file(command, working_directory)
+            except subprocess.TimeoutExpired:
+                outcome = CommandOutcome.TIMED_OUT
+                diagnostic = f"Command timed out after {timeout_seconds:g} seconds."
+            except OSError as error:
+                if getattr(error, "winerror", None) == 193:
+                    outcome = CommandOutcome.TOOL_MISSING
+                    diagnostic = _diagnose_missing_file(command, working_directory)
+                else:
+                    outcome = CommandOutcome.RUNNER_ERROR
+                    diagnostic = f"atom: Windows runner failure: {error}"
+            primary_exit = process.returncode
+        finally:
+            propagating = sys.exc_info()[0] is not None
+            problems = process.finalize(_DRAIN_GRACE_SECONDS)
+            if propagating and problems:
+                print(
+                    f"atom: Windows cleanup incomplete: {'; '.join(problems)}",
+                    file=sys.stderr,
+                )
+    if process.interrupted:
+        if problems:
+            print(f"atom: Windows cleanup incomplete: {'; '.join(problems)}", file=sys.stderr)
+        raise KeyboardInterrupt
+    if problems:
+        if outcome is not CommandOutcome.TIMED_OUT:
+            outcome = CommandOutcome.RUNNER_ERROR
+        cleanup = f"atom: Windows cleanup incomplete: {'; '.join(problems)}"
+        if primary_exit is not None:
+            cleanup += f"; primary exit code {primary_exit}"
+        diagnostic = f"{diagnostic}\n{cleanup}" if diagnostic else cleanup
+    stderr = process.output("stderr")
+    if diagnostic:
+        stderr = f"{stderr}\n{diagnostic}" if stderr else diagnostic
+    return CommandResult(
+        command, working_directory, outcome,
+        primary_exit if outcome is CommandOutcome.COMPLETED else None,
+        process.output("stdout"), stderr, time.perf_counter() - started_at,
+    )
+
+
 def _launch(command: Sequence[str], working_directory: Path) -> subprocess.Popen:
     """Start a command with both streams captured and stdin closed immediately.
 
@@ -184,7 +260,7 @@ def _launch(command: Sequence[str], working_directory: Path) -> subprocess.Popen
     that will not stop on its own -- and because Atom kills the group itself on
     the way out.
 
-    Windows has no sessions to join; its tree is walked at kill time instead.
+    This is the POSIX path. Windows uses its pre-execution Job Object owner.
     """
 
     platform_options: dict[str, object] = {}
@@ -205,7 +281,7 @@ def _launch(command: Sequence[str], working_directory: Path) -> subprocess.Popen
 
 
 def _stop_and_collect(process: subprocess.Popen) -> tuple[str, str, str]:
-    """End a timed-out command and recover whatever it managed to say.
+    """End a timed-out POSIX command without waiting forever on inherited pipes.
 
     Killing the process is not enough to end the wait. A pipe reaches
     end-of-file when the last handle to its write end closes, and any child the
@@ -218,27 +294,10 @@ def _stop_and_collect(process: subprocess.Popen) -> tuple[str, str, str]:
     and the partial output survives -- which matters, because what a stuck
     command already printed is usually the only clue to why it stuck.
 
-    The bounded second wait is a backstop for the case where the tree kill does
-    not take. What survives it differs by platform, and the difference is worth
-    stating rather than averaging away: POSIX reads the pipes incrementally, so
-    the timeout exception carries everything that had arrived and it is handed
-    back; Windows reads each pipe with a single blocking `read()` that returns
-    only at end-of-file, so bytes written before the deadline sit unreachable
-    inside that call while a surviving process holds the pipe open.
-
-    So this path recovers what it can and names what it cannot. Reporting the
-    loss matters as much as avoiding it: an empty reply that does not say why it
-    is empty cannot be told apart from a command that printed nothing.
-
-    A tempting objection is that `subprocess.run(timeout=...)` *does* return the
-    output on Windows, so this careful salvage looks like a downgrade. It does,
-    and the price is the whole reason this function exists: `run` reacts to a
-    timeout by killing the direct child and then calling `communicate()` again
-    with **no deadline**, and that second call is what eventually returns the
-    bytes -- once the surviving grandchildren close the pipe, whenever that is.
-    Atom's own measurement harness took 6h22m against a 300-second limit that
-    way. The output and the bound are not both available here; this picks the
-    bound and says so.
+    The bounded second wait is the backstop when group termination fails.
+    POSIX communication reads incrementally, so TimeoutExpired carries the
+    bytes already captured. Preserve them and name the incomplete drain.
+    Windows has separate nonblocking I/O under its native lifetime owner.
     """
 
     detail = _kill_process_tree(process)
@@ -279,18 +338,6 @@ def _kill_process_tree(process: subprocess.Popen) -> str:
     message: "killed the process only" explains a truncated reply that "timed
     out" alone would not.
     """
-
-    if os.name == "nt":
-        # Windows has no process groups to signal, so the tree is walked by PID.
-        killed = subprocess.run(
-            ["taskkill", "/F", "/T", "/PID", str(process.pid)],
-            capture_output=True,
-            text=True,
-        )
-        if killed.returncode == 0:
-            return "killed the process tree"
-        process.kill()
-        return f"taskkill exited {killed.returncode}; killed the process only"
 
     try:
         # The process id is used directly rather than looked up with `getpgid`,
@@ -370,6 +417,8 @@ def _diagnose_missing_file(command: tuple[str, ...], working_directory: Path) ->
 def _path_matches_after_first(tool_name: str) -> list[str]:
     """List every other place on PATH where this tool name also resolves."""
 
+    if os.path.dirname(tool_name):
+        return []  # An explicit path cannot be shadowed by another PATH entry.
     matches: list[str] = []
     for directory in os.environ.get("PATH", "").split(os.pathsep):
         if not directory:
