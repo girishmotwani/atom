@@ -205,9 +205,10 @@ def capture_diff(
         )
 
     if result.outcome is CommandOutcome.TIMED_OUT:
+        detail = result.stderr.strip()
         raise DiffUnavailable(
             f"git took longer than {timeout_seconds:g} seconds to produce the diff "
-            f"for {request.describe()}."
+            f"for {request.describe()}." + (f" {detail}" if detail else "")
         )
 
     if result.exit_code != 0:

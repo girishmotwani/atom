@@ -137,6 +137,17 @@ in the conversation.
 atom check     # build + vet + gofmt + test + race + coverage
 ```
 
+On Windows, command execution assigns a suspended process to a private Job Object
+before it runs. Remaining owned children are stopped on success, timeout or
+interruption; Atom's runner is not a background-service launcher. Ownership setup
+fails closed rather than running without containment. Lifecycle failures are reported
+as `runner_error`, not a successful tool exit; a timeout keeps its timeout outcome
+and includes any incomplete-cleanup or output diagnostics. Cleanup waits share a
+two-second allowance, not a hard real-time guarantee for Windows kernel calls.
+A change in job membership while collecting exit identities is reported as
+incomplete cleanup, never verified completion.
+POSIX commands retain their existing session/group behavior.
+
 ### The developer is a participant
 
 Gates are conversations, not approvals of finished work. The agent asks **one question
