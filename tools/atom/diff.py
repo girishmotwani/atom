@@ -144,6 +144,7 @@ class CapturedDiff:
 
     text: str
     request: DiffRequest | None = None
+    _canonical_files: tuple[str, ...] | None = field(default=None, repr=False)
 
     @property
     def is_empty(self) -> bool:
@@ -157,6 +158,8 @@ class CapturedDiff:
         A rename is reported under its new name because that is the file the
         review's findings will refer to.
         """
+        if self._canonical_files is not None:
+            return self._canonical_files
         return self._parsed.files
 
     @cached_property

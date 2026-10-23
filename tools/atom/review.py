@@ -21,9 +21,10 @@ from pathlib import Path
 from typing import Sequence
 
 from atom.check import NotAGoModuleError, run_check
+from atom._review_format import capture_review_diff
 from atom.diff import CapturedDiff, DiffRequest, capture_diff
 from atom.extract import ExtractionReport, extract_all
-from atom.gates import GateResult, advisory_gates, default_gates
+from atom.gates import Gate, GateResult, advisory_gates, default_gates
 from atom.invoke import InvocationReport, RunOutcome, invoke_models
 from atom.merge import DEFAULT_PROXIMITY_WINDOW, MergedFinding, merge_findings
 from atom.runner import CommandRunner
@@ -270,13 +271,18 @@ def run_review(
     is always on.
     """
 
+    format_gate = None
+    if not skip_toolchain and (working_directory / "go.mod").is_file():
+        diff, format_gate = capture_review_diff(request, runner, working_directory)
+    else:
+        diff = capture_diff(request, runner, working_directory)
+
     toolchain = _collect_toolchain_evidence(
-        working_directory, runner, skip_toolchain=skip_toolchain
+        working_directory, runner, skip_toolchain=skip_toolchain,
+        format_gate=format_gate,
     )
     if toolchain.blocking_failures:
         raise ToolchainGateFailed(toolchain.blocking_failures)
-
-    diff = capture_diff(request, runner, working_directory)
 
     invocation = invoke_models(
         models=models,
@@ -320,6 +326,7 @@ def _collect_toolchain_evidence(
     working_directory: Path,
     runner: CommandRunner,
     skip_toolchain: bool,
+    format_gate: Gate | None = None,
 ) -> ToolchainEvidence:
     """Run required and advisory Go gates before model review consumes the diff."""
 
@@ -331,9 +338,13 @@ def _collect_toolchain_evidence(
         )
 
     try:
-        required_report = run_check(
-            working_directory, default_gates(enable_race=True), runner
-        )
+        required_gates = default_gates(enable_race=True)
+        if format_gate is not None:
+            required_gates = [
+                format_gate if gate.name == "fmt" else gate
+                for gate in required_gates
+            ]
+        required_report = run_check(working_directory, required_gates, runner)
         advisory_report = run_check(working_directory, advisory_gates(), runner)
     except NotAGoModuleError as error:
         return ToolchainEvidence(gate_results=(), was_run=False, skip_reason=str(error))
@@ -342,6 +353,7 @@ def _collect_toolchain_evidence(
         gate_results=required_report.gate_results + advisory_report.gate_results,
         was_run=True,
         skip_reason="",
+        formatting_is_scoped=format_gate is not None,
     )
 
 

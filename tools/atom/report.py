@@ -552,6 +552,21 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
             "files": list(outcome.diff.files),
             "changed_lines": outcome.diff.changed_lines,
         },
+        "toolchain": {
+            "was_run": outcome.toolchain.was_run,
+            "skip_reason": outcome.toolchain.skip_reason,
+            "gates": [
+                {
+                    "name": result.name,
+                    "status": result.status.value,
+                    "summary": result.summary,
+                    "details": result.details,
+                    "required": result.required,
+                    "duration_seconds": round(result.duration_seconds, 3),
+                }
+                for result in outcome.toolchain.gate_results
+            ],
+        },
         "models": [
             {
                 "model": model,
@@ -723,8 +738,17 @@ def _review_toolchain_lines(outcome: "ReviewOutcome") -> list[str]:
     for result in evidence.gate_results:
         command = _toolchain_command_for_gate(result.name)
         verdict = _toolchain_verdict(result)
+        if result.name == "fmt" and evidence.formatting_is_scoped:
+            command = "gofmt (changed Go files)"
+            summary = result.summary.replace("|", "\\|").replace("\n", "<br>")
+            verdict += f" - {summary}"
         lines.append(f"| `{command}` | {verdict} |")
     lines.append("")
+    if evidence.formatting_is_scoped:
+        for result in evidence.gate_results:
+            if result.name == "fmt":
+                lines.extend(f"    {line}" for line in result.details.splitlines())
+        lines.append("")
     return lines
 
 

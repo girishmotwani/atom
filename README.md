@@ -137,6 +137,14 @@ in the conversation.
 atom check     # build + vet + gofmt + test + race + coverage
 ```
 
+`atom review` checks formatting only for surviving changed Go files in the
+selected module. It formats each whole file from the selected working-tree,
+staged or committed-branch snapshot over stdin, without rewriting it. Untouched
+formatting defects do not block review; a changed-file defect still does.
+Reports name the checked paths and any outside-module or nested-module
+exclusions. Build, vet, tests, race and optional review checks keep their existing
+module-wide scope; standalone `atom check` still checks module-wide formatting.
+
 On Windows, command execution assigns a suspended process to a private Job Object
 before it runs. Remaining owned children are stopped on success, timeout or
 interruption; Atom's runner is not a background-service launcher. Ownership setup
