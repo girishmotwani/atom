@@ -37,6 +37,7 @@ class ToolchainEvidence:
     gate_results: tuple[GateResult, ...]
     was_run: bool
     skip_reason: str
+    formatting_is_scoped: bool = False
 
     @property
     def blocking_failures(self) -> tuple[GateResult, ...]:
@@ -91,10 +92,15 @@ class ToolchainEvidence:
     def _command_verdict_lines(self) -> list[str]:
         """Render every gate so clean, dirty, and unchecked signals stay distinct."""
 
-        rows = [
-            (_command_for_gate(result.name), _verdict_for_prompt(result))
-            for result in self.gate_results
-        ]
+        rows = []
+        for result in self.gate_results:
+            if result.name == "fmt" and self.formatting_is_scoped:
+                rows.append((
+                    "gofmt (changed Go files)",
+                    f"{_verdict_for_prompt(result)} - {result.summary}\n{result.details}",
+                ))
+            else:
+                rows.append((_command_for_gate(result.name), _verdict_for_prompt(result)))
         width = max((len(command) for command, _ in rows), default=0)
         return [f"  {command:<{width}}  {verdict}" for command, verdict in rows]
 
@@ -102,7 +108,11 @@ class ToolchainEvidence:
         """Name only categories whose proving tool actually passed."""
 
         exclusions = [
-            _EXCLUSIONS_BY_GATE[result.name]
+            (
+                "formatting in the checked files only"
+                if result.name == "fmt" and self.formatting_is_scoped
+                else _EXCLUSIONS_BY_GATE[result.name]
+            )
             for result in self.gate_results
             if result.status is GateStatus.PASSED and result.name in _EXCLUSIONS_BY_GATE
         ]

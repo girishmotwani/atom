@@ -46,9 +46,16 @@ review produces confident nonsense about code that is already handled ten lines 
 
 No separate command: the gate runs inside `atom review`, before the models.
 
-Before a single model is called, Atom runs `go build`, `go vet`, `gofmt -l`, `go test`
+Before a single model is called, Atom runs `go build`, `go vet`, `gofmt`, `go test`
 and `go test -race`, plus `staticcheck`, `errcheck` and `govulncheck` when they are
 installed.
+
+Review formatting checks whole surviving changed Go files from the selected
+working-tree, staged or committed-branch snapshot, using stdin without rewriting
+source. Untouched files are not scanned. The report names checked paths and
+outside-module or nested-module exclusions; zero applicable files means SKIPPED,
+not a formatting pass. Other review checks retain their existing module-wide
+scope, and standalone `atom check` retains module-wide formatting.
 
 **A failing required gate stops the review.** Reviewing code that does not compile, or
 that `go vet` already objects to, spends model attention on a question that has an
@@ -60,7 +67,7 @@ re-report an ignored error, a vet diagnostic, a formatting complaint, or a data 
 a tested path. That exclusion is the mechanism that frees attention for the rest of this
 page.
 
-Two rules keep the exclusion honest:
+These rules keep the exclusion honest:
 
 - **A tool that did not run excludes nothing.** If `errcheck` is not installed, the
   prompt says so and ignored errors stay in scope. Suppressing a category nobody checked
@@ -68,6 +75,8 @@ Two rules keep the exclusion honest:
 - **Clean is not absent.** `go test -race` only observes paths the tests actually
   executed. Concurrent code with no test is unchecked, not safe — and the prompt says
   that in those words.
+- **Formatting proof is file-scoped.** Only the checked snapshots are excluded
+  from formatting review; excluded modules and a skipped formatter are not clean.
 
 `--skip-toolchain` bypasses the gate. The prompt then tells the models that nothing was
 checked and nothing is excluded, so a skipped gate costs attention rather than silently
@@ -112,8 +121,9 @@ the reviewer was handed the exact rule.
 Use it to explain a finding, not as a checklist to walk: thirty rules handed to a
 reviewer produce worse coverage than seven.
 
-Formatting is **not** reviewed. `gofmt` settled it, the gate confirmed it, and review
-attention spent on whitespace is attention not spent on priority 1.
+Formatting in the checked file snapshots is **not** reviewed. `gofmt` settled it
+for those files only; a skipped formatter or an excluded module proves nothing
+about formatting there.
 
 > **Where the real instruction lives.** This table guides *your* triage. The sentences
 > actually sent to the models are `REVIEW_PROMPT` and the toolchain block in

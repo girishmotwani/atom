@@ -43,10 +43,17 @@ def test_run_review_blocks_before_models_when_required_gate_fails(tmp_path):
     """A tree that fails required gates is not ready to spend model calls."""
     (tmp_path / "go.mod").write_text("module example.com/toolchain\n", encoding="utf-8")
     build = ("go", "build", "./...")
+    git_root = ("git", "rev-parse", "--show-toplevel")
+    git_diff = (
+        "git", "diff", "--raw", "--no-abbrev", "-z", "--patch", "--full-index",
+        "--no-ext-diff", "--no-textconv", "--no-color", "--no-relative",
+        "--submodule=short", "--",
+    )
     runner = FakeRunner({
+        git_root: command_result(git_root, tmp_path, stdout=str(tmp_path) + "\n"),
+        git_diff: command_result(git_diff, tmp_path),
         build: command_result(build, tmp_path, exit_code=1, stderr="compile failed"),
         ("go", "vet", "./..."): command_result(("go", "vet", "./..."), tmp_path),
-        ("gofmt", "-l", "."): command_result(("gofmt", "-l", "."), tmp_path),
         ("go", "test", "./..."): command_result(("go", "test", "./..."), tmp_path, stdout="ok example 0.1s\n"),
         ("go", "test", "-race", "./..."): command_result(("go", "test", "-race", "./..."), tmp_path, stdout="ok example 0.1s\n"),
         ("staticcheck", "./..."): command_result(("staticcheck", "./..."), tmp_path),
