@@ -247,11 +247,11 @@ You now have these inside Copilot CLI, alongside built-ins like `/model`:
 | `/atom:start` | Describe what you want to build; Atom picks the right beat |
 | `/atom:discover` | Turn a vague goal into one falsifiable question |
 | `/atom:poc` | Build a disposable Go spike that answers it |
+| `/atom:plan` | Break proven work into independently shippable phases |
 | `/atom:spec` | Turn the POC's verdict into a design spec |
 | `/atom:tdd` | Derive the test spec, then red-green |
 | `/atom:review` | Multi-model review of the diff |
 | `/atom:ship` | Commit, branch, pull request |
-| `/atom:plan` | Break work too large for one pass into phases |
 | `/atom:init` | Scaffold project state in a Go repo |
 | `/atom-status` | Show the current phase, what exists, what is missing |
 | `/atom-check` | Run every Go quality gate and explain failures |
@@ -277,12 +277,14 @@ asks before each one. A captured run on a previously un-onboarded Go repository 
 
 | # | Approval | Why it appears |
 |---|---|---|
-| 1 | Check `atom` / `atom-write-artifact` entry points | Finds out whether Atom's commands are on your `PATH` |
-| 2 | Check `python -m atom.cli` / `python -m atom.artifact_cli` | Fallback discovery, only reached when step 1 finds nothing |
-| 3 | `atom init` | The single command that performs onboarding |
+| 1 | `atom init` | The single command that performs onboarding |
+| 2 | Check `atom` / `atom-write-artifact` entry points | Discovery — finds out whether Atom's commands are on your `PATH` |
+| 3 | Check `python -m atom.cli` / `python -m atom.artifact_cli` | Discovery fallback, only reached when the entry-point check finds nothing |
 
-The first two are pure discovery. If your Python scripts directory is already on
-`PATH`, step 2 does not happen. The ledger for the captured run is in
+`atom init` is the approval that matters; it is the one that does the work. The other
+two are discovery probes Copilot runs first to locate Atom's commands, and if your
+Python scripts directory is already on `PATH`, the third never appears. The ledger for
+the captured run, in the order the prompts actually arrived, is in
 [specs/onboarding-workflow/interactions.md](specs/onboarding-workflow/interactions.md).
 
 **You are never asked to approve writes to Atom's own state.** `.atom/state.json`,
@@ -318,8 +320,21 @@ the commands it chose and why, and records them in `.atom/config.json`.
 and moves on, so you can onboard a repository whose gates are already failing and see
 exactly what was broken before Atom touched it.
 
+**Repeating `atom init` is read-only when setup is valid and matching.** It returns 0
+with an explicit no-op message, without rerunning the baseline, resetting approvals,
+refreshing instructions, appending events, or changing files and timestamps. Custom
+build/test commands are preserved. Machine-local baseline and event files, and empty
+`specs/` and `poc/` directories, may be absent on a fresh clone.
+
+Conflicting module requests and incomplete or corrupt shared setup return a nonzero
+error without changes. Restore or repair the named files; do not use `--force` as a
+repeat-call workaround. Explicit `atom init --force` deliberately reinstalls setup and
+discards recorded approvals.
+
 **Confirm it worked** by reading `.atom/baseline.json` and `.atom/config.json`, or by
-running `/atom-status`. Both are read-only.
+running `/atom-status`. Both are read-only. After a no-op, the baseline may be absent;
+the command has validated the shared setup structurally, not captured a new baseline
+or upgraded the local bundle.
 
 ### Installing and updating as Atom evolves
 
@@ -457,10 +472,25 @@ A virtual environment has to be activated in each new terminal.
 **`atom` or `atom-write-artifact` installs, then reports "not found".**
 `pip install --user` puts both executables in a directory Windows may not search, and a
 terminal that was already open copied its environment at launch, so it cannot see a
-later PATH change. Add that Scripts directory to your **user** PATH and open a new
-terminal. `python -m atom.cli` is useful for diagnosing the main CLI, but do not replace
-`atom-write-artifact` with `python -m atom.artifact_cli`: Copilot would approve the
-broader `python` executable instead of the deliberately narrow writer command.
+later PATH change. On Windows, opt into a one-time setup using the working Python
+package:
+
+```powershell
+python -m atom.cli setup-path
+```
+
+This finds both installed executables, adds their Scripts directory to your **user**
+PATH without changing existing entries or system PATH, and notifies Windows.
+It is safe to run again: an equivalent existing entry is not rewritten.
+The current parent process still has its old PATH, so use the absolute PowerShell
+commands printed by setup for the rest of this session. A new terminal launched
+with the refreshed environment can use `atom` and `atom-write-artifact` by name.
+Ordinary `atom init` never opts into this persistent change automatically.
+
+Without the opt-in, bootstrap can use `python -m atom.cli` and
+`python -m atom.artifact_cli` as temporary fallbacks. Approving the dedicated writer
+executable is narrower than approving `python`, so prefer the writer path printed by
+setup rather than broadening executable permissions.
 
 Do not use `setx PATH "%PATH%;..."` to do that. `%PATH%` expands to the *merged* machine
 and user value and `setx` truncates at 1024 characters, so on a typical workstation it

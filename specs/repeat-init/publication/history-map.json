@@ -1,0 +1,20 @@
+{
+  "public_base": "8c2548429d3f4bf4e28f441da321890d63f1918b",
+  "accepted_original_tip": "0bb4bc68447fc6f39dadd5090b0404d619c0e20d",
+  "tested_public_copy_tip": "f58e639038c8abb764e132bfda3a457b6960b3a9",
+  "unpublished_commit_mapping": {
+    "b58605ae99f45227f81d617271d50bd82cf1dedf": "5f35227e71e419e916fb115b8280d5ccaaa90a69",
+    "16ac6bccab326ac856a9a912a67f1b0a318a0073": "63bb500c700d361b63716458e78309670f7aaef4",
+    "cb41f6d5c753c524a0a51bb506adaf78a29ea03c": "570efc399372cd4f40c60972e375a0686b4b6f95",
+    "0bb4bc68447fc6f39dadd5090b0404d619c0e20d": "f58e639038c8abb764e132bfda3a457b6960b3a9"
+  },
+  "historical_redaction_paths": [
+    "specs/repeat-init/poc-report.md",
+    "specs/repeat-init/ship-verification.txt",
+    "specs/repeat-init/verification-probe.txt",
+    "specs/repeat-init/verification.txt",
+    "specs/user-path-bootstrap/review.md"
+  ],
+  "unchanged_runtime_tests_skills_assets_and_poc_blobs": true,
+  "already_public_ancestry_rewritten": false
+}

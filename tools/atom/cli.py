@@ -24,7 +24,8 @@ from atom.invoke import (
     DEFAULT_RUNS,
     NoModelAvailable,
 )
-from atom.onboarding import OnboardingError, install_local_bundle
+from atom.onboarding import OnboardingError, install_local_bundle, validate_local_bundle
+from atom.pathsetup import PathSetupError, setup_user_path
 from atom.merge import DEFAULT_PROXIMITY_WINDOW
 from atom.report import (
     render_json,
@@ -45,9 +46,15 @@ from atom.runner import SubprocessRunner
 from atom.scaffold import ScaffoldError, SlugError, scaffold_spike
 from atom.ship import DEFAULT_BASE_BRANCH, PrAction, ShipRefused, run_ship
 from atom.spike import NotASpikeError, run_spike
-from atom.state import Project
+from atom.state import STATE_FILE_VERSION, Project
 from atom.status import collect_status
-from atom.storage import StateWriteFailed, write_json
+from atom.storage import (
+    StateFileCorrupt,
+    StateFileError,
+    StateWriteFailed,
+    read_json,
+    write_json,
+)
 
 # Exit codes are part of the contract, because `atom check` is designed to be used
 # directly in a gate. 0 and 1 are verdicts about the code; 2 means the command
@@ -75,6 +82,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if arguments.command == "init":
         return _run_init_command(arguments)
+
+    if arguments.command == "setup-path":
+        return _run_setup_path_command()
 
     if arguments.command == "status":
         return _run_status_command(arguments)
@@ -127,8 +137,36 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_state_parsers(subparsers)
     _add_review_parser(subparsers)
     _add_ship_parser(subparsers)
+    subparsers.add_parser(
+        "setup-path",
+        help="Add Atom's installed commands to the Windows user PATH (opt-in).",
+        description=(
+            "Add Atom's installed commands to the Windows user PATH. "
+            "This explicit opt-in leaves system PATH and project state unchanged."
+        ),
+    )
 
     return parser
+
+
+def _run_setup_path_command() -> int:
+    try:
+        result = setup_user_path()
+    except PathSetupError as error:
+        print(f"atom setup-path: {error}", file=sys.stderr)
+        return EXIT_CHECK_FAILED
+
+    action = "Added to" if result.changed else "Already present in"
+    print(f"{action} user PATH: {result.scripts_directory}")
+    print("Use these commands in the current session:")
+    for name in ("atom.exe", "atom-write-artifact.exe"):
+        executable = str(result.scripts_directory / name).replace("'", "''")
+        print(f"  & '{executable}'")
+    print(
+        "The current parent process PATH is unchanged. "
+        "New terminals from an environment-aware launcher can use the command names."
+    )
+    return EXIT_PASSED
 
 
 def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -198,7 +236,12 @@ def _add_state_parsers(subparsers: argparse._SubParsersAction) -> None:
 
     init_parser = subparsers.add_parser(
         "init",
-        help="Capture the baseline and install Atom's complete project scaffold.",
+        help="Set up Atom, or confirm an existing matching project without changes.",
+        description=(
+            "Capture the baseline and install Atom's complete project scaffold. "
+            "A valid matching repeat is a read-only no-op; conflicting or incomplete "
+            "setup is refused without changes."
+        ),
     )
     init_parser.add_argument(
         "--module",
@@ -208,7 +251,7 @@ def _add_state_parsers(subparsers: argparse._SubParsersAction) -> None:
     init_parser.add_argument(
         "--force",
         action="store_true",
-        help="Re-initialise a project that already exists, discarding its state.",
+        help="Re-initialise deliberately, discarding recorded approvals.",
     )
 
     status_parser = subparsers.add_parser(
@@ -364,20 +407,27 @@ def _run_poc_list(arguments: argparse.Namespace, poc_root: Path) -> int:
 
 
 def _run_init_command(arguments: argparse.Namespace) -> int:
-    """Capture the untouched baseline and create a complete Atom project."""
+    """Create a complete Atom project, or confirm existing setup without writes."""
 
     project = Project(Path.cwd())
 
-    # B96: overwriting an existing project silently would destroy a record of
-    # work. Refusing by default costs one flag; the alternative costs progress.
-    if project.is_initialised and not arguments.force:
-        print(
-            f"atom init: {project.state_directory} already exists.\n"
-            "Re-initialising would discard the phase this project has reached.\n"
-            "Pass --force if that is genuinely what you want.",
-            file=sys.stderr,
-        )
-        return EXIT_USAGE_ERROR
+    # A partial record still holds approvals worth preserving. Do not treat a
+    # missing config or state file as permission to run first-init writers.
+    if (
+        project.state_directory.exists() or project.state_directory.is_symlink()
+    ) and not arguments.force:
+        try:
+            _validate_existing_project(project, arguments.module_path)
+        except (StateFileError, OnboardingError, ValueError, OSError, UnicodeError) as error:
+            print(
+                f"atom init: {error}\n"
+                "No changes made. Repair or restore the named files, or explicitly "
+                "pass --force to re-initialise and discard recorded approvals.",
+                file=sys.stderr,
+            )
+            return EXIT_USAGE_ERROR
+        print(f"Already initialised {project.state_directory}; no changes made.")
+        return EXIT_PASSED
 
     try:
         module_path = arguments.module_path or _read_module_path(project.root)
@@ -433,6 +483,51 @@ def _run_init_command(arguments: argparse.Namespace) -> int:
     print("Atom starts by proving things, not describing them:")
     print("  atom poc new <slug> --question \"...\"")
     return EXIT_PASSED
+
+
+def _validate_existing_project(project: Project, requested_module: str | None) -> None:
+    """Reject unsafe repeats without changing the forgiving status readers."""
+
+    if not project.state_directory.is_dir():
+        raise ValueError(f"{project.state_directory}: expected an Atom directory")
+    for path in (project.config_path, project.state_path):
+        if not path.is_file():
+            raise ValueError(f"{path}: missing or not a regular file")
+
+    config = project.load_config()
+    for name in ("module_path", "build_command", "test_command"):
+        value = config.get(name)
+        if not isinstance(value, str) or not value.strip():
+            raise StateFileCorrupt(
+                f"{project.config_path}: {name} must be a nonempty string"
+            )
+
+    state = read_json(project.state_path, required_keys=("version", "approvals"))
+    version = state["version"]
+    if type(version) is not int or version != STATE_FILE_VERSION:
+        raise StateFileCorrupt(
+            f"{project.state_path}: expected state version {STATE_FILE_VERSION}, "
+            f"found {version!r}"
+        )
+    loaded = project.load()
+    if loaded.problems:
+        raise StateFileCorrupt("\n".join(loaded.problems))
+
+    recorded_module = config["module_path"]
+    if requested_module is not None and requested_module != recorded_module:
+        raise ValueError(
+            f"--module {requested_module!r} conflicts with "
+            f"{project.config_path}: {recorded_module!r}"
+        )
+    if (project.root / "go.mod").exists():
+        detected_module = _read_module_path(project.root)
+        if detected_module != recorded_module:
+            raise ValueError(
+                f"{project.root / 'go.mod'}: module {detected_module!r} conflicts "
+                f"with {project.config_path}: {recorded_module!r}"
+            )
+
+    validate_local_bundle(project.root)
 
 
 def _read_module_path(root: Path) -> str:

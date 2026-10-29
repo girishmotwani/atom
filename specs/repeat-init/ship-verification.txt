@@ -1,0 +1,90 @@
+Publication redaction: local Windows profile prefixes in this historical evidence were replaced with <LOCAL_PROFILE>. Original evidence remains private; this copy is not byte-identical to the captured transcript.
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: <LOCAL_PROFILE>\work\atom\tools
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 1107 items
+
+tests\test_artifact_cli.py .............                                 [  1%]
+tests\test_artifact_integration.py ............                          [  2%]
+tests\test_artifacts.py .............................                    [  4%]
+tests\test_body.py ......................                                [  6%]
+tests\test_buildsystem.py .........................                      [  9%]
+tests\test_check.py ...............                                      [ 10%]
+tests\test_cli.py .........                                              [ 11%]
+tests\test_cli_poc.py ...........                                        [ 12%]
+tests\test_cli_review.py ..............................                  [ 14%]
+tests\test_cli_ship.py ..................                                [ 16%]
+tests\test_cli_state.py ...............................                  [ 19%]
+tests\test_comment_guidance.py ........                                  [ 20%]
+tests\test_diff.py .................................                     [ 23%]
+tests\test_eventlog.py ...............                                   [ 24%]
+tests\test_extract.py .....................................              [ 27%]
+tests\test_filelock.py ........                                          [ 28%]
+tests\test_gates.py .....................................                [ 31%]
+tests\test_gates_makefile.py ..........                                  [ 32%]
+tests\test_index.py .............                                        [ 33%]
+tests\test_init_repeat.py .............................................. [ 38%]
+...................................................................      [ 44%]
+tests\test_invoke.py ........................................            [ 47%]
+tests\test_merge.py ..............................................       [ 51%]
+tests\test_onboarding.py ...................                             [ 53%]
+tests\test_pathsetup.py .........................................        [ 57%]
+tests\test_phases.py ................................................... [ 61%]
+......................                                                   [ 63%]
+tests\test_plugin.py ...........                                         [ 64%]
+tests\test_report.py ...................                                 [ 66%]
+tests\test_review_output.py ............................................ [ 70%]
+....................                                                     [ 72%]
+tests\test_review_toolchain.py ...                                       [ 72%]
+tests\test_runner.py ................                                    [ 74%]
+tests\test_scaffold.py ............................                      [ 76%]
+tests\test_ship.py ..................................................... [ 81%]
+......................................                                   [ 84%]
+tests\test_spike.py .................................................... [ 89%]
+..                                                                       [ 89%]
+tests\test_state.py ......................................               [ 93%]
+tests\test_status.py ............................................        [ 97%]
+tests\test_storage.py .......................                            [ 99%]
+tests\test_style.py .....                                                [ 99%]
+tests\test_toolchain.py ...                                              [100%]
+
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.13.14-final-0 _______________
+
+Name                   Stmts   Miss  Cover   Missing
+----------------------------------------------------
+atom\__init__.py           1      0   100%
+atom\artifact_cli.py      35      1    97%   58
+atom\artifacts.py        174     19    89%   103, 153, 219, 241, 256, 265, 276-284, 309-316, 346-348
+atom\body.py              71      0   100%
+atom\buildsystem.py       76      5    93%   57-60, 72, 116, 180
+atom\check.py             43      2    95%   117-118
+atom\cli.py              329     20    94%   98-99, 339-340, 350-360, 382-392, 784
+atom\diff.py             120      0   100%
+atom\eventlog.py          50      0   100%
+atom\extract.py          101      0   100%
+atom\filelock.py          64     10    84%   69-80, 169
+atom\gates.py            173     10    94%   91, 321, 407-408, 412, 462, 472, 509-512
+atom\index.py             40      5    88%   66-67, 81, 86, 98
+atom\invoke.py           116      0   100%
+atom\merge.py             92      0   100%
+atom\onboarding.py       137      4    97%   100, 138, 263-264
+atom\pathsetup.py         66      0   100%
+atom\phases.py            92      0   100%
+atom\report.py           329     10    97%   182, 197, 209, 223, 239, 241, 248, 752, 754, 756
+atom\review.py            82      1    99%   327
+atom\runner.py           126     14    89%   192, 270-272, 292-306, 323, 376
+atom\scaffold.py          46      1    98%   127
+atom\ship.py             252      3    99%   387, 390-391
+atom\spike.py            128      4    97%   169, 265, 268-269
+atom\state.py            103      1    99%   235
+atom\status.py            77      0   100%
+atom\storage.py           79      0   100%
+atom\style.py              4      0   100%
+atom\toolchain.py         53      6    89%   110, 133, 135, 137, 145, 147
+----------------------------------------------------
+TOTAL                   3059    116    96%
+====================== 1107 passed in 135.19s (0:02:15) =======================
