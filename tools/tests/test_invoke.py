@@ -19,14 +19,46 @@ from atom.invoke import (
     NoModelAvailable,
     RunOutcome,
     invoke_models,
+    probe_command,
     probe_models,
     review_command,
 )
 from atom.runner import CommandOutcome, CommandResult
-from tests.conftest import FakeRunner, command_result
+from tests.conftest import FakeRunner, cli_review_response, command_result
 
 WORKDIR = Path("/repo")
 PROMPT = "Review this diff."
+
+
+def test_fixed_evidence_exclusions_reach_probes_and_reviews():
+    model = "fixture-model"
+    servers = ("custom-mcp",)
+    probe = probe_command(model, servers, fixed_evidence=True)
+    review = review_command(model, PROMPT, servers, fixed_evidence=True)
+    runner = FakeRunner({
+        probe: command_result(probe, WORKDIR),
+        review: command_result(review, WORKDIR, stdout=cli_review_response("[]")),
+    })
+
+    report = invoke_models(
+        [model], PROMPT, runner, WORKDIR, runs=2,
+        disable_mcp_servers=servers, fixed_evidence=True,
+    )
+
+    assert len(runner.calls) == 3
+    for command in issued(runner):
+        assert "--excluded-tools" in command
+        position = command.index("--excluded-tools")
+        assert command[position + 1:position + 4] == ("builtin:*", "custom:*", "mcp:*")
+        assert "--available-tools" not in command
+        assert "--deny-tool" not in command
+        assert "--disable-mcp-server" in command
+        assert "custom-mcp" in command
+    assert runner.stdin_texts == [None, PROMPT, PROMPT]
+    assert all(run.fixed_evidence for run in report.runs)
+    assert not report.is_partial
+    assert "--excluded-tools" not in probe_command(model)
+    assert "--excluded-tools" not in review_command(model, PROMPT)
 
 
 def test_runner_error_is_not_usable_model_evidence():
@@ -42,19 +74,76 @@ def test_runner_error_is_not_usable_model_evidence():
     })
     report = invoke_models([model], PROMPT, runner, WORKDIR, runs=1)
     assert report.runs[0].outcome is RunOutcome.FAILED
-    assert report.runs[0].response_text == ""
-    assert "native refusal" in report.runs[0].detail
+    assert report.runs[0].response_text == "[]"
+    assert "runner error" in report.runs[0].detail
+    assert "cleanup status not independently established" in report.runs[0].detail
+    assert "native refusal" not in report.runs[0].detail
+    assert not report.runs[0].is_usable
     assert report.is_partial
 
 
-def _script(models, *, stdout="[]", exit_code=0, outcome=CommandOutcome.COMPLETED):
+@pytest.mark.parametrize("fixed", [False, True])
+@pytest.mark.parametrize("outcome,exit_code,summary", [
+    (CommandOutcome.TIMED_OUT, None, "timed out"),
+    (CommandOutcome.TOOL_MISSING, None, "CLI not found"),
+    (CommandOutcome.RUNNER_ERROR, None, "runner error"),
+    (CommandOutcome.RUNNER_ERROR, 0, "runner error"),
+    (CommandOutcome.COMPLETED, 2, "exited with code 2"),
+])
+def test_structured_failure_retains_raw_evidence_without_diagnostic_leak(
+    fixed, outcome, exit_code, summary,
+):
+    from atom.invoke import _to_run
+
+    raw_stdout = '{"account": "private-stdout", "events": []}'
+    raw_stderr = "private-stderr"
+    result = command_result(
+        ("copilot",), WORKDIR, outcome, exit_code, raw_stdout, raw_stderr,
+    )
+
+    run = _to_run(
+        "fixture-model", 1, result, response_format="copilot_jsonl",
+        fixed_evidence=fixed,
+    )
+
+    assert "private" not in run.detail
+    assert summary in run.detail
+    assert run.response_text == raw_stdout
+    assert run.stderr_text == raw_stderr
+    assert not run.is_usable
+    assert run.outcome is not RunOutcome.COMPLETED
+    if outcome is CommandOutcome.TIMED_OUT:
+        assert "observed elapsed" in run.detail
+
+
+def test_fixed_probe_failure_is_safe_without_fallback():
+    model = "fixture-model"
+    command = probe_command(model, fixed_evidence=True)
+    runner = FakeRunner({
+        command: command_result(
+            command, WORKDIR, CommandOutcome.COMPLETED, 2,
+            "private-stdout", "private-stderr: unsupported option",
+        ),
+    })
+
+    with pytest.raises(NoModelAvailable, match="exited with code 2") as error:
+        invoke_models([model], PROMPT, runner, WORKDIR, fixed_evidence=True)
+    assert "private" not in str(error.value)
+    assert issued(runner) == [command]
+    assert runner.stdin_texts == [None]
+
+
+def _script(models, *, stdout=None, exit_code=0, outcome=CommandOutcome.COMPLETED):
     """Script both the probe and the review call for each model."""
 
     scripted: dict[tuple[str, ...], CommandResult] = {}
     for model in models:
         for command in (probe_command_for(model), review_command(model, PROMPT)):
+            output = stdout
+            if output is None:
+                output = cli_review_response("[]") if "--output-format" in command else "[]"
             scripted[command] = command_result(
-                command, WORKDIR, outcome, exit_code, stdout, ""
+                command, WORKDIR, outcome, exit_code, output, ""
             )
     return FakeRunner(scripted)
 
@@ -105,12 +194,12 @@ class SequencedRunner:
 class TestMandatoryFlags:
     """B107, B108, B109 - each flag is here because a measurement demanded it."""
 
-    def test_uses_silent_and_never_output_format_json(self):
-        # B107: the JSON envelope is a schema Atom does not control.
+    def test_requests_structured_review_output_to_isolate_delegated_answers(self):
         command = review_command("gpt-5.4", PROMPT)
 
-        assert "--silent" in command
-        assert "--output-format" not in command
+        assert "--output-format" in command
+        assert command[command.index("--output-format") + 1] == "json"
+        assert "--silent" not in command
 
     def test_always_disables_custom_instructions(self):
         # B108: without it the CLI loads AGENTS.md from the working directory
@@ -141,6 +230,105 @@ class TestMandatoryFlags:
         assert "claude-haiku-4.5" in command
         # The prompt travels on stdin now; see TestThePromptDoesNotTravelInArgv.
         assert PROMPT not in command
+
+
+class TestProbeExclusions:
+    @pytest.mark.parametrize("servers", [None, (), []])
+    def test_empty_exclusions_preserve_the_exact_probe_command(self, servers):
+        command = (
+            probe_command("fixture-model") if servers is None
+            else probe_command("fixture-model", servers)
+        )
+
+        assert command == (
+            "copilot", "-p", "ping", "--silent", "--model", "fixture-model",
+            "--no-custom-instructions", "--disable-builtin-mcps",
+        )
+
+    def test_probe_command_preserves_exclusions_and_caller_input(self):
+        servers = ["first-mcp", "second-mcp", "first-mcp"]
+
+        command = probe_command("fixture-model", disable_mcp_servers=servers)
+
+        assert command == (
+            "copilot", "-p", "ping", "--silent", "--model", "fixture-model",
+            "--no-custom-instructions", "--disable-builtin-mcps",
+            "--disable-mcp-server", "first-mcp",
+            "--disable-mcp-server", "second-mcp",
+            "--disable-mcp-server", "first-mcp",
+        )
+        assert servers == ["first-mcp", "second-mcp", "first-mcp"]
+
+    def test_probe_models_forwards_exclusions_and_preserves_call_settings(self):
+        models = ["first-model", "second-model"]
+        servers = ["first-mcp", "second-mcp"]
+        commands = [probe_command(model, servers) for model in models]
+        runner = FakeRunner({
+            command: command_result(command, WORKDIR) for command in commands
+        })
+
+        report = probe_models(
+            models, runner, WORKDIR, 12.5, 1, disable_mcp_servers=servers,
+        )
+
+        assert all(entry.available for entry in report)
+        assert [entry.model for entry in report] == models
+        assert runner.calls == [(command, WORKDIR, 12.5) for command in commands]
+        assert servers == ["first-mcp", "second-mcp"]
+
+    @pytest.mark.parametrize("outcome,exit_code,diagnostic", [
+        (CommandOutcome.COMPLETED, 1, "model rejected"),
+        (CommandOutcome.TIMED_OUT, None, "probe timed out"),
+    ])
+    def test_failed_excluded_probe_keeps_diagnostic_and_prevents_review(
+        self, outcome, exit_code, diagnostic,
+    ):
+        model = "fixture-model"
+        servers = ("custom-mcp",)
+        probe = probe_command(model, servers)
+        runner = FakeRunner({
+            probe: command_result(probe, WORKDIR, outcome, exit_code, "", diagnostic),
+        })
+
+        entry = probe_models(
+            [model], runner, WORKDIR, disable_mcp_servers=servers,
+        )[0]
+        assert not entry.available
+        assert diagnostic in entry.detail
+
+        with pytest.raises(NoModelAvailable) as error:
+            invoke_models(
+                [model], PROMPT, runner, WORKDIR, runs=1, disable_mcp_servers=servers,
+            )
+
+        assert diagnostic in str(error.value)
+        assert issued(runner) == [probe, probe]
+        assert runner.stdin_texts == [None, None]
+
+    def test_excluded_probes_preserve_partial_review_reporting(self):
+        servers = ("custom-mcp",)
+        good_probe = probe_command("good-model", servers)
+        bad_probe = probe_command("bad-model", servers)
+        good_review = review_command("good-model", PROMPT, servers)
+        runner = FakeRunner({
+            good_probe: command_result(good_probe, WORKDIR),
+            bad_probe: command_result(
+                bad_probe, WORKDIR, CommandOutcome.COMPLETED, 1, "", "model rejected",
+            ),
+            good_review: command_result(good_review, WORKDIR, stdout="[]"),
+        })
+
+        report = invoke_models(
+            ["good-model", "bad-model"], PROMPT, runner, WORKDIR,
+            runs=1, disable_mcp_servers=servers,
+        )
+
+        assert report.is_partial
+        assert report.completed_for("good-model") == 1
+        assert report.completed_for("bad-model") == 0
+        assert report.unavailable_models()[0].detail == "model rejected"
+        assert len(issued(runner)) == 3
+        assert set(issued(runner)) == {good_probe, bad_probe, good_review}
 
 
 class TestAvailabilityProbing:
@@ -282,7 +470,8 @@ class TestPerRunOutcomes:
         report = invoke_models([model], PROMPT, runner, WORKDIR, runs=1)
 
         assert report.runs[0].outcome is RunOutcome.FAILED
-        assert "boom" in report.runs[0].detail
+        assert report.runs[0].detail == "exited with code 1"
+        assert report.runs[0].stderr_text == "boom"
 
     def test_one_failing_run_does_not_stop_the_others(self):
         # B129: a failed call does not abort the review.
@@ -314,6 +503,20 @@ class TestPerRunOutcomes:
         report = invoke_models([model], PROMPT, runner, WORKDIR, runs=1)
 
         assert report.runs[0].response_text == '[{"a": 1}]'
+
+    def test_native_response_encoding_is_recorded_without_parsing_stdout(self):
+        raw = "deliberately malformed transport"
+        report = invoke_models(
+            ["fixture-model"], PROMPT, _script(["fixture-model"], stdout=raw),
+            WORKDIR, runs=1,
+        )
+
+        run = report.runs[0]
+        assert getattr(run, "response_format", None) == "copilot_jsonl"
+        assert run.outcome is RunOutcome.COMPLETED
+        assert run.response_text == raw
+        legacy = ModelRun("fixture-model", 1, RunOutcome.COMPLETED, "[]", 1.0)
+        assert legacy.response_format == "text"
 
 
 class TestPartialReviews:
@@ -506,7 +709,7 @@ class TestReportingWhatFailed:
 
         report = invoke_models([model], PROMPT, runner, WORKDIR, runs=1)
 
-        assert report.runs[0].detail == "timed_out"
+        assert report.runs[0].detail == "timed out (observed elapsed 0.250 seconds)"
 
 
 class TestNonsensicalSettings:
@@ -593,4 +796,3 @@ class _StdinRecordingRunner:
             return CommandResult(tuple(command), working_directory, CommandOutcome.COMPLETED, 0, "ok", "", 0.01)
         self.stdin_texts.append(stdin_text)
         return CommandResult(tuple(command), working_directory, CommandOutcome.COMPLETED, 0, "[]", "", 0.01)
-

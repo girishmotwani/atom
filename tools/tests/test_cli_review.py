@@ -13,6 +13,8 @@ real subprocess and check what a developer would actually see.
 from __future__ import annotations
 
 import json
+import hashlib
+from dataclasses import replace
 import subprocess
 import sys
 from pathlib import Path
@@ -24,6 +26,7 @@ from atom.gates import GateResult, GateStatus
 from atom.review import DEFAULT_REVIEW_MODELS
 from atom.review import ToolchainGateFailed
 from atom.runner import CommandOutcome, CommandResult
+from tests.conftest import cli_review_events, cli_review_response
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_DIR = REPO_ROOT / "tools"
@@ -53,11 +56,13 @@ class ScriptedRunner:
 
     def __init__(self, diff_text: str = DIFF_TEXT, reply: str = FINDINGS_JSON,
                  failing_models: tuple[str, ...] = (),
-                 unavailable_models: tuple[str, ...] = ()):
+                 unavailable_models: tuple[str, ...] = (),
+                 transport_replies: dict[str, str] | None = None):
         self.diff_text = diff_text
         self.reply = reply
         self.failing_models = failing_models
         self.unavailable_models = unavailable_models
+        self.transport_replies = transport_replies or {}
         self.commands: list[list[str]] = []
         self.stdin_texts: list[str | None] = []
 
@@ -86,7 +91,11 @@ class ScriptedRunner:
         if model in self.failing_models:
             return result(CommandOutcome.TIMED_OUT, None, "", "timed out", 60.0)
 
-        return result(CommandOutcome.COMPLETED, 0, self.reply, "", 1.0)
+        reply = self.reply
+        if "--output-format" in command:
+            reply = cli_review_response(reply) if reply.strip() else reply
+            reply = self.transport_replies.get(model, reply)
+        return result(CommandOutcome.COMPLETED, 0, reply, "", 1.0)
 
 
 @pytest.fixture
@@ -98,6 +107,173 @@ def scripted(monkeypatch):
 
 def review(*args: str) -> int:
     return main(["review", *args])
+
+
+def test_context_requires_opt_in_before_io(scripted, monkeypatch, capsys):
+    def forbidden(*args):
+        pytest.fail("context must not be read before validating opt-in")
+
+    monkeypatch.setattr("atom.cli.load_context_documents", forbidden)
+    assert review("--working", "--context-file", "unread.md") == EXIT_USAGE_ERROR
+    assert "context-file requires --fixed-evidence" in capsys.readouterr().err
+    assert scripted.commands == []
+
+
+@pytest.mark.parametrize("kind,code,reason", [
+    ("missing", EXIT_CHECK_FAILED, "could not be read"),
+    ("blank", EXIT_CHECK_FAILED, "empty content"),
+    ("duplicate", EXIT_USAGE_ERROR, "duplicate context-file"),
+])
+def test_context_cli_failure_blocks_runner(
+    scripted, tmp_path, monkeypatch, capsys, kind, code, reason,
+):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "valid").write_text("first contract", encoding="utf-8")
+    (tmp_path / "blank").write_text(" \n", encoding="utf-8")
+    invalid = "valid" if kind == "duplicate" else kind
+    assert review(
+        "--working", "--fixed-evidence", "--context-file", "valid",
+        "--context-file", invalid,
+    ) == code
+    output = capsys.readouterr()
+    assert reason in output.err
+    assert output.out == ""
+    assert scripted.commands == []
+
+
+def test_fixed_evidence_cli_uses_mode(scripted, tmp_path, capsys):
+    source = tmp_path / "contract.md"
+    source.write_text("Caller contract.", encoding="utf-8")
+    assert review(
+        "--working", "--fixed-evidence", "--context-file", str(source),
+        "--skip-toolchain", "--runs", "1",
+    ) == EXIT_PASSED
+    for command in scripted.commands:
+        if command[0] == "copilot":
+            assert "--excluded-tools" in command
+    prompts = [text for text in scripted.stdin_texts if text is not None]
+    assert len(prompts) == 2
+    assert all("Caller contract." in text for text in prompts)
+
+
+@pytest.mark.parametrize("as_json", [False, True])
+@pytest.mark.parametrize("with_context", [False, True])
+def test_fixed_evidence_cli_reports_scope(
+    scripted, tmp_path, capsys, as_json, with_context,
+):
+    scripted.reply = "[]"
+    documents = [b"private-first-contract\r\n", "private-\u03bb-contract\n".encode("utf-8")]
+    arguments = ["--working", "--fixed-evidence", "--skip-toolchain", "--runs", "1"]
+    if as_json:
+        arguments.append("--json")
+    if with_context:
+        for index, content in enumerate(documents):
+            source = tmp_path / f"private-path-{index}.md"
+            source.write_bytes(content)
+            arguments.extend(("--context-file", str(source)))
+
+    assert review(*arguments) == EXIT_PASSED
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    text = captured.out
+    assert "private" not in text
+    prompt = next(text for text in scripted.stdin_texts if text is not None).encode("utf-8")
+    scope = "diff-plus-caller-context" if with_context else "diff-only"
+    if as_json:
+        payload = json.loads(text)
+        metadata = payload.get("review_execution")
+        assert metadata is not None
+        assert metadata == {
+            "mode": "fixed-evidence",
+            "tool_policy": "source-exclusions-requested",
+            "scope": scope,
+            "context_quality": "unvalidated",
+            "prompt_utf8_bytes": len(prompt),
+            "prompt_sha256": hashlib.sha256(prompt).hexdigest(),
+            "documents": [
+                {"label": f"context-{index}", "utf8_bytes": len(content),
+                 "sha256": hashlib.sha256(content).hexdigest()}
+                for index, content in enumerate(documents, 1)
+            ] if with_context else [],
+        }
+        assert not payload["is_partial"]
+        assert not payload["has_no_usable_response"]
+    else:
+        assert "## Review evidence" in text
+        assert scope in text
+        assert "unvalidated" in text
+        assert str(len(prompt)) in text
+        assert hashlib.sha256(prompt).hexdigest() in text
+        assert (
+            f"Logical prompt (before platform stdin normalization): {len(prompt)} "
+            f"UTF-8 bytes; SHA-256 `{hashlib.sha256(prompt).hexdigest()}`."
+        ) in text
+        assert "No findings were reported in the supplied evidence." in text
+        assert "not automatically included" in text
+        if with_context:
+            assert "caller-supplied/unverified" in text
+            for index, content in enumerate(documents, 1):
+                assert f"context-{index}" in text
+                assert hashlib.sha256(content).hexdigest() in text
+                assert str(len(content)) in text
+
+
+@pytest.mark.parametrize("with_good_model", [False, True])
+def test_fixed_evidence_execution_violation_is_incomplete(
+    monkeypatch, capsys, with_good_model,
+):
+    events = cli_review_events(FINDINGS_JSON)
+    events.insert(0, {"type": "tool.execution_start", "data": {"private": "events"}})
+    runner = ScriptedRunner(
+        reply="[]", transport_replies={"bad": "\n".join(map(json.dumps, events))},
+    )
+    monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
+    arguments = [
+        "--working", "--fixed-evidence", "--skip-toolchain",
+        "--model", "bad", "--runs", "2", "--json",
+    ]
+    if with_good_model:
+        arguments.extend(("--model", "good"))
+    assert review(*arguments) == EXIT_CHECK_FAILED
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload["is_partial"]
+    assert payload["has_no_usable_response"] is not with_good_model
+    assert payload["findings"] == []
+    assert all(failure["excerpt"] == "" for failure in payload["unparsed_responses"])
+    assert {entry["model"]: entry["runs_answered"] for entry in payload["models"]} == (
+        {"bad": 0, "good": 2} if with_good_model else {"bad": 0}
+    )
+    assert all(entry["runs_requested"] == 2 for entry in payload["models"])
+    assert "CLI fixed-evidence contract violated" in captured.err
+    assert "private" not in captured.out + captured.err
+
+
+@pytest.mark.parametrize("fixed", [False, True])
+@pytest.mark.parametrize("as_json", [False, True])
+def test_structured_failure_streams_never_reach_cli_reports(
+    monkeypatch, capsys, fixed, as_json,
+):
+    class FailedReviews(ScriptedRunner):
+        def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
+            result = super().run(command, working_directory, timeout_seconds, stdin_text)
+            if "--output-format" in command:
+                return replace(
+                    result, outcome=CommandOutcome.TIMED_OUT, exit_code=None,
+                    stdout="private-native-stdout", stderr="private-native-stderr",
+                )
+            return result
+
+    monkeypatch.setattr("atom.cli.SubprocessRunner", FailedReviews)
+    arguments = ["--working", "--skip-toolchain", "--runs", "1"]
+    if fixed:
+        arguments.append("--fixed-evidence")
+    if as_json:
+        arguments.append("--json")
+    assert review(*arguments) == EXIT_CHECK_FAILED
+    captured = capsys.readouterr()
+    assert "private" not in captured.out + captured.err
+    assert "timed out (observed elapsed" in captured.err
 
 
 class TestDiffSourceSelection:
@@ -215,6 +391,87 @@ class TestExitCodes:
         assert "printf mismatch" in captured.err
 
 
+class TestStructuredResponses:
+    @pytest.mark.parametrize("as_json", [False, True])
+    def test_only_parent_findings_reach_the_report(self, monkeypatch, capsys, as_json):
+        events = cli_review_events(FINDINGS_JSON)
+        del events[0]["data"]["phase"]
+        events.insert(0, {
+            "type": "assistant.message", "agentId": "child",
+            "data": {"content": "DELEGATED_SENTINEL"},
+        })
+        events.insert(2, {
+            "type": "assistant.message",
+            "data": {"content": "COMMENTARY_SENTINEL", "phase": "commentary"},
+        })
+        raw = "\n".join(json.dumps(event) for event in events)
+        runner = ScriptedRunner(
+            transport_replies={model: raw for model in DEFAULT_REVIEW_MODELS},
+        )
+        monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
+        arguments = ["--working", "--runs", "1"]
+        if as_json:
+            arguments.append("--json")
+
+        assert review(*arguments) == EXIT_PASSED
+        captured = capsys.readouterr()
+
+        assert "Export reads without the lock." in captured.out
+        assert "SENTINEL" not in captured.out + captured.err
+        if as_json:
+            payload = json.loads(captured.out)
+            assert not payload["is_partial"]
+            assert not payload["has_no_usable_response"]
+            assert all(model["runs_answered"] == 1 for model in payload["models"])
+
+    def test_transport_failure_keeps_completion_but_not_answer_count(self, monkeypatch, capsys):
+        good, bad = DEFAULT_REVIEW_MODELS
+        raw = json.dumps({
+            "type": "assistant.message", "account": "PRIVATE_ACCOUNT",
+            "data": {"content": "[]", "phase": "final_answer"},
+        })
+        runner = ScriptedRunner(transport_replies={bad: raw})
+        monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
+
+        assert review("--working", "--runs", "1", "--json") == EXIT_CHECK_FAILED
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+
+        assert payload["is_partial"]
+        assert not payload["has_no_usable_response"]
+        models = {entry["model"]: entry for entry in payload["models"]}
+        assert models[good]["runs_answered"] == 1
+        assert models[bad]["runs_completed"] == 1
+        assert models[bad]["runs_answered"] == 0
+        assert payload["silent_runs"] == [{"model": bad, "run_index": 1}]
+        assert len(payload["unparsed_responses"]) == 1
+        failure = payload["unparsed_responses"][0]
+        assert failure["model"] == bad
+        assert failure["excerpt"] == ""
+        assert failure["reason"].startswith("CLI response transport:")
+        assert "PRIVATE_ACCOUNT" not in captured.out + captured.err
+
+    @pytest.mark.parametrize("raw", [
+        "", " \n\t", "[]", "not JSONL",
+        json.dumps({"type": "result", "exitCode": 0, "sessionId": "fixture"}),
+    ])
+    def test_no_readable_parent_never_becomes_a_clean_review(self, monkeypatch, capsys, raw):
+        runner = ScriptedRunner(
+            transport_replies={model: raw for model in DEFAULT_REVIEW_MODELS},
+        )
+        monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: runner)
+
+        assert review("--working", "--runs", "1", "--json") == EXIT_CHECK_FAILED
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+
+        assert payload["is_partial"]
+        assert payload["has_no_usable_response"]
+        assert all(model["runs_completed"] == 1 for model in payload["models"])
+        assert all(model["runs_answered"] == 0 for model in payload["models"])
+        assert "not a clean review" in captured.err
+
+
 class TestChannels:
     """B128 - `atom review > review.md` leaves a clean file."""
 
@@ -260,6 +517,36 @@ class TestCommandsIssued:
 
         model_calls = [c for c in scripted.commands if c[0] != "git"]
         assert all("--no-custom-instructions" in c for c in model_calls)
+
+    def test_named_mcp_exclusions_reach_probes_and_reviews(self, scripted):
+        code = review(
+            "--working", "--runs", "1", "--skip-toolchain",
+            "--model", "first-model", "--model", "second-model",
+            "--disable-mcp-server", "first-mcp",
+            "--disable-mcp-server", "second-mcp",
+        )
+
+        assert code == EXIT_PASSED
+        calls = [
+            (command, text)
+            for command, text in zip(scripted.commands, scripted.stdin_texts)
+            if command[0] == "copilot"
+        ]
+        assert len(calls) == 4
+        for command, text in calls:
+            excluded = [
+                command[index + 1]
+                for index, argument in enumerate(command)
+                if argument == "--disable-mcp-server"
+            ]
+            assert excluded == ["first-mcp", "second-mcp"]
+            if "-p" in command:
+                assert text is None
+            else:
+                assert text is not None and DIFF_TEXT in text
+        probe_indices = [index for index, (command, _) in enumerate(calls) if "-p" in command]
+        review_indices = [index for index, (command, _) in enumerate(calls) if "-p" not in command]
+        assert max(probe_indices) < min(review_indices)
 
     def test_no_named_mcp_server_is_disabled_by_default(self, scripted):
         # A7. The spike's speed-up command named servers that existed on one

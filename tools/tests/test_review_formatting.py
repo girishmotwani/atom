@@ -13,6 +13,7 @@ import pytest
 
 from atom.diff import DiffRequest, DiffSource, DiffUnavailable
 from atom.cli import EXIT_PASSED, main
+from atom.context import load_context_documents
 from atom.gates import FormatGate, GateStatus
 from atom.invoke import InvocationReport, ModelAvailability, ModelRun, RunOutcome
 from atom.review import ToolchainGateFailed, run_review
@@ -141,6 +142,37 @@ def test_clean_changed_file_is_not_blocked_by_untouched_formatting(
     standalone = FormatGate().evaluate(SubprocessRunner(), repository)
     assert standalone.status is GateStatus.FAILED
     assert "untouched.go" in standalone.summary
+
+
+def test_fixed_evidence_keeps_changed_file_formatting_and_one_diff_capture(
+    repository: Path, model_prompts: list[str]
+):
+    (repository / "changed.go").write_bytes(CLEAN.encode())
+    context = repository / "review-context.md"
+    context.write_text("Caller contract: preserve the exported value.\n", encoding="utf-8")
+    documents = load_context_documents((context,), repository)
+    runner = ReviewRunner()
+
+    try:
+        outcome = run_review(
+            DiffRequest(DiffSource.WORKING), ("fixture-model",), runner,
+            repository, 1, 1, fixed_evidence=True, context_documents=documents,
+        )
+    except ToolchainGateFailed as error:
+        pytest.fail(f"Untouched formatting must not block fixed-evidence review: {error}")
+
+    formatting = next(gate for gate in outcome.toolchain.gate_results if gate.name == "fmt")
+    assert formatting.status is GateStatus.PASSED
+    assert [text for command, text in runner.calls if command[0] == "gofmt"] == [CLEAN]
+    assert sum("diff" in command for command, _ in runner.calls) == 1
+    assert outcome.diff.files == ("changed.go",)
+    assert len(model_prompts) == 1
+    assert model_prompts[0].count(outcome.diff.text) == 1
+    assert json.dumps([
+        {"label": document.label, "text": document.text} for document in documents
+    ]) in model_prompts[0]
+    assert outcome.evidence is not None
+    assert outcome.evidence.documents == documents
 
 
 @pytest.mark.parametrize(

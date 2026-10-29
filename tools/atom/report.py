@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 
 from atom.check import CheckReport
+from atom.context import FixedReviewEvidence
 from atom.gates import GateStatus
 from atom.index import SpikeSummary
 from atom.invoke import RunOutcome
@@ -28,6 +30,12 @@ STATUS_SCHEMA_VERSION = 1
 # "several models on this line", so the same input now yields a different
 # answer.
 REVIEW_SCHEMA_VERSION = 2
+
+_PR_REVIEW_LIMITATIONS = (
+    "Initialized module rules are not applied.",
+    "Additional surrounding-code context is not supplied.",
+    "Go checks cover only the selected module.",
+)
 
 _RESET = "\x1b[0m"
 _GREEN = "\x1b[32m"
@@ -498,7 +506,15 @@ def render_review_markdown(outcome: "ReviewOutcome") -> str:
 
     lines: list[str] = ["# Code review", ""]
     lines.extend(_review_header_lines(outcome))
+    if outcome.pull_request is not None:
+        lines.extend(["## Pull request", ""])
+        for name, value in asdict(outcome.pull_request).items():
+            lines.append(f"- {name.replace('_', ' ')}: `{value}`")
+        lines.extend(["", "**Scope limitations:**", ""])
+        lines.extend(f"- {limitation}" for limitation in _pr_review_limitations(outcome))
+        lines.append("")
     lines.extend(_review_toolchain_lines(outcome))
+    lines.extend(_review_evidence_lines(outcome))
     lines.extend(_review_finding_lines(outcome))
 
     return "\n".join(lines).rstrip() + "\n"
@@ -603,7 +619,66 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
         "findings": [_finding_payload(finding) for finding in outcome.findings],
     }
 
+    if outcome.pull_request is not None:
+        payload["pull_request"] = {
+            **asdict(outcome.pull_request),
+            "limitations": list(_pr_review_limitations(outcome)),
+        }
+    if outcome.evidence is not None:
+        payload["review_execution"] = _review_evidence_payload(outcome.evidence)
     return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def _pr_review_limitations(outcome: ReviewOutcome) -> tuple[str, ...]:
+    if outcome.evidence is None:
+        return _PR_REVIEW_LIMITATIONS
+    return (
+        _PR_REVIEW_LIMITATIONS[0],
+        "Additional surrounding-code context is not automatically collected; "
+        "only explicitly supplied caller evidence is included.",
+        _PR_REVIEW_LIMITATIONS[2],
+    )
+
+
+def _review_evidence_payload(evidence: FixedReviewEvidence) -> dict[str, object]:
+    # Do not use asdict: ContextDocument.text is private reviewer input.
+    return {
+        "mode": "fixed-evidence",
+        "tool_policy": "source-exclusions-requested",
+        "scope": "diff-plus-caller-context" if evidence.documents else "diff-only",
+        "context_quality": "unvalidated",
+        "prompt_utf8_bytes": evidence.prompt_utf8_bytes,
+        "prompt_sha256": evidence.prompt_sha256,
+        "documents": [
+            {"label": document.label, "utf8_bytes": document.utf8_bytes,
+             "sha256": document.sha256}
+            for document in evidence.documents
+        ],
+    }
+
+
+def _review_evidence_lines(outcome: ReviewOutcome) -> list[str]:
+    evidence = outcome.evidence
+    if evidence is None:
+        return []
+    metadata = _review_evidence_payload(evidence)
+    lines = [
+        "## Review evidence", "",
+        "Execution: fixed-evidence; tool policy: source-exclusions-requested.",
+        f"Scope: {metadata['scope']}. Context quality: **unvalidated**.",
+        "Other repository/dependency material is not automatically included.",
+        "Logical prompt (before platform stdin normalization): "
+        f"{evidence.prompt_utf8_bytes} UTF-8 bytes; SHA-256 `{evidence.prompt_sha256}`.",
+    ]
+    if evidence.documents:
+        lines.extend(["", "Document provenance: caller-supplied/unverified.", ""])
+        lines.extend(
+            f"- {document.label}: {document.utf8_bytes} UTF-8 bytes; SHA-256 `{document.sha256}`."
+            for document in evidence.documents
+        )
+    else:
+        lines.append("No additional evidence documents were supplied.")
+    return [*lines, ""]
 
 
 def _review_header_lines(outcome: "ReviewOutcome") -> list[str]:
@@ -787,7 +862,10 @@ def _review_finding_lines(outcome: "ReviewOutcome") -> list[str]:
     if not outcome.findings:
         lines = ["## Findings", ""]
         lines.append(
-            "No findings were reported." if not outcome.has_no_usable_response
+            (
+                "No findings were reported in the supplied evidence."
+                if outcome.evidence is not None else "No findings were reported."
+            ) if not outcome.has_no_usable_response
             else "No findings were reported, because no model answered."
         )
         return lines

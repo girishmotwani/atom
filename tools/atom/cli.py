@@ -6,10 +6,13 @@ import argparse
 import json
 import re
 import sys
+from contextlib import nullcontext
+from dataclasses import replace
 from pathlib import Path
 from typing import Sequence
 
 from atom.check import NotAGoModuleError, run_check
+from atom.context import ContextInputError, load_context_documents
 from atom.diff import (
     DiffUnavailable,
     NoDiffSourceSelected,
@@ -26,6 +29,7 @@ from atom.invoke import (
 )
 from atom.onboarding import OnboardingError, install_local_bundle, validate_local_bundle
 from atom.pathsetup import PathSetupError, setup_user_path
+from atom.pull_request import PullRequestReviewError, prepare_pull_request_review
 from atom.merge import DEFAULT_PROXIMITY_WINDOW
 from atom.report import (
     render_json,
@@ -191,6 +195,10 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Review this branch's changes against REF.",
     )
     review_parser.add_argument(
+        "--pr", metavar="ADO_URL",
+        help="Review an Azure DevOps PR in an independent temporary checkout.",
+    )
+    review_parser.add_argument(
         "--model", action="append", dest="models", metavar="NAME",
         help="Model to consult; repeat for several (default: gpt-5.4 and gemini-3.8-flash).",
     )
@@ -228,6 +236,14 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
             "Do not run Go toolchain checks before review; nothing will be "
             "excluded from the models' attention."
         ),
+    )
+    review_parser.add_argument(
+        "--fixed-evidence", action="store_true",
+        help="Exclude model-side tools and review only the supplied evidence.",
+    )
+    review_parser.add_argument(
+        "--context-file", action="append", default=[], metavar="PATH", type=Path,
+        help="Explicit UTF-8 evidence document; repeat with --fixed-evidence.",
     )
 
 
@@ -597,33 +613,69 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
     """Ask several models about a diff and report what they said (B103-B137)."""
 
     try:
-        request = select_source(
+        if arguments.pr is not None and (
+            arguments.working or arguments.staged or arguments.branch is not None
+        ):
+            raise TooManyDiffSourcesSelected(
+                "--pr cannot be combined with --working, --staged or --branch."
+            )
+        request = None if arguments.pr is not None else select_source(
             staged=arguments.staged,
             branch=arguments.branch,
             working=arguments.working,
         )
     except (NoDiffSourceSelected, TooManyDiffSourcesSelected) as error:
         print(f"atom review: {error}", file=sys.stderr)
+        if isinstance(error, NoDiffSourceSelected):
+            print("atom review: or choose --pr ADO_URL (an Azure DevOps pull request).", file=sys.stderr)
         return EXIT_USAGE_ERROR
 
     try:
-        outcome = run_review(
-            request=request,
-            models=arguments.models or list(DEFAULT_REVIEW_MODELS),
-            runner=SubprocessRunner(),
-            working_directory=Path.cwd(),
-            runs=arguments.runs,
-            concurrency=arguments.concurrency,
-            window=arguments.window,
-            disable_mcp_servers=arguments.disable_mcp_servers,
-            skip_toolchain=arguments.skip_toolchain,
+        if arguments.pr is not None and (
+            arguments.runs < 1 or arguments.concurrency < 1 or arguments.window < 0
+        ):
+            raise ValueError(
+                "runs and concurrency must be at least 1; window must be zero or positive."
+            )
+        if arguments.context_file and not arguments.fixed_evidence:
+            raise ValueError("context-file requires --fixed-evidence")
+        launch_directory = Path.cwd()
+        documents = (
+            load_context_documents(arguments.context_file, launch_directory)
+            if arguments.fixed_evidence else ()
         )
+        runner = SubprocessRunner()
+        preparation = (
+            prepare_pull_request_review(arguments.pr, launch_directory, runner)
+            if arguments.pr is not None else nullcontext(None)
+        )
+        with preparation as prepared:
+            review_request = prepared.request if prepared is not None else request
+            if review_request is None:
+                raise PullRequestReviewError("preparation did not provide a review source")
+            outcome = run_review(
+                request=review_request,
+                models=arguments.models or list(DEFAULT_REVIEW_MODELS),
+                runner=runner,
+                working_directory=(
+                    prepared.working_directory if prepared is not None else launch_directory
+                ),
+                runs=arguments.runs,
+                concurrency=arguments.concurrency,
+                window=arguments.window,
+                disable_mcp_servers=arguments.disable_mcp_servers,
+                skip_toolchain=arguments.skip_toolchain,
+                fixed_evidence=arguments.fixed_evidence,
+                context_documents=documents,
+            )
+            if prepared is not None:
+                outcome = replace(outcome, pull_request=prepared.provenance)
     except ValueError as error:
         # Nonsensical settings are refused rather than clamped (A8): `--runs 0`
         # would otherwise produce a clean-looking review that consulted nobody.
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_USAGE_ERROR
-    except DiffUnavailable as error:
+    except (ContextInputError, DiffUnavailable, PullRequestReviewError) as error:
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_CHECK_FAILED
     except NoModelAvailable as error:

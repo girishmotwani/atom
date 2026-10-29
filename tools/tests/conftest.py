@@ -2,12 +2,30 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
 from atom.runner import CommandOutcome, CommandResult
+
+
+def cli_review_events(content: str) -> list[dict]:
+    """Build sanitized root-answer and completion events, without real sessions."""
+
+    return [
+        {"type": "assistant.message", "data": {
+            "content": content, "phase": "final_answer",
+        }},
+        {"type": "result", "exitCode": 0, "sessionId": "fixture-session"},
+    ]
+
+
+def cli_review_response(content: str) -> str:
+    """Frame a fake CLI reply without making invalid findings JSON valid."""
+
+    return "\n".join(json.dumps(event) for event in cli_review_events(content))
 
 
 class FakeRunner:
@@ -59,4 +77,3 @@ def fake_runner_factory():
     """Create FakeRunner instances without hiding command/result setup in tests."""
 
     return FakeRunner
-

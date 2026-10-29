@@ -36,6 +36,7 @@ def _prompt_capturing_invoker(captured: list[str]):
         runs,
         concurrency,
         disable_mcp_servers=(),
+        *, fixed_evidence=False,
     ):
         captured.append(prompt)
         return InvocationReport(

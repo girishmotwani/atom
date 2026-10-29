@@ -8,6 +8,7 @@ heuristic that was deliberately not shipped.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -20,6 +21,7 @@ from atom.extract import (
     strip_fence,
 )
 from atom.invoke import ModelRun, RunOutcome
+from tests.conftest import cli_review_events, cli_review_response
 
 FILES = ("store/cache.go", "store/index.go")
 
@@ -49,6 +51,311 @@ def a_finding(**overrides) -> dict:
     }
     base.update(overrides)
     return base
+
+
+def jsonl_run(*events: object, separator: str = "\n") -> ModelRun:
+    return ModelRun(
+        "fixture-model", 2, RunOutcome.COMPLETED,
+        separator.join(json.dumps(event) for event in events), 1.0,
+        response_format="copilot_jsonl",
+    )
+
+
+@pytest.mark.parametrize("event", [
+    {"type": "assistant.message", "data": {
+        "phase": "commentary", "content": "private",
+        "toolRequests": [{"toolCallId": "private-tool"}],
+    }},
+    {"type": "tool.execution_start", "data": {"toolCallId": "private-tool"}},
+    {"type": "tool.execution_complete", "data": {"content": "private"}},
+    {"type": "assistant.message", "agentId": "private-child", "data": {
+        "content": "[]", "phase": "final_answer",
+    }},
+    {"type": "assistant.turn_start", "data": {"parentToolCallId": "private-tool"}},
+    {"type": "session.start", "agentId": "private-child"},
+])
+@pytest.mark.parametrize("after_terminal", [False, True])
+def test_fixed_evidence_rejects_observable_execution(event, after_terminal):
+    events = cli_review_events(findings_json(a_finding()))
+    events.insert(len(events) if after_terminal else 0, event)
+    run = replace(jsonl_run(*events), fixed_evidence=True)
+
+    findings, failure = extract_from_run(run, FILES)
+
+    assert findings == []
+    assert failure is not None
+    assert "CLI fixed-evidence contract violated" in failure.reason
+    assert failure.excerpt == ""
+    assert "private" not in failure.reason
+    if not after_terminal:
+        legacy_findings, legacy_failure = extract_from_run(
+            replace(run, fixed_evidence=False), FILES,
+        )
+        assert len(legacy_findings) == 1
+        assert legacy_failure is None
+
+
+class TestCliResponseIsolation:
+    @pytest.mark.parametrize("content", ["[]", findings_json(a_finding())])
+    def test_selects_parent_content_before_strict_findings_validation(self, content):
+        run = jsonl_run(*cli_review_events(content))
+
+        findings, failure = extract_from_run(run, FILES)
+
+        assert failure is None
+        assert len(findings) == len(json.loads(content))
+        assert run.response_text == cli_review_response(content)
+
+    @pytest.mark.parametrize("marker", ["agentId", "parentToolCallId"])
+    @pytest.mark.parametrize("after_parent", [False, True])
+    def test_child_cannot_replace_parent_regardless_of_order(self, marker, after_parent):
+        events = cli_review_events(findings_json(a_finding(message="parent")))
+        child = cli_review_events(findings_json(a_finding(message="child")))[0]
+        if marker == "agentId":
+            child[marker] = "child-agent"
+        else:
+            child["data"][marker] = "child-tool-call"
+        events.insert(1 if after_parent else 0, child)
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert failure is None
+        assert [finding.message for finding in findings] == ["parent"]
+
+    @pytest.mark.parametrize("data", [
+        {"phase": "commentary"},
+        {"toolRequests": [{"toolCallId": "fixture-tool"}]},
+    ])
+    def test_commentary_and_tool_requests_are_not_answers(self, data):
+        events = cli_review_events("[]")
+        other = cli_review_events("not findings")[0]
+        other["data"].update(data)
+        events.insert(0, other)
+
+        assert extract_from_run(jsonl_run(*events), FILES) == ([], None)
+
+    @pytest.mark.parametrize("phase", ["absent", None])
+    def test_unphased_parent_is_supported(self, phase):
+        events = cli_review_events("[]")
+        events[0]["agentId"] = None
+        events[0]["data"]["parentToolCallId"] = None
+        events[0]["data"]["toolRequests"] = []
+        if phase == "absent":
+            del events[0]["data"]["phase"]
+        else:
+            events[0]["data"]["phase"] = phase
+
+        assert extract_from_run(jsonl_run(*events), FILES) == ([], None)
+
+    @pytest.mark.parametrize("data", [{"phase": 42}, {"toolRequests": "invalid"}])
+    def test_malformed_candidate_fields_are_transport_failures(self, data):
+        events = cli_review_events("[]")
+        events[0]["data"].update(data)
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert failure.reason.startswith("CLI response transport:")
+
+    @pytest.mark.parametrize("event", [
+        {"type": 42}, {"type": ""}, {"type": "   "},
+    ])
+    def test_invalid_record_type_is_not_ignored_as_metadata(self, event):
+        run = jsonl_run(event, *cli_review_events("[]"))
+
+        findings, failure = extract_from_run(run, FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert "CLI response transport: line 1" in failure.reason
+
+    @pytest.mark.parametrize("marker", ["agentId", "parentToolCallId"])
+    @pytest.mark.parametrize("value", ["", False, 0, []])
+    def test_invalid_ownership_does_not_default_to_root(self, marker, value):
+        events = cli_review_events("[]")
+        container = events[0] if marker == "agentId" else events[0]["data"]
+        container[marker] = value
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert "ownership" in failure.reason
+
+    def test_unsupported_response_format_does_not_fall_back_to_text(self):
+        run = replace(run_with("[]"), response_format="unsupported")
+
+        findings, failure = extract_from_run(run, FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert failure.reason.startswith("CLI response transport:")
+
+    @pytest.mark.parametrize("case", [
+        "missing", "nonzero", "bool", "missing_code", "string_code",
+        "missing_id", "blank_id", "invalid_id", "duplicate", "trailing",
+        "root_error", "child_result_only",
+    ])
+    def test_incomplete_or_failed_stream_cannot_report_clean(self, case):
+        events = cli_review_events("[]")
+        terminal = events[-1]
+        if case == "missing":
+            events.pop()
+        elif case == "nonzero":
+            terminal["exitCode"] = 1
+        elif case == "bool":
+            terminal["exitCode"] = False
+        elif case == "missing_code":
+            del terminal["exitCode"]
+        elif case == "string_code":
+            terminal["exitCode"] = "0"
+        elif case == "missing_id":
+            del terminal["sessionId"]
+        elif case == "blank_id":
+            terminal["sessionId"] = " "
+        elif case == "invalid_id":
+            terminal["sessionId"] = 42
+        elif case == "duplicate":
+            events.append(dict(terminal))
+        elif case == "trailing":
+            events.append({"type": "assistant.idle"})
+        elif case == "root_error":
+            events.insert(0, {"type": "session.error", "data": {"message": "PRIVATE"}})
+        elif case == "child_result_only":
+            terminal["agentId"] = "child"
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert failure.reason.startswith("CLI response transport:")
+        assert failure.excerpt == ""
+        assert "PRIVATE" not in failure.reason
+
+    @pytest.mark.parametrize("text", [
+        "[]", "null", "42", "true", '"string"', "{}",
+        '{"type": "PRIVATE',
+        '{"type": "assistant.message"}',
+        '{"type": "assistant.message", "data": null}',
+        '{"type": "assistant.message", "data": []}',
+    ])
+    def test_bad_framing_has_safe_line_diagnostics_without_fallback(self, text):
+        run = replace(jsonl_run(), response_text="\n" + text)
+
+        findings, failure = extract_from_run(run, FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert failure.reason.startswith("CLI response transport: line 2:")
+        assert failure.excerpt == ""
+        assert "PRIVATE" not in failure.reason
+        assert failure.model == run.model
+        assert failure.run_index == run.run_index
+        assert not failure.reply_was_readable
+
+    @pytest.mark.parametrize("data", [
+        {}, {"content": None}, {"content": 42}, {"content": []},
+        {"content": "[]", "phase": []}, {"content": "[]", "toolRequests": None},
+    ])
+    def test_invalid_parent_data_is_not_a_findings_schema_error(self, data):
+        events = cli_review_events("[]")
+        events[0]["data"] = data
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert "line 1: invalid parent message fields" in failure.reason
+        assert failure.excerpt == ""
+
+    @pytest.mark.parametrize("case", ["missing", "blank", "child_only", "multiple", "unphased_multiple"])
+    def test_missing_or_ambiguous_parent_is_not_rescued(self, case):
+        events = cli_review_events("[]")
+        if case == "missing":
+            events.pop(0)
+        elif case == "blank":
+            events[0]["data"]["content"] = " \n\t"
+        elif case == "child_only":
+            events[0]["agentId"] = "child"
+        else:
+            events.insert(0, cli_review_events("[]")[0])
+            if case == "unphased_multiple":
+                for event in events[:-1]:
+                    event["data"].pop("phase")
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert "exactly one parent answer" in failure.reason
+
+    @pytest.mark.parametrize("marker", ["agentId", "parentToolCallId"])
+    @pytest.mark.parametrize("kind", ["session.error", "result", "assistant.message"])
+    def test_child_completion_errors_and_invalid_findings_do_not_overrule_root(self, marker, kind):
+        events = cli_review_events("[]")
+        child = {"type": kind, "data": {"content": "not findings"}, "exitCode": 1}
+        container = child if marker == "agentId" else child["data"]
+        container[marker] = "child"
+        events.insert(0, child)
+
+        assert extract_from_run(jsonl_run(*events), FILES) == ([], None)
+
+    def test_crlf_blank_lines_and_non_message_events_do_not_contribute_content(self):
+        events = [
+            {"type": "future.metadata", "data": {"content": "PRIVATE"}},
+            {"type": "assistant.message_delta", "data": {"content": "[]"}},
+            {"type": "tool.execution_complete", "data": {"content": "[]"}},
+            *cli_review_events("[]"),
+        ]
+        run = jsonl_run(*events, separator="\r\n\r\n")
+        run = replace(run, response_text="\r\n" + run.response_text + "\r\n\r\n")
+
+        assert extract_from_run(run, FILES) == ([], None)
+
+    @pytest.mark.parametrize("content", [
+        "not JSON", 'Here are findings: []', '{}',
+        findings_json(a_finding(severity="invalid")),
+        findings_json(a_finding(line="44")),
+    ])
+    def test_selected_parent_still_obeys_strict_findings_schema(self, content):
+        events = cli_review_events(content)
+        events.insert(0, {"type": "future.metadata", "account": "PRIVATE"})
+        child = cli_review_events("[]")[0]
+        child["agentId"] = "child"
+        events.insert(1, child)
+
+        findings, failure = extract_from_run(jsonl_run(*events), FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert not failure.reason.startswith("CLI response transport:")
+        assert "PRIVATE" not in failure.excerpt
+        assert failure.excerpt == content
+
+    def test_selected_parent_keeps_fence_handling_and_file_guard(self):
+        content = "```json\n" + findings_json(a_finding(file="outside.go")) + "\n```"
+        run = jsonl_run(*cli_review_events(content))
+
+        findings, failure = extract_from_run(run, FILES)
+
+        assert findings == []
+        assert failure is not None
+        assert failure.reply_was_readable
+        findings, failure = extract_from_run(run, None)
+        assert failure is None
+        assert [finding.file for finding in findings] == ["outside.go"]
+
+    def test_bad_stream_does_not_discard_another_run(self):
+        bad = replace(jsonl_run(), response_text="PRIVATE malformed JSONL")
+        good = replace(jsonl_run(*cli_review_events(findings_json(a_finding()))), run_index=3)
+
+        report = extract_all([bad, good], FILES)
+
+        assert len(report.findings) == len(report.failures) == 1
+        assert report.findings[0].run_index == 3
+        assert report.failures[0].run_index == 2
+        assert report.failures[0].excerpt == ""
 
 
 class TestFenceStripping:
