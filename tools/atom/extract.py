@@ -133,6 +133,91 @@ def strip_fence(text: str) -> str:
     return text.strip()
 
 
+class _InvalidCliResponse(Exception):
+    """Keep transport failures separate from invalid model findings."""
+
+
+def _content_from_cli_jsonl(text: str, *, fixed_evidence: bool = False) -> str:
+    """Select one unambiguous root answer or raise _InvalidCliResponse."""
+
+    candidates: list[str] = []
+    completed = False
+    for line_number, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise _InvalidCliResponse(f"line {line_number}: invalid JSON event") from error
+        if not isinstance(event, dict):
+            raise _InvalidCliResponse(f"line {line_number}: event is not an object")
+        kind = event.get("type")
+        if not isinstance(kind, str) or not kind.strip():
+            raise _InvalidCliResponse(f"line {line_number}: invalid event type")
+        if fixed_evidence:
+            data = event.get("data")
+            metadata = data if isinstance(data, dict) else {}
+            if (
+                event.get("agentId") is not None
+                or metadata.get("parentToolCallId") is not None
+                or kind.startswith("tool.execution")
+                or (kind == "assistant.message" and metadata.get("toolRequests"))
+            ):
+                raise _InvalidCliResponse(
+                    "CLI fixed-evidence contract violated: tool request, tool execution or child event"
+                )
+        if completed:
+            raise _InvalidCliResponse(f"line {line_number}: event after terminal result")
+        if kind not in ("assistant.message", "result", "session.error"):
+            continue
+        data = event.get("data", {} if kind != "assistant.message" else None)
+        if not isinstance(data, dict):
+            raise _InvalidCliResponse(f"line {line_number}: invalid message data")
+        ownership = (event.get("agentId"), data.get("parentToolCallId"))
+        if any(
+            marker is not None
+            and (not isinstance(marker, str) or not marker.strip())
+            for marker in ownership
+        ):
+            raise _InvalidCliResponse(f"line {line_number}: invalid ownership marker")
+        if any(marker is not None for marker in ownership):
+            continue
+        if kind == "session.error":
+            raise _InvalidCliResponse(f"line {line_number}: root session error")
+        if kind == "result":
+            session_id = event.get("sessionId")
+            if (
+                type(event.get("exitCode")) is not int
+                or event["exitCode"] != 0
+                or not isinstance(session_id, str)
+                or not session_id.strip()
+            ):
+                raise _InvalidCliResponse(f"line {line_number}: invalid or failed result")
+            completed = True
+            continue
+        phase = data.get("phase")
+        requests = data.get("toolRequests", [])
+        content = data.get("content")
+        if (
+            (phase is not None and not isinstance(phase, str))
+            or not isinstance(requests, list)
+            or not isinstance(content, str)
+        ):
+            raise _InvalidCliResponse(f"line {line_number}: invalid parent message fields")
+        # Some model families omit phase; uniqueness still prevents guessing
+        # between multiple unphased messages.
+        if phase not in (None, "final_answer") or requests:
+            continue
+        if content.strip():
+            candidates.append(content)
+    if not completed:
+        # Exit zero alone cannot distinguish a full stream from truncated output.
+        raise _InvalidCliResponse("missing successful terminal result")
+    if len(candidates) != 1:
+        raise _InvalidCliResponse("expected exactly one parent answer")
+    return candidates[0]
+
+
 def extract_from_run(
     run: ModelRun,
     allowed_files: Sequence[str] | None = (),
@@ -155,8 +240,17 @@ def extract_from_run(
             reason=run.detail or f"run did not complete ({run.outcome.value})",
         )
 
-    payload = strip_fence(run.response_text)
-    excerpt = _excerpt(run.response_text)
+    content = run.response_text
+    if run.response_format == "copilot_jsonl":
+        try:
+            content = _content_from_cli_jsonl(content, fixed_evidence=run.fixed_evidence)
+        except _InvalidCliResponse as error:
+            # Raw event excerpts may expose account metadata, not model findings.
+            return [], _failure(run, f"CLI response transport: {error}", "")
+    elif run.response_format != "text":
+        return [], _failure(run, "CLI response transport: unsupported response format", "")
+    payload = strip_fence(content)
+    excerpt = _excerpt(content)
 
     try:
         parsed = json.loads(payload)

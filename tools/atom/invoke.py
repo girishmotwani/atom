@@ -27,7 +27,7 @@ import enum
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence
 
 from atom.runner import CommandOutcome, CommandResult, CommandRunner
 
@@ -93,6 +93,10 @@ class ModelRun:
 
     `run_index` is 1-based because it appears in human-readable output, where
     "run 0 of 3" reads as a mistake.
+    `response_text` keeps raw stdout; `response_format` selects its decoder
+    without making a completed process imply a readable review.
+    Native failures retain raw stdout/stderr for private diagnosis, separately
+    from safe operational detail.
     """
 
     model: str
@@ -101,6 +105,9 @@ class ModelRun:
     response_text: str
     duration_seconds: float
     detail: str = ""
+    response_format: Literal["text", "copilot_jsonl"] = "text"
+    fixed_evidence: bool = False
+    stderr_text: str = ""
 
     @property
     def is_usable(self) -> bool:
@@ -177,15 +184,18 @@ class InvocationReport:
         return tuple(entry for entry in self.availability if not entry.available)
 
 
-def probe_command(model: str) -> tuple[str, ...]:
-    """Build the cheap call that proves whether a model can be used.
+def probe_command(
+    model: str, disable_mcp_servers: Sequence[str] = (),
+    *, fixed_evidence: bool = False,
+) -> tuple[str, ...]:
+    """Check availability with the same caller-selected isolation as reviews.
 
     Availability is an account property, not a fact about the CLI version: the
     spike found two models rejected on the same machine where two others were
     accepted (C7).
     """
 
-    return (
+    command = [
         _CLI,
         "-p",
         _PROBE_PROMPT,
@@ -194,21 +204,27 @@ def probe_command(model: str) -> tuple[str, ...]:
         model,
         "--no-custom-instructions",
         "--disable-builtin-mcps",
-    )
+    ]
+    for server in disable_mcp_servers:
+        command.extend(("--disable-mcp-server", server))
+    if fixed_evidence:
+        command.extend(("--excluded-tools", "builtin:*", "custom:*", "mcp:*"))
+    return tuple(command)
 
 
 def review_command(
     model: str,
     prompt: str,
     disable_mcp_servers: Sequence[str] = (),
+    *, fixed_evidence: bool = False,
 ) -> tuple[str, ...]:
     """Build one review call, with the flags that every measurement demanded.
 
     Each flag earns its place:
 
-    * `--silent` rather than `--output-format json` (B107). The two carry
-      identical findings, and the JSON envelope adds 33KB of event stream in a
-      schema Atom does not control.
+    * `--output-format json`. Silent text can concatenate delegated replies
+      with the parent's findings. JSONL carries ownership so extraction can
+      isolate the answer without guessing where JSON starts.
     * `--no-custom-instructions` (B108). Without it the CLI loads `AGENTS.md`
       from the working directory, and the review quietly becomes a property of
       the repository being reviewed rather than of Atom.
@@ -234,7 +250,8 @@ def review_command(
 
     command = [
         _CLI,
-        "--silent",
+        "--output-format",
+        "json",
         "--model",
         model,
         "--no-custom-instructions",
@@ -242,6 +259,8 @@ def review_command(
     ]
     for server in disable_mcp_servers:
         command.extend(("--disable-mcp-server", server))
+    if fixed_evidence:
+        command.extend(("--excluded-tools", "builtin:*", "custom:*", "mcp:*"))
 
     return tuple(command)
 
@@ -252,8 +271,10 @@ def probe_models(
     working_directory: Path,
     timeout_seconds: float = DEFAULT_PROBE_TIMEOUT_SECONDS,
     concurrency: int = DEFAULT_CONCURRENCY,
+    disable_mcp_servers: Sequence[str] = (),
+    *, fixed_evidence: bool = False,
 ) -> tuple[ModelAvailability, ...]:
-    """Check every model before any review call is made (B110).
+    """Check models with the caller's exclusions before review can spend runs.
 
     Probing first is worth the couple of seconds it costs: the alternative is
     discovering an unusable model after the other one has already spent a
@@ -261,13 +282,16 @@ def probe_models(
     """
 
     def probe(model: str) -> ModelAvailability:
-        result = runner.run(probe_command(model), working_directory, timeout_seconds)
+        result = runner.run(
+            probe_command(model, disable_mcp_servers, fixed_evidence=fixed_evidence),
+            working_directory, timeout_seconds,
+        )
         if result.succeeded:
             return ModelAvailability(model=model, available=True)
         return ModelAvailability(
             model=model,
             available=False,
-            detail=_explain(result),
+            detail=_explain(result, include_output=not fixed_evidence),
         )
 
     return tuple(_map_bounded(probe, list(models), concurrency))
@@ -282,6 +306,7 @@ def invoke_models(
     concurrency: int = DEFAULT_CONCURRENCY,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     disable_mcp_servers: Sequence[str] = (),
+    *, fixed_evidence: bool = False,
 ) -> InvocationReport:
     """Run every available model `runs` times and record each attempt.
 
@@ -294,7 +319,9 @@ def invoke_models(
     requested = tuple(models)
     _reject_nonsensical_settings(requested, runs, concurrency)
     availability = probe_models(
-        requested, runner, working_directory, concurrency=concurrency
+        requested, runner, working_directory, concurrency=concurrency,
+        disable_mcp_servers=disable_mcp_servers,
+        fixed_evidence=fixed_evidence,
     )
     usable_models = [entry.model for entry in availability if entry.available]
 
@@ -311,7 +338,9 @@ def invoke_models(
     # measured belongs to the model, so introducing any of our own would
     # measure something else and make the agreement counts meaningless.
     command_for = {
-        model: review_command(model, prompt, disable_mcp_servers)
+        model: review_command(
+            model, prompt, disable_mcp_servers, fixed_evidence=fixed_evidence,
+        )
         for model in usable_models
     }
     planned = [
@@ -325,7 +354,10 @@ def invoke_models(
         result = runner.run(
             command_for[model], working_directory, timeout_seconds, stdin_text=prompt
         )
-        return _to_run(model, run_index, result)
+        return _to_run(
+            model, run_index, result, response_format="copilot_jsonl",
+            fixed_evidence=fixed_evidence,
+        )
 
     completed = _map_bounded(execute, planned, concurrency)
 
@@ -362,31 +394,55 @@ def _reject_nonsensical_settings(
         raise ValueError(f"concurrency must be at least 1, got {concurrency}.")
 
 
-def _to_run(model: str, run_index: int, result: CommandResult) -> ModelRun:
+def _to_run(
+    model: str,
+    run_index: int,
+    result: CommandResult,
+    *,
+    response_format: Literal["text", "copilot_jsonl"] = "text",
+    fixed_evidence: bool = False,
+) -> ModelRun:
     """Translate a command result into a run outcome without losing the reason."""
 
     if result.outcome is CommandOutcome.TIMED_OUT:
         outcome = RunOutcome.TIMED_OUT
     elif result.outcome is CommandOutcome.TOOL_MISSING:
         outcome = RunOutcome.TOOL_MISSING
-    elif result.exit_code == 0:
+    elif result.succeeded:
         outcome = RunOutcome.COMPLETED
     else:
         outcome = RunOutcome.FAILED
 
+    structured = response_format == "copilot_jsonl"
     return ModelRun(
         model=model,
         run_index=run_index,
         outcome=outcome,
-        response_text=result.stdout if outcome is RunOutcome.COMPLETED else "",
+        response_text=result.stdout if structured or outcome is RunOutcome.COMPLETED else "",
         duration_seconds=result.duration_seconds,
-        detail="" if outcome is RunOutcome.COMPLETED else _explain(result),
+        detail="" if outcome is RunOutcome.COMPLETED else _explain(
+            result, include_output=not (structured or fixed_evidence),
+        ),
+        response_format=response_format,
+        fixed_evidence=fixed_evidence,
+        stderr_text=result.stderr,
     )
 
 
-def _explain(result: CommandResult) -> str:
-    """Describe why a call did not succeed, using whatever the tool said."""
+def _explain(result: CommandResult, *, include_output: bool = True) -> str:
+    """Keep process diagnostics separate from potentially private CLI streams."""
 
+    if not include_output:
+        # Structured stdout/stderr can contain source and account-bearing events.
+        if result.outcome is CommandOutcome.TIMED_OUT:
+            return f"timed out (observed elapsed {result.duration_seconds:.3f} seconds)"
+        if result.outcome is CommandOutcome.TOOL_MISSING:
+            return "CLI not found"
+        if result.outcome is CommandOutcome.RUNNER_ERROR:
+            return "runner error; cleanup status not independently established"
+        if result.exit_code is not None:
+            return f"exited with code {result.exit_code}"
+        return result.outcome.value
     message = result.combined_output.strip()
     if message:
         return message

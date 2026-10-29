@@ -209,6 +209,84 @@ to repository-standard LF.
 
 ## Getting started
 
+### Review an Azure DevOps pull request
+
+From the corresponding **local Go module directory**, run:
+
+```powershell
+atom review --pr "https://dev.azure.com/organization/project/_git/repository/pullrequest/42"
+```
+
+This requires Git HTTPS access, an authorized Azure CLI login for read-only PR
+metadata, and the existing Copilot CLI reviewer setup. Atom does not log in, install
+tools, store tokens, or post comments. Both `dev.azure.com` and
+`organization.visualstudio.com` PR links are supported. The local HTTPS `origin`
+must match the PR repository; forks, inactive PRs, SSH origins and on-premises ADO
+links are not supported by this first increment.
+
+Atom creates a full independent temporary clone, checks out the pinned source, and
+reviews its merge-base diff against the PR's **actual target branch**, not an assumed
+`main`. The original branch, index and dirty files stay untouched. Reports identify
+the source, fetched target, merge base and selected module. Changed files outside
+that module remain in the diff, but Go checks cover only the selected module.
+Cleanup is attempted on every exit; failures name the retained directory and do not
+become a successful review.
+
+**Current boundary:** this reuses the existing diff-and-shared-style reviewer.
+Initialized module rules and automatic surrounding-code collection are **not yet
+delivered**; PR Markdown and JSON reports explicitly disclose both limitations.
+Required checks still block review unless you explicitly use `--skip-toolchain`.
+Existing `--model`, `--runs`, `--concurrency`, `--window`,
+`--disable-mcp-server`, and `--json` options apply. Choose exactly one source:
+`--pr`, `--working`, `--staged`, or `--branch`.
+
+Use repeated `--model NAME` options to select reviewers available to your Copilot
+account when a default model is unavailable; Atom does not silently substitute one.
+Repeated `--disable-mcp-server NAME` options exclude named custom MCP servers from
+both availability probes and review calls, without changing saved configuration.
+Disabling built-in MCP servers alone does not exclude custom servers.
+
+Review calls request structured CLI events so Atom can isolate one parent answer
+from delegated replies, commentary and tool output. Atom requires successful stream
+completion, then applies its existing strict findings validation. Malformed,
+incomplete or ambiguous output remains an explicit partial-review failure; Atom
+does not guess at JSON fragments or fall back to mixed plain text. This relies on
+the CLI event contract, not a guarantee of compatibility with every CLI version.
+
+### Opt-in fixed-evidence review
+
+```powershell
+atom review --working --fixed-evidence --context-file .\evidence\caller-contract.md
+```
+
+`--fixed-evidence` requests exclusions for all built-in, custom and MCP tools on
+both probes and reviews. Observable tool activity or child-owned events invalidate
+that review response; rejected options never trigger a tool-enabled fallback.
+The existing default mode is unchanged.
+
+Repeat `--context-file PATH` to supply caller-prepared UTF-8 documents. Each is
+captured once, before PR preparation, relative to the original launch directory;
+explicit absolute paths are also accepted. Missing, invalid, blank or duplicate
+inputs stop the review. Atom does not discover callers, dependencies or other
+context automatically. The complete diff and documents are sent without truncation
+or an input-size cap; provider capacity errors remain explicit failures.
+
+Reports identify diff-only versus diff-plus-caller-context scope and include byte
+counts and SHA-256 digests, not document contents or local evidence paths.
+Prompt metadata (`prompt_utf8_bytes` and `prompt_sha256` in JSON) identifies the
+logical UTF-8 prompt before platform stdin normalization, not raw subprocess stdin
+bytes or a verified provider request. Existing Windows transport converts physical
+LF to CRLF. Individual document metadata identifies the original captured UTF-8
+file bytes; JSON serialization preserves document text through this conversion.
+Document provenance is **caller-supplied/unverified** and real-PR context quality
+remains **unvalidated**. A successful scoped review is not a readiness certification.
+The CLI exclusion mechanism was live-proven with one Gemini invocation; broader
+model/version compatibility and real-PR quality require separate validation.
+
+In both modes, structured review failures now report process-status summaries
+instead of dumping raw CLI streams. Raw stdout/stderr remain available on native
+`ModelRun` values for private programmatic diagnosis, not in ordinary reports.
+
 ### Install the plugin — the only setup step
 
 Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into

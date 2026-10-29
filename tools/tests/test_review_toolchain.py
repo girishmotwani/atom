@@ -39,7 +39,8 @@ def test_empty_toolchain_placeholder_preserves_original_prompt_bytes():
     )
 
 
-def test_run_review_blocks_before_models_when_required_gate_fails(tmp_path):
+@pytest.mark.parametrize("fixed_evidence", [False, True])
+def test_run_review_blocks_before_models_when_required_gate_fails(tmp_path, fixed_evidence):
     """A tree that fails required gates is not ready to spend model calls."""
     (tmp_path / "go.mod").write_text("module example.com/toolchain\n", encoding="utf-8")
     build = ("go", "build", "./...")
@@ -69,6 +70,7 @@ def test_run_review_blocks_before_models_when_required_gate_fails(tmp_path):
             working_directory=tmp_path,
             runs=1,
             concurrency=1,
+            fixed_evidence=fixed_evidence,
         )
 
     assert raised.value.failures[0].name == "build"
@@ -95,6 +97,7 @@ def test_run_review_continues_with_no_exclusions_when_directory_is_not_go_module
         runs,
         concurrency,
         disable_mcp_servers=(),
+        *, fixed_evidence=False,
     ):
         captured_prompts.append(prompt)
         return InvocationReport(

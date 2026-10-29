@@ -628,7 +628,12 @@ def test_real_repository_reports_multiple_projects_and_atom_cli_history_remains_
     )
     resolved = _resolve_project_dir(real_specs, report)
 
-    assert resolved == real_specs / "artifact-writer"
+    projects = sorted(
+        (child for child in real_specs.iterdir() if child.is_dir() and discover_phases(child)),
+        key=lambda child: child.name,
+    )
+    assert len(projects) > 1
+    assert resolved == projects[0]
     ambiguity = [problem for problem in report.problems if "more than one project" in problem]
     assert ambiguity
     assert "artifact-writer" in ambiguity[0]
