@@ -22,3 +22,7 @@ The developer chose unchanged public publication with ADO explicitly draft/not m
 The pre-publication scan found local Windows profile/worktree paths in historical repeat-init proof and verification logs and the shared PATH-bootstrap review artifact. These are actual historical local paths, not credentials or synthetic path placeholders. Credential-signature checks found no matching secrets; that limited scan is not a blanket secrets assurance. The same shared review artifact is also in the ADO branch.
 
 Publishing the exact existing commits would make those paths available in public history. Editing only branch tips would not remove them from earlier reachable commits. Before pushing either unchanged branch, ask the owner whether to preserve the original evidence including these local paths or create properly sanitized public-history copies. Do not silently redact history, rewrite original refs or call a tip-only redaction sufficient. The separate public-main-based README documentation branch contains no such paths and is unaffected.
+
+## Canonical repository reference correction
+
+Public-main installation URLs were already canonical, but README/bootstrap still incorrectly claimed the repository was not public and treated fetch errors as access requests. Corrected README and both bootstrap copies in this public-main-based PR so the landing-page branch also carries accurate installation guidance. The existing bootstrap source/package parity case passed. Current decision logs contain no repository-transition narrative. No runtime code changed.
