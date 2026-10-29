@@ -1,6 +1,7 @@
-# Atom
+# Atom - AI coding skills for Go
 
-**An agentic development framework for Go.**
+**Proof-first AI development for Go: runnable POCs, evidence-backed specs,
+TDD, and multi-model review.**
 
 Atom exists to stop AI agents from writing large amounts of confident code against an
 imagined design.
