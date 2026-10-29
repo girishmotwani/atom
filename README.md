@@ -205,12 +205,11 @@ Repositories that already committed one of the generated files need a one-time
 `git rm --cached <path>` for that specific file; onboarding never changes the Git
 index automatically.
 
-> **Atom is in private testing, so the repository is not public yet.** The command below
-> clones it using your own git credentials, so it works only if you have been granted
-> access — see [if setup goes wrong](#if-setup-goes-wrong) if it fails.
+> Atom is public at [girishmotwani/atom](https://github.com/girishmotwani/atom).
+> Installation does not require access to a private repository.
 
 ```bash
-copilot plugin marketplace add gimotwan_microsoft/atom
+copilot plugin marketplace add girishmotwani/atom
 copilot plugin install atom@atom
 ```
 
@@ -339,7 +338,7 @@ That distinction gives two different workflows:
 
 | You are | Marketplace points at | To get new bits |
 |---|---|---|
-| **Using** Atom | `gimotwan_microsoft/atom` on GitHub | `copilot plugin update atom@atom` |
+| **Using** Atom | `girishmotwani/atom` on GitHub | `copilot plugin update atom@atom` |
 | **Developing** Atom | your local clone | same command — no push required |
 
 To develop against your own clone, point the marketplace at it with an **absolute** path
@@ -428,9 +427,11 @@ the same rules for agents working inside this repository.
 
 ### If setup goes wrong
 
-**`Repository not found` when adding the marketplace.** Atom is in private testing, so
-this is a permissions error despite reading like a typo. Ask for access — or, if you
-already have a clone, point the marketplace at it directly with
+**`Repository not found` when adding the marketplace.** Verify that the command uses
+`girishmotwani/atom` and that Git can reach GitHub. The repository is public; do not
+assume this error means private-repository access is required. Report the exact
+failure instead of retrying an unchanged command. If you already have a clone,
+you can point the marketplace at it directly with
 `copilot plugin marketplace add /absolute/path/to/atom`. The path must be absolute; a
 relative one is parsed as `owner/repo`.
 
@@ -442,7 +443,7 @@ python -m venv .venv                # optional; deleting .venv undoes everything
 source .venv/bin/activate           # macOS / Linux
 .venv\Scripts\Activate.ps1          # Windows
 
-pip install "git+https://github.com/gimotwan_microsoft/atom.git#subdirectory=tools"
+pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
 atom --help
 ```
 

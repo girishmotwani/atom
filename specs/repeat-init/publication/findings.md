@@ -8,3 +8,7 @@ The finite credential-signature scan found no matches in the publication objects
 
 A read-only merge-tree check against the fetched public main passed; no merge was performed. Sequential repeat behavior and structural scaffold validation remain the scope. Cross-platform CI is not claimed. See the existing [repeat-init findings](../findings.md).
 Issue #8 references inside archived artifacts belong to the historical private tracker; they do not refer to public PR #8, and no public issue-closing instruction is included.
+
+## Canonical repository reference correction
+
+The README and both bootstrap copies contained stale installation/update destinations and obsolete access guidance. They now point to public girishmotwani/atom. Source/package parity and retained PATH guidance passed the four existing focused tests. No runtime code changed. Current decision logs contain no repository-transition narrative. Final tracked-reference, link and whitespace checks cover the correction.

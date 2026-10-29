@@ -94,15 +94,16 @@ developer declines this optional step, retain the module forms above.
 Only if both checks above failed.
 
 ```bash
-pip install "git+https://github.com/gimotwan_microsoft/atom.git#subdirectory=tools"
+pip install "git+https://github.com/girishmotwani/atom.git#subdirectory=tools"
 ```
 
 Say what you are doing and why, in one line, before you run it.
 
-Atom is in private testing, so this clones over the developer's own git
-credentials. A `Repository not found` failure here is a **permissions** problem
-despite reading like a typo — the developer needs access. Say so and stop rather
-than retrying.
+Atom's canonical repository, `girishmotwani/atom`, is public; installation does not
+require private-repository access. If installation fails, report the exact output
+and stop rather than retrying an unchanged command. For `Repository not found`,
+verify the public URL and GitHub connectivity; do not assume a permissions problem
+or ask the developer to request access to the abandoned private fork.
 
 Then re-run both checks in step 1, and use the corresponding check in step 2 for any
 entry point that is still not found. Each command must have a working entry-point or

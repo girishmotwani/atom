@@ -1,26 +1,20 @@
-# Public publication decisions
+# Publication decisions
 
-The developer explicitly directed all publication to public girishmotwani/atom, selected sanitized public-history copies, and reconfirmed sanitizing and publishing both PRs before further adoption work. ADO remains draft/conflicting. No private PR closure, merge, force-push, public-history rewrite or integration change is authorized.
+All installation commands, source links and publication target public `girishmotwani/atom`.
 
-Recreated each unpublished commit with mapped sanitized parents, keeping original private refs and captured evidence intact. This is not a tip-only redaction. Original private commits are not newly reachable through the public branches. Public common ancestry is deliberately unchanged. The [commit map](history-map.json) records provenance; text references to old hashes are historical identifiers, not newly published Git objects.
+This change corrects README installation/update guidance and both source and packaged bootstrap instructions. The repository is public; installation failures must be reported accurately instead of assuming access approval is required. No runtime logic, dependencies, tests, PATH behavior or initialization contract changes.
 
-Only explicit profile-prefix substitutions and publication labels change the historical evidence trees. All runtime code, tests, packaged assets, skills, POC source, file modes and non-evidence blobs are byte-identical to the accepted originals. No replacement design, runtime implementation, new POC, paid review or real-model call is included. Prior independent [review](../review.md) applies to that unchanged code; this publication audit is not a new independent model review.
+This log records the current source of truth, scope and verification decisions. Historical verification outcomes are not reclassified or presented as new experiments. Labeled profile-prefix redactions in captured evidence remain explicit.
 
-The fresh full Windows/Python gate ran on sanitized code snapshot `f58e639038c8abb764e132bfda3a457b6960b3a9` before this final evidence-only commit. It uses Atom's existing Python test gate, not a fictional root Go/race gate. Historical copied commits were constructed before this fresh run, but no runtime code changed; the final publication-record commit follows the passing run. The [complete captured output](verification.txt) is retained with any local profile prefixes explicitly redacted; outcome/counts are unmodified.
+The earlier full Windows/Python gate is retained in [verification.txt](verification.txt). The current documentation correction passed the existing bootstrap source/package parity and PATH-documentation tests: four cases passed. No new constant-string test, Go POC, full runtime retest or paid multi-model review is warranted for a reference-only documentation correction.
 
-The first full attempts failed one wheel-installation test on each branch because the launch command explicitly injected source PYTHONPATH into the test's isolated environment. The failing test passed unchanged with that override removed; both complete suites were then rerun with the normal environment. No assertion, dependency or runtime code was changed. The failed logs and narrow recheck remain privately retained.
+Further adoption work, runtime changes and merging are outside this correction. The developer explicitly approved committing and pushing this documentation-only correction to the existing public PRs 9, 10 and 11. No merge or force-push is included.
 
-Historical redaction paths relative to the accepted original tip:
-
-- `specs/repeat-init/poc-report.md`
-- `specs/repeat-init/ship-verification.txt`
-- `specs/repeat-init/verification-probe.txt`
-- `specs/repeat-init/verification.txt`
-- `specs/user-path-bootstrap/review.md`
-
-Final documentation verification (python tools\check_links.py, exit 0):
+Final link-check output (python tools\check_links.py, exit 0):
 
 ```text
-checked 240 relative links across markdown files
+checked 238 relative links across markdown files
 all relative links resolve
 ```
+
+Tracked repository-reference scan: no stale matches. Whitespace check: git diff --check exited 0 with no output.
