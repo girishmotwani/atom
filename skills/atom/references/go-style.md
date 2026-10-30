@@ -20,8 +20,8 @@ This document is written for people. Until recently it reached nobody else: the
 `atom review` prompt described the output format and said nothing about style, so
 every rule here had exactly zero influence on what a review reported.
 
-Seven of them are now sent to the models on every review. They live in
-`tools/atom/style.py`, and that file — not this one — is what a reviewer reads:
+Seven shared rules are sent to the models on every CLI review. Their default
+baseline lives in `tools/atom/style.py`:
 
 1. Errors wrapped with the operation that failed
 2. Interfaces narrow, and declared where they are consumed
@@ -51,8 +51,16 @@ race detector already proves is deliberately absent from that list. `atom review
 runs those tools first and tells the models what they settled, so repeating it
 would spend reviewer attention on an answered question.
 
-Every other rule below is guidance for a human writing Go in this repository. It
-is real, and it is not enforced by anything.
+Normal CLI reviews additionally freeze the launching module's initialized copy at
+`.atom/atom/skills/atom/references/go-style.md` and module-root `AGENTS.md`, when
+present. Local edits are included; the PR checkout does not replace them.
+`--no-module-rules` opts out, and `--fixed-evidence` excludes automatic collection.
+No linked or ancestor instructions are discovered.
+
+The remaining guidance below can therefore reach reviewers through that local
+copy, not by automatically reading this repository reference. It is not enforced
+by delivery. The earlier seven-rule measurement does not establish that adding
+the whole local guide improves review quality or guarantees rule compliance.
 
 ---
 

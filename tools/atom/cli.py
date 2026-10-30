@@ -13,6 +13,7 @@ from typing import Sequence
 
 from atom.check import NotAGoModuleError, run_check
 from atom.context import ContextInputError, load_context_documents
+from atom.module_rules import ModuleRulesInputError, capture_module_review_rules
 from atom.diff import (
     DiffUnavailable,
     NoDiffSourceSelected,
@@ -240,6 +241,10 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
     review_parser.add_argument(
         "--fixed-evidence", action="store_true",
         help="Exclude model-side tools and review only the supplied evidence.",
+    )
+    review_parser.add_argument(
+        "--no-module-rules", action="store_true",
+        help="Do not collect the launch module's Go guide or AGENTS.md.",
     )
     review_parser.add_argument(
         "--context-file", action="append", default=[], metavar="PATH", type=Path,
@@ -640,6 +645,10 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
         if arguments.context_file and not arguments.fixed_evidence:
             raise ValueError("context-file requires --fixed-evidence")
         launch_directory = Path.cwd()
+        module_rules = capture_module_review_rules(
+            launch_directory, enabled=not arguments.no_module_rules,
+            fixed_evidence=arguments.fixed_evidence,
+        )
         documents = (
             load_context_documents(arguments.context_file, launch_directory)
             if arguments.fixed_evidence else ()
@@ -667,6 +676,7 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
                 skip_toolchain=arguments.skip_toolchain,
                 fixed_evidence=arguments.fixed_evidence,
                 context_documents=documents,
+                module_rules=module_rules,
             )
             if prepared is not None:
                 outcome = replace(outcome, pull_request=prepared.provenance)
@@ -675,7 +685,7 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
         # would otherwise produce a clean-looking review that consulted nobody.
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_USAGE_ERROR
-    except (ContextInputError, DiffUnavailable, PullRequestReviewError) as error:
+    except (ModuleRulesInputError, ContextInputError, DiffUnavailable, PullRequestReviewError) as error:
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_CHECK_FAILED
     except NoModelAvailable as error:
