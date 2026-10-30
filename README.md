@@ -6,6 +6,36 @@ TDD, and multi-model review.**
 Atom exists to stop AI agents from writing large amounts of confident code against an
 imagined design.
 
+Built for **Go developers using GitHub Copilot CLI**. Prove a risky idea before
+designing it, implement behavior test-first, or review a Go change with multiple
+models.
+
+## Try Atom
+
+You need GitHub Copilot CLI and Go. Atom's local tooling uses Python 3.10 or later.
+Install the plugin from your terminal:
+
+```bash
+copilot plugin marketplace add girishmotwani/atom
+copilot plugin install atom@atom
+```
+
+Then open Copilot CLI in a Go module and run:
+
+```text
+/atom:init
+```
+
+Onboarding runs the Go checks, records the baseline, and adds Atom's workflow files.
+It records a failing baseline too; onboarding success is not a clean bill of health
+for the code. To start a feature afterward, use `/atom:start` and describe your goal.
+
+See the [setup and review instructions](#getting-started) for prerequisites and
+options, or the [workflow walkthrough](docs/workflow.md) for what happens next.
+
+If Atom is useful to you, consider
+[starring the repository](https://github.com/girishmotwani/atom).
+
 ---
 
 ## The one rule
