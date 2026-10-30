@@ -10,6 +10,7 @@ from atom.context import FixedReviewEvidence
 from atom.gates import GateStatus
 from atom.index import SpikeSummary
 from atom.invoke import RunOutcome
+from atom.module_rules import ModuleReviewRules
 from atom.review import ReviewOutcome
 from atom.spike import SpikeKind, SpikeResult, Stage, Verdict
 
@@ -515,6 +516,7 @@ def render_review_markdown(outcome: "ReviewOutcome") -> str:
         lines.append("")
     lines.extend(_review_toolchain_lines(outcome))
     lines.extend(_review_evidence_lines(outcome))
+    lines.extend(_review_module_rules_lines(outcome.module_rules))
     lines.extend(_review_finding_lines(outcome))
 
     return "\n".join(lines).rstrip() + "\n"
@@ -626,10 +628,14 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
         }
     if outcome.evidence is not None:
         payload["review_execution"] = _review_evidence_payload(outcome.evidence)
+    if outcome.module_rules is not None:
+        payload["module_rules"] = _module_rules_payload(outcome.module_rules)
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
 def _pr_review_limitations(outcome: ReviewOutcome) -> tuple[str, ...]:
+    if outcome.module_rules is not None and outcome.module_rules.status == "loaded":
+        return _PR_REVIEW_LIMITATIONS[1:]
     if outcome.evidence is None:
         return _PR_REVIEW_LIMITATIONS
     return (
@@ -638,6 +644,38 @@ def _pr_review_limitations(outcome: ReviewOutcome) -> tuple[str, ...]:
         "only explicitly supplied caller evidence is included.",
         _PR_REVIEW_LIMITATIONS[2],
     )
+
+
+def _module_rules_payload(rules: ModuleReviewRules) -> dict[str, object]:
+    # Do not use asdict: local policy text belongs in reviewer input, not reports.
+    return {
+        "status": rules.status,
+        "provenance": "local-launch",
+        "sources": [
+            {"path": source, "utf8_bytes": document.utf8_bytes, "sha256": document.sha256}
+            for source, document in zip(rules.sources, rules.documents)
+        ],
+    }
+
+
+def _review_module_rules_lines(rules: ModuleReviewRules | None) -> list[str]:
+    if rules is None:
+        return []
+    explanation = {
+        "loaded": "Selected local guidance was supplied; model compliance is not validated.",
+        "not-found": "Neither optional local source was found; only shared Go rules apply.",
+        "disabled": "Local rule collection was disabled; only shared Go rules apply.",
+        "fixed-evidence": "Automatic local rules were excluded; only shared Go rules apply.",
+    }[rules.status]
+    lines = [
+        "## Module rules", "",
+        f"Status: {rules.status}. Provenance: local-launch.", explanation,
+    ]
+    lines.extend(
+        f"- `{source}`: {document.utf8_bytes} UTF-8 bytes; SHA-256 `{document.sha256}`."
+        for source, document in zip(rules.sources, rules.documents)
+    )
+    return [*lines, ""]
 
 
 def _review_evidence_payload(evidence: FixedReviewEvidence) -> dict[str, object]:

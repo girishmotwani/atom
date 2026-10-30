@@ -232,9 +232,9 @@ that module remain in the diff, but Go checks cover only the selected module.
 Cleanup is attempted on every exit; failures name the retained directory and do not
 become a successful review.
 
-**Current boundary:** this reuses the existing diff-and-shared-style reviewer.
-Initialized module rules and automatic surrounding-code collection are **not yet
-delivered**; PR Markdown and JSON reports explicitly disclose both limitations.
+**Current boundary:** normal reviews include the shared Go rules and selected
+launch-module guidance described below. Automatic surrounding-code collection is
+not supplied; Go checks still cover only the selected module.
 Required checks still block review unless you explicitly use `--skip-toolchain`.
 Existing `--model`, `--runs`, `--concurrency`, `--window`,
 `--disable-mcp-server`, and `--json` options apply. Choose exactly one source:
@@ -245,6 +245,21 @@ account when a default model is unavailable; Atom does not silently substitute o
 Repeated `--disable-mcp-server NAME` options exclude named custom MCP servers from
 both availability probes and review calls, without changing saved configuration.
 Disabling built-in MCP servers alone does not exclude custom servers.
+
+Normal reviews freeze two optional files from the **launch module root**, in order:
+`.atom\atom\skills\atom\references\go-style.md` and `AGENTS.md`. Local edits apply,
+including during PR review; files in the temporary checkout do not replace them.
+Run from the module root: Atom does not walk ancestors, infer nested modules, follow
+Markdown links, or import other instruction files. Missing sources are reported;
+present but unreadable, invalid, blank, nonregular, dangling, outside-root or
+duplicate-resolved sources stop review before PR preparation or model calls.
+
+Use `--no-module-rules` for shared-rules-only review. For conflicting code-review
+conventions, module `AGENTS.md` takes precedence over the initialized guide, then
+shared style. This does not authorize workflow execution or change tool permissions,
+output format or evidence scope. Reports include status, relative source names,
+byte counts and SHA-256 digests, not captured policy text or absolute paths.
+Delivery is not proof of rule compliance or improved review quality.
 
 Review calls request structured CLI events so Atom can isolate one parent answer
 from delegated replies, commentary and tool output. Atom requires successful stream
@@ -262,7 +277,10 @@ atom review --working --fixed-evidence --context-file .\evidence\caller-contract
 `--fixed-evidence` requests exclusions for all built-in, custom and MCP tools on
 both probes and reviews. Observable tool activity or child-owned events invalidate
 that review response; rejected options never trigger a tool-enabled fallback.
-The existing default mode is unchanged.
+Tool exclusions do not necessarily prevent MCP startup; named custom servers still
+require `--disable-mcp-server NAME` when startup isolation is needed.
+This mode does not automatically collect module rules, even when those files exist;
+its report records `fixed-evidence` status. Shared Go rules remain present.
 
 Repeat `--context-file PATH` to supply caller-prepared UTF-8 documents. Each is
 captured once, before PR preparation, relative to the original launch directory;

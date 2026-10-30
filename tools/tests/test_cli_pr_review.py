@@ -107,8 +107,11 @@ def test_pr_report_provenance_and_limitations(prepared_cli, capsys, as_json):
     assert not checkout_runner.checkout.parent.exists()
 
 
-def test_pr_review_options_and_partial_status(prepared_cli, capsys):
+def test_pr_review_options_and_partial_status(prepared_cli, capsys, tmp_path):
     checkout_runner, models = prepared_cli
+    (tmp_path / "AGENTS.md").write_text(
+        "LOCAL_PARTIAL_POLICY: preserve rollback", encoding="utf-8",
+    )
     models.failing_models = ("bad-model",)
     assert invoke(
         "--pr", PR_URL, "--skip-toolchain", "--model", "good-model", "--model", "bad-model",
@@ -119,6 +122,8 @@ def test_pr_review_options_and_partial_status(prepared_cli, capsys):
     assert payload["is_partial"] is True
     assert {entry["model"] for entry in payload["models"]} == {"good-model", "bad-model"}
     assert all(entry["runs_requested"] == 2 for entry in payload["models"])
+    assert payload["module_rules"]["status"] == "loaded"
+    assert all("LOCAL_PARTIAL_POLICY" in text for text in models.stdin_texts if text is not None)
     reviews = [command for command in models.commands if "--no-custom-instructions" in command
                and "-p" not in command]
     assert reviews
@@ -205,7 +210,8 @@ def test_cleanup_failure_prevents_success_output(prepared_cli, monkeypatch, caps
     assert "cleanup failure fixture" in output.err
 
 
-def test_local_reports_have_no_pr_fields(monkeypatch, capsys):
+def test_local_reports_have_no_pr_fields(monkeypatch, capsys, tmp_path):
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: ScriptedRunner())
     assert invoke("--working", "--skip-toolchain", "--runs", "1", "--json") == EXIT_PASSED
     assert "pull_request" not in json.loads(capsys.readouterr().out)
@@ -289,3 +295,74 @@ def test_pr_context_failure_prevents_preparation(tmp_path, monkeypatch, capsys):
 def test_missing_source_help_mentions_pr(capsys):
     assert invoke() == EXIT_USAGE_ERROR
     assert "--pr" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("as_json", [False, True])
+def test_cli_freezes_launch_rules_before_pr_preparation(
+    prepared_cli, tmp_path, monkeypatch, capsys, as_json,
+):
+    from atom import cli
+
+    _, models = prepared_cli
+    guide_relative = ".atom/atom/skills/atom/references/go-style.md"
+    guide = tmp_path / guide_relative
+    guide.parent.mkdir(parents=True)
+    guide.write_bytes(b"LAUNCH_GUIDE: preserve cancellation\r\n")
+    agents = tmp_path / "AGENTS.md"
+    agents.write_bytes(b"LAUNCH_AGENTS: rollback releases leases\n")
+    original_prepare = cli.prepare_pull_request_review
+
+    @contextmanager
+    def prepare(*args):
+        guide.unlink()
+        agents.unlink()
+        with original_prepare(*args) as prepared:
+            clone_guide = prepared.working_directory / guide_relative
+            clone_guide.parent.mkdir(parents=True)
+            clone_guide.write_text("CHECKOUT_GUIDE must not become policy", encoding="utf-8")
+            (prepared.working_directory / "AGENTS.md").write_text(
+                "CHECKOUT_AGENTS must not become policy", encoding="utf-8",
+            )
+            yield prepared
+
+    monkeypatch.setattr(cli, "prepare_pull_request_review", prepare)
+    options = ["--json"] if as_json else []
+    assert invoke("--pr", PR_URL, "--skip-toolchain", "--runs", "2", *options) == EXIT_PASSED
+    output = capsys.readouterr().out
+    prompts = [text for text in models.stdin_texts if text is not None]
+    assert len(prompts) == 4
+    assert len(set(prompts)) == 1
+    assert all("LAUNCH_GUIDE" in text and "LAUNCH_AGENTS" in text for text in prompts)
+    assert all("CHECKOUT_GUIDE" not in text and "CHECKOUT_AGENTS" not in text for text in prompts)
+    assert "LAUNCH_GUIDE" not in output and "LAUNCH_AGENTS" not in output
+    limitations = (
+        json.loads(output)["pull_request"]["limitations"] if as_json else output
+    )
+    assert "Initialized module rules are not applied." not in limitations
+    assert "selected module" in str(limitations).lower()
+    assert "surrounding" in str(limitations).lower()
+
+
+@pytest.mark.parametrize("pr", [False, True])
+def test_cli_rule_error_prevents_preparation_or_execution(tmp_path, monkeypatch, capsys, pr):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "AGENTS.md").write_bytes(b" \r\n")
+    models = ScriptedRunner()
+    preparations = []
+
+    @contextmanager
+    def prepare(*args):
+        preparations.append(args)
+        raise ValueError("unexpected PR preparation")
+        yield
+
+    monkeypatch.setattr("atom.cli.SubprocessRunner", lambda: models)
+    monkeypatch.setattr("atom.cli.prepare_pull_request_review", prepare)
+    source = ["--pr", PR_URL] if pr else ["--working"]
+    assert invoke(*source, "--skip-toolchain") == EXIT_CHECK_FAILED
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "module rules:" in captured.err
+    assert str(tmp_path) not in captured.err
+    assert models.commands == []
+    assert preparations == []
