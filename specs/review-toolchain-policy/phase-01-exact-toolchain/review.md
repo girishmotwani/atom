@@ -1,127 +1,27 @@
-# Exact Go Multi-Model Review
+# Exact Go Independent Review And Triage
 
-Status: **two independent reviews completed; final unchanged Python gate passed; earlier handle-count failure retained**.
+Status: **two independent reviews completed; later root fix separately tested;
+cross-platform CI currently failing**.
 
-Earlier batch sections are historical. The final section records a subsequent tested author-found correction.
+## Completed Model Reviews
 
-## First Approved Batch (Historical)
-
-The developer approved one fixed-evidence review each from the two runtime-default
-models, with availability probes, 300-second review deadlines and no retries.
-The input was 780615 UTF-8 bytes, SHA-256
-`4fe61a7cded1253bbe4eeaf6f17a3f0db44e8852dc9dd6f4ac114ebdff68e0d6`, covering twenty changed code/test/guidance/archived
-driver files with complete current files and supporting context.
-
-| Model | Availability | Reviews completed/requested |
-|---|---|---|
-| gpt-5.4 | Unavailable | 0/1 |
-| gemini-3.8-flash | Available | 0/1 |
-
-Three commands actually ran: two availability probes and the Gemini review
-attempt. GPT's review was never invoked. Neither failure was a timeout.
-
-Actual GPT availability command:
-
-```text
-copilot -p ping --silent --model gpt-5.4 --no-custom-instructions --disable-builtin-mcps --excluded-tools builtin:* custom:* mcp:*
-Error: Model "gpt-5.4" from --model flag is not available.
-exit code: 1
-```
-
-Actual Gemini review command and error copied from its structured stdout:
-
-```text
-copilot --output-format json --model gemini-3.8-flash --no-custom-instructions --disable-builtin-mcps --excluded-tools builtin:* custom:* mcp:*
-Execution failed: Request exceeds the model's prompt budget after reserving output (203090 tokens; limit 200000). Reduce context or compact before continuing.
-exit code: 1
-```
-
-No usable findings were produced. This is **not a clean review**. No source
-fix, commit, push or PR has been performed. No second paid batch is authorized.
-The already accepted Windows Python gate and later focused native test remain
-unchanged; Linux/macOS evidence remains pending actual CI.
-
-The review gate mistakenly described 300 seconds as the existing timeout.
-The library default is actually 600 seconds. This batch explicitly used the
-approved stricter 300-second limit; that did not cause either observed failure.
-
-Proposed next batch, not executed: replace the unavailable default with a
-distinct non-author reviewer and retain Gemini; remove duplicate new-file
-diff text while retaining every complete changed file, tracked diff and all
-supporting context. Re-gate before any further model call.
-
-Untouched original POC/TDD artifacts and raw model captures remain outside Git.
-The approved path-redacted publication copies were prepared and byte-verified;
-see [publication evidence](../publication-evidence.md). Publication still waits
-for successful review and triage.
-
-## Approved Replacement Batch
-
-Both replacement models passed their availability probes. Four commands ran:
-two probes and two review attempts. Complete file/context input was retained;
-only redundant new-file diff text was removed. Input: 721289
-UTF-8 bytes, SHA-256 `891bd89e0334776c3568a6d6af11aeacc581ac74ca3e1329b845ed2a30d958ec`.
-
-| Model | Review outcome | Completed/requested | Observed duration (seconds) |
+| Reviewer | Usable reviews | Findings | Context and duration |
 |---|---|---|---|
-| claude-sonnet-5.5 | Failed before query: prompt budget | 0/1 | 11.416180100059137 |
-| gemini-3.8-flash | Completed, readable fixed-evidence response | 1/1 | 297.4306458000792 |
+| gemini-3.8-flash | 1 | None | Retained standard-context response; 297.4306458000792 seconds |
+| claude-sonnet-5.5 | 1 | Two low/Minor findings | Approved long_context response; 65.40789499995299 seconds |
 
-Actual failed-query diagnostic copied from structured stdout:
+Both received the same complete twenty-file/context prompt: 721289 UTF-8 bytes,
+SHA-256 `891bd89e0334776c3568a6d6af11aeacc581ac74ca3e1329b845ed2a30d958ec`.
+Tools/custom instructions were excluded and root responses passed fixed-evidence
+validation. The reviewers differ from the primary authoring model.
 
-```text
-Execution failed: Request exceeds the model's prompt budget after reserving output (226156 tokens; limit 200000). Reduce context or compact before continuing.
-```
-
-The completed Gemini response was decoded by Atom's fixed-evidence/root-response
-validator and was exactly:
+Actual validated Gemini response:
 
 ```json
 []
 ```
 
-Gemini reported no consequential findings. That is one independent review, not
-a completed two-model review. Claude's failure was not a timeout. No source bug
-was reported, fixed or silently rejected; no commit, push or PR was performed.
-All twenty code/test/guidance/driver snapshot hashes remain unchanged.
-
-Proposed next step, not authorized or run: retain the completed Gemini result and
-run only the pending Claude review with the CLI's larger-context setting and the
-actual 600-second default deadline. This requires a fresh bounded spend gate;
-do not rerun Gemini or discard either failed-batch denominator.
-
-The pre-commit Python gate must be rerun if publication becomes unblocked.
-Native Linux/macOS remains pending actual CI.
-
-## Claude-Only Larger-Context Batch And Final Triage
-
-The developer selected "Approve Claude-only long-context batch". One matching
-availability probe and one review ran with long_context and a 600-second owned
-deadline. Claude completed in 65.40789499995299 seconds. Gemini's
-already completed response was retained; it was not rerun.
-
-Both successful reviewers received the same complete twenty-file/context prompt,
-SHA-256 `891bd89e0334776c3568a6d6af11aeacc581ac74ca3e1329b845ed2a30d958ec`. Tool access was excluded and both final root
-responses passed fixed-evidence validation. Reviewer models differ from the
-primary authoring model. At that model-review snapshot, no source/test/guidance/archived-driver byte had changed.
-
-| Reviewer | Completed usable reviews | Raw finding count |
-|---|---|---|
-| gemini-3.8-flash | 1/1 retained | 0 |
-| claude-sonnet-5.5 | 1/1 larger context | 2 |
-
-### Merged Findings
-
-| Severity | Agreement | Location | Finding | Disposition |
-|---|---|---|---|---|
-| Minor (model: low) | 1/2 | tools/atom/go_selection.py:238 | Empty GOENV in minimal environments is rejected | Deferred: approved policy requires all four observed environment fields to be non-empty. Supporting empty GOENV would change that contract. Callers may explicitly use GOENV=off; no automatic setting change is introduced. |
-| Minor (model: low) | 1/2 | tools/atom/go_selection.py:222 | Experiment-labelled version output is rejected | Rejected as outside scope: exact stable version output and exact GOVERSION are deliberate checks. Widening/removing the probe would change the approved stable-distribution contract; no ordinary stable-release regression was established. |
-
-Both single-model findings were read individually, not discarded for lack of
-agreement. At model triage there were no Blocker/Major findings or production changes; the subsequent correction is recorded below.
-The empty-GOENV limitation is retained in findings.md and the PR notes.
-
-Actual Claude root response, copied from the validated structured output:
+Actual validated Claude response:
 
 ```json
 [
@@ -140,212 +40,76 @@ Actual Claude root response, copied from the validated structured output:
 ]
 ```
 
-### Reviewed-Snapshot Pre-Commit Verification (Before Subsequent Correction)
+## Finding Dispositions
 
-The approved Python-project replacement for root atom check was rerun for the
-reviewed snapshot alongside the final independent review. The later correction's gate follows below. Full original
-bytes are retained outside Git, SHA-256 `14a0d3efde296ba70f049542bb0c7d98762b367f6f6eb898a1ab54a1430e32ab`.
-The publication copy substitutes only labelled local path prefixes.
+| Severity | Agreement | Location | Finding | Disposition |
+|---|---|---|---|---|
+| Minor (model: low) | 1/2 | tools/atom/go_selection.py:238 | Empty observed GOENV rejects some minimal environments | Deferred under the approved four-non-empty-fields contract. Explicit GOENV=off is an option; no automatic rewrite or acceptance change. |
+| Minor (model: low) | 1/2 | tools/atom/go_selection.py:222 | Experiment-labelled version output is rejected | Rejected as outside the exact-stable contract; no ordinary stable-release regression established. |
 
-```text
-python -m pytest tests -v --cov=atom --cov-report=term-missing
+Each finding was read individually. Neither was discarded for lack of agreement.
+No model Blocker/Major finding was reported; these dispositions are not a claim
+that the models approved every later change.
 
-Name                        Stmts   Miss  Cover   Missing
----------------------------------------------------------
-atom\__init__.py                1      0   100%
-atom\_checkout_cleanup.py      30     21    30%   13-30, 34-41, 45
-atom\_review_format.py        149      7    95%   125, 178, 201, 210, 234, 244, 257
-atom\_windows_process.py      381     28    93%   188-190, 243, 309, 317, 346-350, 357-359, 362-363, 377, 386-387, 405, 414, 455-456, 485, 487, 560-561, 610, 618
-atom\artifact_cli.py           35      1    97%   58
-atom\artifacts.py             174     19    89%   103, 153, 219, 241, 256, 265, 276-284, 309-316, 346-348
-atom\body.py                   71      0   100%
-atom\buildsystem.py            76      5    93%   57-60, 72, 116, 180
-atom\check.py                  43      2    95%   117-118
-atom\cli.py                   366     21    94%   107-108, 372-373, 383-393, 415-425, 684, 875
-atom\context.py                61      2    97%   86-87
-atom\diff.py                  124      0   100%
-atom\eventlog.py               50      0   100%
-atom\extract.py               164      0   100%
-atom\filelock.py               64     10    84%   69-80, 169
-atom\gates.py                 173      6    97%   91, 407-408, 412, 462, 472
-atom\go_selection.py          220      3    99%   97, 181, 279
-atom\index.py                  40      5    88%   66-67, 81, 86, 98
-atom\invoke.py                137      4    97%   445, 449-451
-atom\merge.py                  92      0   100%
-atom\module_rules.py           52      2    96%   53-54
-atom\onboarding.py            137      4    97%   100, 138, 263-264
-atom\pathsetup.py              66      0   100%
-atom\phases.py                 92      0   100%
-atom\pull_request.py          209      6    97%   81, 306-307, 311-312, 341
-atom\report.py                396     10    97%   193, 208, 220, 234, 250, 252, 259, 931, 933, 935
-atom\review.py                131      0   100%
-atom\runner.py                213     54    75%   144-145, 161-207, 262, 268, 306-312, 345-357, 369-373, 384-395, 416, 457, 467, 469, 541
-atom\scaffold.py               46      1    98%   127
-atom\ship.py                  252      3    99%   387, 390-391
-atom\spike.py                 128      4    97%   169, 265, 268-269
-atom\state.py                 103      1    99%   235
-atom\status.py                 77      0   100%
-atom\storage.py                79      0   100%
-atom\style.py                   4      0   100%
-atom\toolchain.py              72      4    94%   124, 180, 188, 190
----------------------------------------------------------
-TOTAL                        4508    223    95%
-================= 1614 passed, 5 skipped in 209.39s (0:03:29) =================
-EXIT CODE: 0
-```
+## Subsequent Author-Found Root Bug
 
-Complete path-redacted output is appended to [TDD evidence](tdd-evidence.md).
-Native Linux/macOS, successful native Go race/CGO execution and real dependency
-compatibility remain unestablished locally. Publication is explicitly authorized;
-actual native CI evidence still must not be claimed before it runs.
+Publication inspection found that a different canonical GOROOT could share the
+selected resolved bin/go and pass executable/hash checks. Approved behavior 7
+already requires the inspected distribution root. One independent root-equality
+guard and one regression fixed this Minor gap.
 
-## Subsequent Author-Found Canonical-Root Correction
+The regression first failed with DID NOT RAISE GoToolchainSelectionError, then
+179 coupled selection/review/CLI tests passed. The alias is a filesystem-I/O
+simulation, not a native junction reproduction. Both models reviewed the
+preceding snapshot, not the later check/test. All other reviewed code, tests,
+guidance and drivers remained unchanged.
 
-Publication inspection found that executable path/hash equality alone could
-accept a different observed GOROOT whose bin/go resolves to the selected binary.
-This is a Minor contract-enforcement gap, not a finding from either model.
-Approved behavior 7 already requires the observed root to match the selected
-distribution. Add one independent canonical-root equality check and one focused
-regression; do not broaden the policy or weaken any existing expectation.
+Full RED/GREEN, the failed Windows gate, isolated handle diagnosis and latest
+passing full gate remain verbatim in [TDD evidence](tdd-evidence.md). The latest
+local result is 1615 passed, 5 skipped in 176.32s, 95%, exit 0. A prior native
+handle-count failure remains unexplained, not fixed or erased.
 
-The regression produced the clean assertion failure `DID NOT RAISE
-GoToolchainSelectionError` before production was changed. The corrected selector
-and coupled review/CLI tests then passed: 179 passed. The alias is controlled
-filesystem-I/O simulation, not a claimed native junction/symlink reproduction.
-Complete RED/GREEN and final gate captures are in [TDD evidence](tdd-evidence.md).
+## Invocation History
 
-The successful models reviewed the earlier snapshot, not this later check/test.
-All other reviewed source, test, guidance and driver hashes remain unchanged.
-No additional paid review or retry was run; this tested amendment is explicitly
-distinguished from the independent model-review evidence.
+| Approved batch | Actual commands | Result |
+|---|---|---|
+| Original default reviewers; 300-second reviews | 3: two probes and one review | GPT unavailable; Gemini rejected prompt budget; zero usable reviews |
+| Replacement Claude/Gemini; 300-second reviews | 4: two probes and two reviews | Gemini completed; Claude rejected prompt budget |
+| Claude-only long_context; 600-second review | 2: one matching probe and one review | Claude completed; Gemini not rerun |
 
-Final Windows Python gate after the correction (complete capture SHA-256
-`421c207d9e59b9fd520bc9cb3916182d0570b00103f74ab97710d8b36de4e9b8`; public output substitutes local path prefixes):
+Nine commands actually ran, yielding two usable independent reviews. None of
+the failed attempts timed out and no automatic retry occurred.
+
+The original 780615-byte prompt had SHA-256
+`4fe61a7cded1253bbe4eeaf6f17a3f0db44e8852dc9dd6f4ac114ebdff68e0d6`.
+The replacement removed duplicate new-file diff text, not complete files/context.
+Claude's tokenizer still exceeded its standard context. Raw model captures and
+the complete former report are archived outside Git.
+
+Original safe failure diagnostics, unchanged:
 
 ```text
-python -m pytest tests -v --cov=atom --cov-report=term-missing
-atom\_checkout_cleanup.py      30     21    30%   13-30, 34-41, 45
-atom\_review_format.py        149      7    95%   125, 178, 201, 210, 234, 244, 257
-atom\_windows_process.py      381     28    93%   188-190, 243, 309, 317, 346-350, 357-359, 362-363, 377, 386-387, 405, 414, 455-456, 485, 487, 560-561, 610, 618
-atom\artifact_cli.py           35      1    97%   58
-atom\artifacts.py             174     19    89%   103, 153, 219, 241, 256, 265, 276-284, 309-316, 346-348
-atom\body.py                   71      0   100%
-atom\buildsystem.py            76      5    93%   57-60, 72, 116, 180
-atom\check.py                  43      2    95%   117-118
-atom\cli.py                   366     21    94%   107-108, 372-373, 383-393, 415-425, 684, 875
-atom\context.py                61      2    97%   86-87
-atom\diff.py                  124      0   100%
-atom\eventlog.py               50      0   100%
-atom\extract.py               164      0   100%
-atom\filelock.py               64     10    84%   69-80, 169
-atom\gates.py                 173      6    97%   91, 407-408, 412, 462, 472
-atom\go_selection.py          220      3    99%   97, 181, 280
-atom\index.py                  40      5    88%   66-67, 81, 86, 98
-atom\invoke.py                137      4    97%   445, 449-451
-atom\merge.py                  92      0   100%
-atom\module_rules.py           52      2    96%   53-54
-atom\onboarding.py            137      4    97%   100, 138, 263-264
-atom\pathsetup.py              66      0   100%
-atom\phases.py                 92      0   100%
-atom\pull_request.py          209      6    97%   81, 306-307, 311-312, 341
-atom\report.py                396     10    97%   193, 208, 220, 234, 250, 252, 259, 931, 933, 935
-atom\review.py                131      0   100%
-atom\runner.py                213     54    75%   144-145, 161-207, 262, 268, 306-312, 345-357, 369-373, 384-395, 416, 457, 467, 469, 541
-atom\scaffold.py               46      1    98%   127
-atom\ship.py                  252      3    99%   387, 390-391
-atom\spike.py                 128      4    97%   169, 265, 268-269
-atom\state.py                 103      1    99%   235
-atom\status.py                 77      0   100%
-atom\storage.py                79      0   100%
-atom\style.py                   4      0   100%
-atom\toolchain.py              72      4    94%   124, 180, 188, 190
----------------------------------------------------------
-TOTAL                        4508    223    95%
-=========================== short test summary info ===========================
-FAILED tests/test_windows_process.py::test_windows_repeated_runs_release_handles_and_workers - AssertionError: native handles leaked across command runs
-assert 330 <= 328
- +  where 330 = <function test_windows_repeated_runs_release_handles_and_workers.<locals>.handle_count at 0x00000204F8AF2DE0>()
-============ 1 failed, 1614 passed, 5 skipped in 214.87s (0:03:34) ============
-EXIT CODE: 1
+Error: Model "gpt-5.4" from --model flag is not available.
 ```
-
-Native Linux/macOS and successful native race/CGO or real dependency compatibility
-remain pending actual evidence; the synthetic Windows fixture cannot prove them.
-
-## Final Verification Blocker
-
-The post-correction complete Python gate failed: 1 failed, 1614 passed, 5 skipped.
-test_windows_repeated_runs_release_handles_and_workers observed 330 handles
-against a baseline of 328 at tools/tests/test_windows_process.py:761.
-Its original strict assertions passed in a separate focused run (1 passed);
-that does not erase the full-suite failure or establish its cause.
-
-No handle-cleanup assertion, tolerance, skip or production workaround was added.
-Publication is paused; no commit, push or PR occurred. A bounded unchanged full
-rerun versus further native-handle diagnosis requires the developer's decision.
-The full failure and isolated result remain distinct evidence, not a clean gate.
-
-## Approved Unchanged Full Rerun
-
-After the full gate's handle-count failure and the isolated strict assertion
-pass, the developer explicitly approved one unchanged full-suite rerun.
-Actual result: 1615 passed, 5 skipped in 176.32s, 95% coverage, exit 0.
-No production code, test assertion, tolerance or skip changed between runs.
-The previously failed handle test passed in this full rerun.
-
-The original full-suite failure remains retained, not relabelled as success.
-Its cause remains unexplained; the passing rerun is not a handle-cleanup fix.
-The final source gate is green. Carry the earlier failure into findings and PR
-notes, alongside pending native Linux/macOS and race/CGO/dependency evidence.
-
-Review token-budget preflight and viable plan proposal are separately tracked
-in girishmotwani/atom#14. No budget implementation or additional model call
-is included in this exact-Go phase.
-
-Final full-gate excerpt (complete output in TDD evidence):
 
 ```text
-
-Name                        Stmts   Miss  Cover   Missing
----------------------------------------------------------
-atom\__init__.py                1      0   100%
-atom\_checkout_cleanup.py      30     21    30%   13-30, 34-41, 45
-atom\_review_format.py        149      7    95%   125, 178, 201, 210, 234, 244, 257
-atom\_windows_process.py      381     28    93%   188-190, 243, 309, 317, 346-350, 357-359, 362-363, 377, 386-387, 405, 414, 455-456, 485, 487, 560-561, 610, 618
-atom\artifact_cli.py           35      1    97%   58
-atom\artifacts.py             174     19    89%   103, 153, 219, 241, 256, 265, 276-284, 309-316, 346-348
-atom\body.py                   71      0   100%
-atom\buildsystem.py            76      5    93%   57-60, 72, 116, 180
-atom\check.py                  43      2    95%   117-118
-atom\cli.py                   366     21    94%   107-108, 372-373, 383-393, 415-425, 684, 875
-atom\context.py                61      2    97%   86-87
-atom\diff.py                  124      0   100%
-atom\eventlog.py               50      0   100%
-atom\extract.py               164      0   100%
-atom\filelock.py               64     10    84%   69-80, 169
-atom\gates.py                 173      6    97%   91, 407-408, 412, 462, 472
-atom\go_selection.py          220      3    99%   97, 181, 280
-atom\index.py                  40      5    88%   66-67, 81, 86, 98
-atom\invoke.py                137      4    97%   445, 449-451
-atom\merge.py                  92      0   100%
-atom\module_rules.py           52      2    96%   53-54
-atom\onboarding.py            137      4    97%   100, 138, 263-264
-atom\pathsetup.py              66      0   100%
-atom\phases.py                 92      0   100%
-atom\pull_request.py          209      6    97%   81, 306-307, 311-312, 341
-atom\report.py                396     10    97%   193, 208, 220, 234, 250, 252, 259, 931, 933, 935
-atom\review.py                131      0   100%
-atom\runner.py                213     54    75%   144-145, 161-207, 262, 268, 306-312, 345-357, 369-373, 384-395, 416, 457, 467, 469, 541
-atom\scaffold.py               46      1    98%   127
-atom\ship.py                  252      3    99%   387, 390-391
-atom\spike.py                 128      4    97%   169, 265, 268-269
-atom\state.py                 103      1    99%   235
-atom\status.py                 77      0   100%
-atom\storage.py                79      0   100%
-atom\style.py                   4      0   100%
-atom\toolchain.py              72      4    94%   124, 180, 188, 190
----------------------------------------------------------
-TOTAL                        4508    223    95%
-================= 1615 passed, 5 skipped in 176.32s (0:02:56) =================
-EXIT CODE: 0
+Execution failed: Request exceeds the model's prompt budget after reserving output (203090 tokens; limit 200000). Reduce context or compact before continuing.
 ```
+
+```text
+Execution failed: Request exceeds the model's prompt budget after reserving output (226156 tokens; limit 200000). Reduce context or compact before continuing.
+```
+
+The first gate incorrectly called 300 seconds the existing timeout; the library
+default is 600 seconds. The approved stricter deadline did not cause these failures.
+
+## Current Readiness
+
+CI on source commit 2d42f6f is not green: macOS and Windows CLI jobs failed.
+Linux CLI, existing POC jobs and documentation passed. Actual summaries and
+links are in [findings](../findings.md); this cleanup does not repair code.
+Native race/CGO, real dependencies and exhaustive SDK-manager discovery remain
+outside established local evidence.
+
+girishmotwani/atom#14 tracks model-budget preflight; girishmotwani/atom#16 tracks
+fresh independent post-patch review. Neither repair is implemented in this PR.

@@ -67,3 +67,43 @@ Both completed model inputs precede the selector/test correction.
 Original capture SHA-256: `e66cfc052c050b47e113252b9017eeb3a029b1de7e98872659df361ca5a40132`.
 The earlier failed capture is preserved separately. Only path prefixes
 are redacted in the added full output; source/test bytes are unchanged.
+
+## Approved Evidence Pruning
+
+The developer approved removing superseded successful validation transcripts
+and consolidating chronological status notes. Six complete pre-cleanup documents
+are archived byte-for-byte outside Git. They are also accessible at immutable
+source commit [2d42f6f](https://github.com/girishmotwani/atom/tree/2d42f6f18a6c0d0346f90a4cefbe5346cce9a8e3/specs/review-toolchain-policy).
+Earlier original/initial-publication hashes above remain historical identities.
+
+Current TDD retains complete failure-bearing/RED-GREEN capture blocks and the
+latest full successful gate without editing those bytes. Only superseded
+successful sections are omitted; chronological prose is consolidated. This is
+an explicitly approved excerpt selection, not a new experiment or a claim that
+omitted failures disappeared. Drivers, source, tests and approved design/map
+are unchanged. CI failures on that source commit remain explicit in findings.
+
+| Pre-cleanup artifact | Complete archived SHA-256 |
+|---|---|
+| `specs/review-toolchain-policy/phase-01-exact-toolchain/tdd-evidence.md` | `f39df0417d3c5f8f8f903e0ad954ba4e6d6cb84bf6dabff008cc6248781a00fe` |
+| `specs/review-toolchain-policy/phase-01-exact-toolchain/review.md` | `522c45ab0cb51f9696ba9ea5b5a0e4d01787f38a85aace5c7202649e7b4d2d09` |
+| `specs/review-toolchain-policy/decisions.md` | `931f6e19c0ab9a0f3b2da448f71220942b34573cbacd6693149fbbc925471984` |
+| `specs/review-toolchain-policy/findings.md` | `848a68ab4d6e74dd49735ec812f879e509918d179ec13a337bea5c8764ef2983` |
+| `specs/review-toolchain-policy/publication-evidence.md` | `db0aa1f50997fd2ce145289dec7525c7c3cc95adb89eb0398155691e8e96855f` |
+| `specs/review-toolchain-policy/phase-01-exact-toolchain/test-spec.md` | `0ce0fe626a20fc3ee75c3085a3f67ddc5bd61bafec6358795892e95b602d2f30` |
+
+| Retired successful TDD section | Archived section SHA-256 |
+|---|---|
+| Final full Python validation | `d0996049779597ad09229d55d2364f51c15a3539089a68aa67ae9f38d0b802b5` |
+| Fresh Pre-Commit Gate After Independent Reviews | `2af005ec8a29ab05b4f787e8f2197f0144935e6a5361af80417b4be087e26b3d` |
+| Final Documentation Validation | `620081d40f28d1a444b711139f81b12dc3aaf00373d1db35b2235a1d67ce2b09` |
+
+## Cleanup Documentation Check
+
+Actual output from the documentation-only cleanup, not a new source gate:
+
+```text
+python tools\check_links.py
+checked 339 relative links across markdown files
+all relative links resolve
+```

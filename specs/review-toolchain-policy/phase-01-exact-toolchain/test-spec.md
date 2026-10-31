@@ -132,34 +132,12 @@ behavior gaps, not optimized through trivial tests.
 - [x] New behavior RED/GREEN and preservation/native evidence distinguished.
 - [x] Native Windows evidence distinguished from pending Linux/macOS CI.
 - [x] Full final validation completed and captured in the TDD evidence artifact.
-- [x] Local implementation gate explicitly accepted by the developer; native Linux/macOS CI remains pending.
+- [x] Local implementation gate explicitly accepted by the developer; subsequent cross-platform CI results are recorded below.
 
-## Final Verification Blocker
+## Current Verification Status
 
-The post-correction complete Python gate failed: 1 failed, 1614 passed, 5 skipped.
-test_windows_repeated_runs_release_handles_and_workers observed 330 handles
-against a baseline of 328 at tools/tests/test_windows_process.py:761.
-Its original strict assertions passed in a separate focused run (1 passed);
-that does not erase the full-suite failure or establish its cause.
-
-No handle-cleanup assertion, tolerance, skip or production workaround was added.
-Publication is paused; no commit, push or PR occurred. A bounded unchanged full
-rerun versus further native-handle diagnosis requires the developer's decision.
-The full failure and isolated result remain distinct evidence, not a clean gate.
-
-## Approved Unchanged Full Rerun
-
-After the full gate's handle-count failure and the isolated strict assertion
-pass, the developer explicitly approved one unchanged full-suite rerun.
-Actual result: 1615 passed, 5 skipped in 176.32s, 95% coverage, exit 0.
-No production code, test assertion, tolerance or skip changed between runs.
-The previously failed handle test passed in this full rerun.
-
-The original full-suite failure remains retained, not relabelled as success.
-Its cause remains unexplained; the passing rerun is not a handle-cleanup fix.
-The final source gate is green. Carry the earlier failure into findings and PR
-notes, alongside pending native Linux/macOS and race/CGO/dependency evidence.
-
-Review token-budget preflight and viable plan proposal are separately tracked
-in girishmotwani/atom#14. No budget implementation or additional model call
-is included in this exact-Go phase.
+The complete final local gate passed 1615 tests, with 5 skipped, 95% coverage.
+The earlier native handle failure is preserved, not claimed fixed.
+CI run 41194476670 passed Linux CLI/POC/docs but failed macOS/Windows CLI suites;
+see [findings](../findings.md). Only evidence/status prose is consolidated here:
+all twenty behavior-to-test rows and actual source/tests are unchanged.
