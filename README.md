@@ -298,6 +298,60 @@ incomplete or ambiguous output remains an explicit partial-review failure; Atom
 does not guess at JSON fragments or fall back to mixed plain text. This relies on
 the CLI event contract, not a guarantee of compatibility with every CLI version.
 
+### Exact Go for review checks
+
+Optionally add `review_go_version` to the launch module's existing
+`.atom\config.json`, preserving its other fields. For example:
+
+```json
+{
+  "module_path": "example.com/service",
+  "review_go_version": "1.26.9"
+}
+```
+
+Only exact stable `1.X.Y` versions with X >= 21 are accepted, not minimums,
+`go` prefixes, ranges or `+auto`. Override that policy for one review with:
+
+```powershell
+atom review --working --go-version 1.26.9
+atom review --working --go-version 1.26.9 --go-executable "C:\Go1269\bin\go.exe"
+```
+
+`--go-executable` requires a configured or explicit version. It must identify an
+already installed distribution's direct executable, not a download wrapper;
+POSIX installations use their native `bin/go`. Otherwise discovery checks bounded
+PATH, process GOROOT, versioned SDK and common module-cache locations. Custom
+layouts may need an explicit path. Nothing is installed or silently upgraded.
+
+CLI version wins over launch-module policy; neither `go.mod` nor ancestor config
+sets a pin. Present malformed config fails explicitly, even with an override.
+Policy and relative executable paths are frozen before PR preparation: target
+checkout config cannot replace them. Use `--go-version` when launching PR review
+from an unrelated directory.
+
+Selected direct build/vet/test/race commands use the verified Go executable, and
+changed-file formatting uses its distribution's gofmt. Pinned Makefile build/test
+delegation is unsupported and stops before probes or recipes; Atom never bypasses
+the recipe to claim success. Unpinned behavior is unchanged.
+
+Child-only `GOTOOLCHAIN=local`, removed process GOROOT and selected-bin PATH leave
+parent/default settings unchanged. Other project settings and normal dependency
+activity remain: this is not network-free or hermetic. Advisory analyzers receive
+that helper-Go environment; their own binaries/compiler internals, arbitrary
+descendants and model tools are not independently pinned.
+
+Markdown, prompts and optional `toolchain.selection` in JSON schema 2 disclose
+requested/observed versions, executable identities and command evidence. Configured
+pins with `--skip-toolchain`, or requests outside a root Go module, are `not_run`,
+never an observed version. Explicit Go flags with `--skip-toolchain` are usage
+errors. Missing/mismatched tools, identity changes and required failures block
+models; failure stdout stays empty even with `--json`.
+
+Native integration has been exercised locally on Windows. Linux/macOS native
+validation remains pending CI; bounded discovery is not exhaustive SDK-manager
+support.
+
 ### Opt-in fixed-evidence review
 
 ```powershell

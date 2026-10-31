@@ -2,16 +2,243 @@
 
 from __future__ import annotations
 
+import json
 import os
+import shutil
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
+from pathlib import Path
 
 import pytest
 
 from atom import runner as runner_module
 from atom.runner import CommandOutcome, CommandResult, SubprocessRunner
+
+
+def test_child_environment_is_complete_unicode_and_preserves_stdin_and_parent(
+    tmp_path, monkeypatch,
+):
+    monkeypatch.setenv("ATOM_PARENT_ONLY", "must not leak")
+    parent = dict(os.environ)
+    environment = {"ATOM_CHILD": "selected \u03bb \U0001f680", "PYTHONIOENCODING": "utf-8"}
+    original = dict(environment)
+    script = (
+        "import json, os, sys; "
+        "print(json.dumps([os.environ.get('ATOM_CHILD'), "
+        "os.environ.get('ATOM_PARENT_ONLY'), sys.stdin.read()]))"
+    )
+
+    result = SubprocessRunner().run(
+        [sys.executable, "-c", script], tmp_path, timeout_seconds=5,
+        stdin_text="prompt \u03bb\n", environment=environment,
+    )
+
+    assert result.succeeded, result.stderr
+    assert json.loads(result.stdout) == ["selected \u03bb \U0001f680", None, "prompt \u03bb\n"]
+    assert environment == original
+    assert dict(os.environ) == parent
+
+
+@pytest.mark.parametrize("relative_path", [False, True])
+def test_executable_lookup_uses_complete_child_path_and_windows_pathext(
+    tmp_path, monkeypatch, relative_path,
+):
+    child_bin = tmp_path / "child-bin"
+    child_bin.mkdir()
+    child_path = child_bin.name if relative_path else str(child_bin)
+    environment = dict(os.environ)
+    if os.name == "nt":
+        executable = child_bin / "atom-env-tool.ENVTOOL"
+        shutil.copyfile(Path(os.environ["SystemRoot"]) / "System32" / "cmd.exe", executable)
+        arguments = ["/d", "/c", "echo child-path"]
+        environment = {
+            key: value for key, value in environment.items()
+            if key.upper() not in ("PATH", "PATHEXT")
+        }
+        environment.update({"pAtH": child_path, "pAtHeXt": ".ENVTOOL"})
+    else:
+        executable = child_bin / "atom-env-tool"
+        shutil.copyfile(sys.executable, executable)
+        executable.chmod(0o755)
+        arguments = ["-c", "print('child-path')"]
+        environment["PATH"] = child_path
+    monkeypatch.setenv("PATH", str(tmp_path / "parent-empty-bin"))
+    monkeypatch.setenv("PATHEXT", ".EXE")
+    parent = dict(os.environ)
+
+    result = SubprocessRunner().run(
+        ["atom-env-tool", *arguments], tmp_path, timeout_seconds=5,
+        environment=environment,
+    )
+
+    assert result.succeeded, result.stderr
+    assert result.stdout.strip() == "child-path"
+    assert dict(os.environ) == parent
+
+
+@pytest.mark.parametrize("empty_path", [False, True])
+def test_missing_child_tool_never_falls_back_to_parent_path(
+    tmp_path, monkeypatch, empty_path,
+):
+    parent_bin = tmp_path / "parent-bin"
+    parent_bin.mkdir()
+    if os.name == "nt":
+        shutil.copyfile(
+            Path(os.environ["SystemRoot"]) / "System32" / "cmd.exe",
+            parent_bin / "atom-parent-only.exe",
+        )
+        arguments = ["/d", "/c", "echo parent-tool-ran"]
+    else:
+        executable = parent_bin / "atom-parent-only"
+        shutil.copyfile(sys.executable, executable)
+        executable.chmod(0o755)
+        arguments = ["-c", "print('parent-tool-ran')"]
+    monkeypatch.setenv("PATH", str(parent_bin))
+    monkeypatch.chdir(parent_bin)
+    environment = {
+        "PATH": "" if empty_path else str(tmp_path / "child-empty-bin"),
+        "PATHEXT": ".EXE",
+    }
+
+    result = SubprocessRunner().run(
+        ["atom-parent-only", *arguments], tmp_path, timeout_seconds=5,
+        environment=environment,
+    )
+
+    assert result.outcome is CommandOutcome.TOOL_MISSING, result
+    assert result.stdout == ""
+    assert result.stderr == "Executable not found on PATH: atom-parent-only"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows stale executable diagnosis")
+def test_windows_child_path_diagnostic_names_shadowed_copy(tmp_path, monkeypatch):
+    broken = tmp_path / "broken"
+    working = tmp_path / "working"
+    broken.mkdir()
+    working.mkdir()
+    first = broken / "atom-shadow.ENVTOOL"
+    second = working / "atom-shadow.ENVTOOL"
+    first.touch()
+    shutil.copyfile(Path(os.environ["SystemRoot"]) / "System32" / "cmd.exe", second)
+    monkeypatch.setenv("PATH", str(tmp_path / "parent-empty-bin"))
+    environment = {"pAtH": os.pathsep.join(map(str, (broken, working))),
+                   "pAtHeXt": ".ENVTOOL"}
+
+    result = SubprocessRunner().run(
+        ["atom-shadow"], tmp_path, timeout_seconds=5, environment=environment,
+    )
+
+    assert result.outcome is CommandOutcome.TOOL_MISSING
+    assert str(first) in result.stderr
+    assert str(second) in result.stderr
+    assert "shadowed by the entry above" in result.stderr
+    assert "Reinstall" not in result.stderr
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows PATHEXT affects name lookup only")
+def test_absolute_executable_does_not_depend_on_child_pathext(tmp_path):
+    result = SubprocessRunner().run(
+        [sys.executable, "-c", "print('absolute')"], tmp_path, timeout_seconds=5,
+        environment={"PATHEXT": ".NOTEXE", "PYTHONIOENCODING": "utf-8"},
+    )
+
+    assert result.succeeded, result.stderr
+    assert result.stdout.strip() == "absolute"
+
+
+def test_environment_is_copied_before_launch(tmp_path, monkeypatch):
+    environment = {"ATOM_CHILD": "before", "PYTHONIOENCODING": "utf-8"}
+    launch_name = "_run_windows" if os.name == "nt" else "_launch"
+    original_launch = getattr(runner_module, launch_name)
+
+    def mutate_callers_mapping(*arguments, **keywords):
+        environment["ATOM_CHILD"] = "after"
+        return original_launch(*arguments, **keywords)
+
+    monkeypatch.setattr(runner_module, launch_name, mutate_callers_mapping)
+
+    result = SubprocessRunner().run(
+        [sys.executable, "-c", "import os; print(os.environ.get('ATOM_CHILD'))"],
+        tmp_path, timeout_seconds=5, environment=environment,
+    )
+
+    assert result.succeeded, result.stderr
+    assert result.stdout.strip() == "before"
+    assert environment["ATOM_CHILD"] == "after"
+
+
+def test_concurrent_child_environments_do_not_leak_into_base_calls(tmp_path, monkeypatch):
+    monkeypatch.setenv("ATOM_CHILD", "parent")
+    parent = dict(os.environ)
+    runner = SubprocessRunner()
+    barrier = threading.Barrier(3)
+    script = (
+        "import json, os, sys, time; time.sleep(0.1); "
+        "print(json.dumps([os.environ['ATOM_CHILD'], sys.stdin.read()]))"
+    )
+
+    def run_child(value):
+        options = {}
+        if value is not None:
+            options["environment"] = {
+                **parent, "ATOM_CHILD": value, "PYTHONIOENCODING": "utf-8",
+            }
+        barrier.wait(timeout=5)
+        return runner.run(
+            [sys.executable, "-c", script], tmp_path, timeout_seconds=5, **options,
+        )
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        results = list(executor.map(run_child, ("left \u03bb", "right \U0001f680", None)))
+
+    assert all(result.succeeded for result in results), results
+    assert [json.loads(result.stdout) for result in results] == [
+        ["left \u03bb", ""], ["right \U0001f680", ""], ["parent", ""],
+    ]
+    assert dict(os.environ) == parent
+
+
+def test_empty_environment_does_not_inherit_parent_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("ATOM_PARENT_ONLY", "must not leak")
+
+    result = SubprocessRunner().run(
+        [sys.executable, "-c", "import os; print(repr(os.environ.get('ATOM_PARENT_ONLY')))"],
+        tmp_path, timeout_seconds=5, environment={},
+    )
+
+    assert result.succeeded, result.stderr
+    assert result.stdout.strip() == "None"
+    assert os.environ["ATOM_PARENT_ONLY"] == "must not leak"
+
+
+@pytest.mark.parametrize("error", [
+    PermissionError("selected executable is not executable"),
+    OSError(8, "selected executable has invalid format"),
+])
+def test_posix_launch_errors_are_failed_command_evidence(tmp_path, monkeypatch, error):
+    from types import SimpleNamespace
+    import atom.runner as runner_module
+
+    def failed_launch(*args, **kwargs):
+        raise error
+
+    # Fault injection exercises classification, not native POSIX ownership.
+    monkeypatch.setattr(runner_module, "os", SimpleNamespace(name="posix"))
+    monkeypatch.setattr(runner_module, "_resolve_for_launch", lambda command, **kwargs: list(command))
+    monkeypatch.setattr(runner_module, "_launch", failed_launch)
+    try:
+        result = SubprocessRunner().run(
+            ("selected-go", "version"), tmp_path, environment={"GOTOOLCHAIN": "local"},
+        )
+    except OSError:
+        pytest.fail("unlaunchable selected executable escaped command evidence")
+    assert result.outcome is CommandOutcome.RUNNER_ERROR
+    assert result.exit_code is None
+    assert str(error) in result.stderr
 
 
 def test_runner_error_cannot_succeed_or_change_result_shape(tmp_path):
@@ -233,15 +460,25 @@ class TestTimeoutIsBoundedEvenWhenChildrenSurvive:
         "time.sleep(600)"
     )
 
-    def test_run_returns_promptly_when_the_child_leaves_a_process_behind(self, tmp_path):
+    @pytest.mark.parametrize("with_environment", [False, True])
+    def test_run_returns_promptly_when_the_child_leaves_a_process_behind(
+        self, tmp_path, with_environment,
+    ):
         started = time.monotonic()
+        options = {}
+        script = self.SPAWNS_A_SURVIVOR
+        if with_environment:
+            options["environment"] = {"ATOM_CHILD": "timeout", "PYTHONIOENCODING": "utf-8"}
+            script = "import os; print(os.environ.get('ATOM_CHILD'), flush=True); " + script
 
         result = SubprocessRunner().run(
-            [sys.executable, "-c", self.SPAWNS_A_SURVIVOR], tmp_path, timeout_seconds=1.0
+            [sys.executable, "-c", script], tmp_path, timeout_seconds=1.0, **options,
         )
 
         elapsed = time.monotonic() - started
         assert result.outcome is CommandOutcome.TIMED_OUT
+        if with_environment:
+            assert "timeout" in result.stdout
         assert elapsed < self.GRANDCHILD_LIFETIME_SECONDS / 2, (
             f"waited {elapsed:.1f}s for a 1s timeout; the wait is bounded by the "
             "surviving process rather than by the deadline"

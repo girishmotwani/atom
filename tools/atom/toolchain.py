@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from atom.gates import GateResult, GateStatus
+from atom.go_selection import GoToolchainSelection
 
 
 _COMMAND_BY_GATE = {
@@ -38,6 +39,7 @@ class ToolchainEvidence:
     was_run: bool
     skip_reason: str
     formatting_is_scoped: bool = False
+    selection: GoToolchainSelection | None = None
 
     @property
     def blocking_failures(self) -> tuple[GateResult, ...]:
@@ -52,9 +54,11 @@ class ToolchainEvidence:
     def as_prompt_block(self) -> str:
         """Explain which mechanical findings models should not spend time on."""
 
+        selection_text = "\n".join(_go_selection_lines(self.selection))
+        prefix = selection_text + "\n\n" if selection_text else ""
         if not self.was_run:
             reason = self.skip_reason or "no reason was recorded"
-            return (
+            return prefix + (
                 "The Go toolchain did not run before this review.\n"
                 f"Reason: {reason}\n\n"
                 "Nothing is excluded from your attention. Look for "
@@ -87,7 +91,7 @@ class ToolchainEvidence:
             "A clean tool run is not evidence a problem is absent; it is "
             "evidence that one specific tool did not see it."
         )
-        return "\n".join(lines)
+        return prefix + "\n".join(lines)
 
     def _command_verdict_lines(self) -> list[str]:
         """Render every gate so clean, dirty, and unchecked signals stay distinct."""
@@ -126,6 +130,35 @@ class ToolchainEvidence:
             "Do not report these mechanically checked categories: "
             f"{_join_human_list(exclusions)}."
         )
+
+
+def _go_selection_lines(selection: GoToolchainSelection | None) -> list[str]:
+    if selection is None:
+        return []
+    request = selection.request
+    lines = [
+        f"Requested Go: {request.version} (source: {request.source}; "
+        f"project version: {request.project_version or 'not configured'}).",
+        f"Go selection: {selection.status}; observed Go: "
+        f"{selection.observed_version or 'not observed'}.",
+    ]
+    if selection.status == "not_run":
+        lines.append(f"Reason: {selection.reason}")
+    else:
+        lines.extend([
+            f"Executable: {selection.executable} (source: {selection.selection_source}).",
+            f"Go SHA-256: before={selection.executable_sha256}, "
+            f"after={selection.executable_sha256_after}.",
+            f"GOROOT: {selection.goroot}",
+            f"Selected-root formatter: {selection.gofmt_executable}.",
+            f"gofmt SHA-256: before={selection.gofmt_sha256}, "
+            f"after={selection.gofmt_sha256_after or 'not used'}.",
+        ])
+    lines.append(
+        "Selection scope: direct Go/gofmt gates only. Advisory analyzer internals "
+        "and arbitrary descendants are not independently attested."
+    )
+    return lines
 
 
 def _command_for_gate(name: str) -> str:
