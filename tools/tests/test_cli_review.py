@@ -23,10 +23,14 @@ import pytest
 
 from atom.cli import EXIT_CHECK_FAILED, EXIT_PASSED, EXIT_USAGE_ERROR, main
 from atom.gates import GateResult, GateStatus
+from atom.go_selection import (
+    GoToolchainConfigError, GoToolchainRequest, GoToolchainSelection, GoToolchainSelectionError,
+)
 from atom.review import DEFAULT_REVIEW_MODELS
 from atom.review import ToolchainGateFailed
 from atom.runner import CommandOutcome, CommandResult
 from tests.conftest import cli_review_events, cli_review_response
+from tests.test_go_selection import write_policy
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_DIR = REPO_ROOT / "tools"
@@ -107,6 +111,126 @@ def scripted(monkeypatch):
 
 def review(*args: str) -> int:
     return main(["review", *args])
+
+
+def test_review_cli_captures_project_toolchain_policy(scripted, monkeypatch, tmp_path, capsys):
+    monkeypatch.chdir(tmp_path)
+    policy = write_policy(tmp_path)
+    original = policy.read_bytes()
+    assert review("--working", "--skip-toolchain", "--runs", "1", "--json") == EXIT_PASSED
+    payload = json.loads(capsys.readouterr().out)
+    assert "selection" in payload["toolchain"], "CLI did not capture launch policy"
+    assert payload["toolchain"]["selection"]["requested_version"] == "1.26.9"
+    assert payload["toolchain"]["selection"]["status"] == "not_run"
+    assert policy.read_bytes() == original
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_review_cli_version_and_executable_override(
+    scripted, monkeypatch, tmp_path, capsys, configured,
+):
+    import atom.cli as cli
+
+    monkeypatch.chdir(tmp_path)
+    if configured:
+        write_policy(tmp_path)
+    captured = []
+    original = cli.run_review
+
+    def recording(**kwargs):
+        captured.append(kwargs.get("go_toolchain_request"))
+        return original(**kwargs)
+
+    monkeypatch.setattr(cli, "run_review", recording)
+    relative = Path("sdk") / "bin" / "go"
+    assert review(
+        "--working", "--go-version", "1.25.0", "--go-executable", str(relative),
+        "--runs", "1", "--json",
+    ) == EXIT_PASSED
+    assert captured[0] is not None, "explicit toolchain request was ignored"
+    assert captured[0].version == "1.25.0"
+    assert captured[0].source == "cli"
+    assert captured[0].project_version == ("1.26.9" if configured else None)
+    assert captured[0].executable == (tmp_path / relative).resolve()
+    assert json.loads(capsys.readouterr().out)["toolchain"]["selection"]["status"] == "not_run"
+
+
+@pytest.mark.parametrize("option", [
+    ("--go-version", "1.26.9"), ("--go-executable", "sdk"),
+])
+def test_explicit_go_options_conflict_with_skip_toolchain(
+    scripted, monkeypatch, tmp_path, capsys, option,
+):
+    monkeypatch.chdir(tmp_path)
+    write_policy(tmp_path)
+    assert review("--working", "--skip-toolchain", *option, "--json") == EXIT_USAGE_ERROR
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--skip-toolchain" in captured.err
+    assert scripted.commands == []
+
+
+@pytest.mark.parametrize("kind", ["configuration", "selection", "required"])
+def test_toolchain_setup_failures_are_stderr_only(
+    scripted, monkeypatch, tmp_path, capsys, kind,
+):
+    monkeypatch.chdir(tmp_path)
+    pin = GoToolchainRequest("1.26.9", "cli")
+    if kind == "configuration":
+        error = GoToolchainConfigError("config.json: invalid review_go_version")
+        expected = ("review_go_version",)
+    elif kind == "selection":
+        command = ("fixture-go", "version")
+        error = GoToolchainSelectionError(
+            pin, "execution_failed", "probe failed",
+            probes=(CommandResult(
+                command, tmp_path, CommandOutcome.TIMED_OUT, None, "",
+                "probe-specific stderr", 60,
+            ),),
+        )
+        expected = ("Go 1.26.9", "probe-specific stderr")
+    else:
+        failure = GateResult(
+            "build", GateStatus.FAILED, "build failed", "original compiler output", True, 0.1,
+        )
+        error = ToolchainGateFailed(
+            (failure,), selection=GoToolchainSelection(
+                pin, status="verified", observed_version="1.26.9", executable=tmp_path / "go",
+            ),
+        )
+        expected = ("Requested Go: 1.26.9", "observed Go: 1.26.9", "original compiler output")
+
+    def blocked(**kwargs):
+        raise error
+
+    monkeypatch.setattr("atom.cli.run_review", blocked)
+    try:
+        code = review("--working", "--json")
+    except Exception as escaped:
+        pytest.fail(f"typed setup error escaped CLI diagnostics: {type(escaped).__name__}")
+    assert code == EXIT_CHECK_FAILED
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert all(text in captured.err for text in expected)
+    assert scripted.commands == []
+
+
+@pytest.mark.parametrize("options,code,diagnostic", [
+    (("--go-version", "auto"), EXIT_USAGE_ERROR, "exact stable Go"),
+    (("--go-executable", "installed"), EXIT_USAGE_ERROR, "requires"),
+    (("--go-version", "1.26.9"), EXIT_CHECK_FAILED, "review_go_version"),
+])
+def test_invalid_go_policy_fails_before_runner_commands(
+    scripted, monkeypatch, tmp_path, capsys, options, code, diagnostic,
+):
+    monkeypatch.chdir(tmp_path)
+    if code == EXIT_CHECK_FAILED:
+        write_policy(tmp_path, "invalid")
+    assert review("--working", "--json", *options) == code
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert diagnostic in captured.err
+    assert scripted.commands == []
 
 
 def test_context_requires_opt_in_before_io(scripted, monkeypatch, capsys):

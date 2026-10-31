@@ -220,16 +220,28 @@ def test_windows_fixture_readiness_deadline_preserves_read_failure(
     assert sleeps == [0.01]
 
 
-def test_windows_parent_exits_before_timeout(tmp_path):
+@pytest.mark.parametrize("with_environment", [False, True])
+def test_windows_parent_exits_before_timeout(tmp_path, with_environment):
     native = _windows_module()._Native()
     with _tree_fixture(tmp_path, hold_output=True) as (command, directory, identities):
+        options = {}
+        if with_environment:
+            options["environment"] = {
+                "ATOM_CHILD": "owned \u03bb", "PYTHONIOENCODING": "utf-8",
+            }
+            command = [
+                *command[:-1],
+                "import os; print(os.environ.get('ATOM_CHILD'), flush=True); " + command[-1],
+            ]
         started = time.monotonic()
-        result = SubprocessRunner().run(command, tmp_path, timeout_seconds=2)
+        result = SubprocessRunner().run(command, tmp_path, timeout_seconds=2, **options)
         elapsed = time.monotonic() - started
         handle = _retained_identity(identities)
         assert result.outcome is CommandOutcome.TIMED_OUT, result.stderr
         assert elapsed < 5
-        assert result.stdout == "child-out\n"
+        assert result.stdout == (
+            "owned \u03bb\nchild-out\n" if with_environment else "child-out\n"
+        )
         assert result.stderr.startswith("child-err\n")
         assert "timed out after 2 seconds" in result.stderr
         assert native.wait(handle, 0), "a child survived timed-out command return"

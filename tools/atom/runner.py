@@ -11,7 +11,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, Sequence
+from typing import Mapping, Protocol, Sequence
 
 # How long a timed-out command may spend handing back what it already printed,
 # once its process tree has been killed. Long enough for a drain that is going to
@@ -66,6 +66,8 @@ class CommandRunner(Protocol):
         working_directory: Path,
         timeout_seconds: float = 300.0,
         stdin_text: str | None = None,
+        *,
+        environment: Mapping[str, str] | None = None,
     ) -> CommandResult:
         """Run a command in a directory without exposing subprocess exceptions."""
 
@@ -79,6 +81,8 @@ class SubprocessRunner:
         working_directory: Path,
         timeout_seconds: float = 300.0,
         stdin_text: str | None = None,
+        *,
+        environment: Mapping[str, str] | None = None,
     ) -> CommandResult:
         """Execute command with separate stdout/stderr capture and no check=True raises.
 
@@ -106,18 +110,32 @@ class SubprocessRunner:
         execution. Remaining owned children stop even on success; this is not a
         background-service launcher. Ownership or cleanup failures cannot become
         successful command evidence.
+
+        An explicit environment is a complete child-only mapping, copied per
+        invocation; None retains inherited settings and legacy launch calls.
         """
 
         started_at = time.perf_counter()
+        child_environment = None if environment is None else dict(environment)
         command_tuple = tuple(command)
+        launch_options = (
+            {} if child_environment is None else {"environment": child_environment}
+        )
+        lookup_options = (
+            {} if child_environment is None else {
+                "environment": child_environment, "working_directory": working_directory,
+            }
+        )
         if os.name == "nt":
             return _run_windows(
-                command_tuple, working_directory, timeout_seconds, stdin_text, started_at
+                command_tuple, working_directory, timeout_seconds, stdin_text, started_at,
+                **launch_options,
             )
         try:
             process = _launch(
-                _resolve_for_launch(command_tuple),
+                _resolve_for_launch(command_tuple, **lookup_options),
                 working_directory,
+                **launch_options,
             )
         except (FileNotFoundError, NotADirectoryError):
             # Windows raises NotADirectoryError (WinError 267) for a bad working
@@ -130,8 +148,14 @@ class SubprocessRunner:
                 CommandOutcome.TOOL_MISSING,
                 None,
                 "",
-                _diagnose_missing_file(command_tuple, working_directory),
+                _diagnose_missing_file(command_tuple, working_directory, **launch_options),
                 duration_seconds,
+            )
+        except OSError as error:
+            return CommandResult(
+                command_tuple, working_directory, CommandOutcome.RUNNER_ERROR,
+                None, "", f"atom: command launch failure: {error}",
+                time.perf_counter() - started_at,
             )
 
         try:
@@ -189,18 +213,29 @@ def _run_windows(
     timeout_seconds: float,
     stdin_text: str | None,
     started_at: float,
+    *,
+    environment: Mapping[str, str] | None = None,
 ) -> CommandResult:
     from ._windows_process import _WindowsProcess
 
     process = _WindowsProcess()
     outcome = CommandOutcome.COMPLETED
     diagnostic = ""
+    start_options = {} if environment is None else {"environment": environment}
+    lookup_options = (
+        {} if environment is None else {
+            "environment": environment, "working_directory": working_directory,
+        }
+    )
     # Keep the guard installed through receipt/diagnosis and the first cleanup
     # instruction, not only during individual native acquisitions.
     with process.defer_interrupts():
         try:
             try:
-                process.start(_resolve_for_launch(command), working_directory)
+                process.start(
+                    _resolve_for_launch(command, **lookup_options),
+                    working_directory, **start_options,
+                )
                 if process.interrupted:
                     raise KeyboardInterrupt
                 process.communicate(
@@ -208,14 +243,14 @@ def _run_windows(
                 )
             except (FileNotFoundError, NotADirectoryError):
                 outcome = CommandOutcome.TOOL_MISSING
-                diagnostic = _diagnose_missing_file(command, working_directory)
+                diagnostic = _diagnose_missing_file(command, working_directory, **start_options)
             except subprocess.TimeoutExpired:
                 outcome = CommandOutcome.TIMED_OUT
                 diagnostic = f"Command timed out after {timeout_seconds:g} seconds."
             except OSError as error:
                 if getattr(error, "winerror", None) == 193:
                     outcome = CommandOutcome.TOOL_MISSING
-                    diagnostic = _diagnose_missing_file(command, working_directory)
+                    diagnostic = _diagnose_missing_file(command, working_directory, **start_options)
                 else:
                     outcome = CommandOutcome.RUNNER_ERROR
                     diagnostic = f"atom: Windows runner failure: {error}"
@@ -249,7 +284,12 @@ def _run_windows(
     )
 
 
-def _launch(command: Sequence[str], working_directory: Path) -> subprocess.Popen:
+def _launch(
+    command: Sequence[str],
+    working_directory: Path,
+    *,
+    environment: Mapping[str, str] | None = None,
+) -> subprocess.Popen:
     """Start a command with both streams captured and stdin closed immediately.
 
     On POSIX the child is given its own session so that a timeout can signal the
@@ -264,6 +304,8 @@ def _launch(command: Sequence[str], working_directory: Path) -> subprocess.Popen
     """
 
     platform_options: dict[str, object] = {}
+    if environment is not None:
+        platform_options["env"] = environment
     if os.name != "nt":
         platform_options["start_new_session"] = True
 
@@ -353,7 +395,11 @@ def _kill_process_tree(process: subprocess.Popen) -> str:
         return f"could not signal the process group ({error}); killed the process only"
 
 
-def _resolve_for_launch(command: tuple[str, ...]) -> list[str]:
+def _resolve_for_launch(
+    command: tuple[str, ...],
+    environment: Mapping[str, str] | None = None,
+    working_directory: Path | None = None,
+) -> list[str]:
     """Replace the program name with the path the developer's shell would pick.
 
     Windows CreateProcess searches PATH for the literal name and for `name.exe`
@@ -362,20 +408,80 @@ def _resolve_for_launch(command: tuple[str, ...]) -> list[str]:
     and is invisible to subprocess.run. shutil.which applies the shell's rules,
     so resolving through it first makes Atom agree with the terminal.
 
-    Resolution failures are left alone deliberately: passing the original name
-    through lets the launch fail where the failure can be diagnosed properly.
+    Ambient resolution failures pass through to the launch for diagnosis. An
+    explicit environment must not fall back to the parent's executable search.
     """
 
     if not command:
         return []
 
-    resolved_program = shutil.which(command[0])
+    resolved_program = _which(
+        command[0], environment, working_directory=working_directory
+    )
     if resolved_program is None:
+        if environment is not None:
+            # CreateProcessW would otherwise search the parent's PATH after an
+            # explicit child's lookup failed, silently running a different tool.
+            raise FileNotFoundError(command[0])
         return list(command)
     return [resolved_program, *command[1:]]
 
 
-def _diagnose_missing_file(command: tuple[str, ...], working_directory: Path) -> str:
+def _which(
+    tool_name: str,
+    environment: Mapping[str, str] | None = None,
+    *,
+    path: str | None = None,
+    working_directory: Path | None = None,
+) -> str | None:
+    if environment is None:
+        # Keep the existing seam/call shape for ambient callers and their fakes.
+        return shutil.which(tool_name) if path is None else shutil.which(tool_name, path=path)
+    settings = environment
+    if os.name == "nt":
+        settings = {key.upper(): value for key, value in environment.items()}
+    search_path = settings.get("PATH", os.defpath) if path is None else path
+    if working_directory is not None:
+        # Relative PATH entries and explicit relative executables belong to the
+        # child's cwd, not the directory from which Atom was launched.
+        if search_path:
+            search_path = os.pathsep.join(
+                os.path.abspath(os.path.join(working_directory, directory))
+                for directory in search_path.split(os.pathsep)
+            )
+        if os.path.dirname(tool_name):
+            tool_name = os.path.abspath(os.path.join(working_directory, tool_name))
+    if os.path.dirname(tool_name) and os.path.isfile(tool_name):
+        return tool_name
+    if os.name != "nt":
+        return shutil.which(tool_name, path=search_path)
+
+    # shutil.which reads PATHEXT globally even when given path=. Mutating the
+    # parent to use it would leak settings into concurrent model/base commands.
+    extensions = (
+        settings.get("PATHEXT") or ".COM;.EXE;.BAT;.CMD"
+    ).split(os.pathsep)
+    extensions = [extension.rstrip(".") for extension in extensions if extension]
+    candidates = [tool_name + extension for extension in extensions]
+    if any(tool_name.upper().endswith(extension.upper()) for extension in extensions):
+        candidates.insert(0, tool_name)
+    if os.path.dirname(tool_name):
+        directories = [""]
+    else:
+        directories = search_path.split(os.pathsep) if search_path else []
+    for directory in directories:
+        for candidate in candidates:
+            found = os.path.join(directory, candidate)
+            if os.path.isfile(found) and os.access(found, os.F_OK | os.X_OK):
+                return found
+    return None
+
+
+def _diagnose_missing_file(
+    command: tuple[str, ...],
+    working_directory: Path,
+    environment: Mapping[str, str] | None = None,
+) -> str:
     """Explain which of the three causes of FileNotFoundError actually applies.
 
     The operating system raises the same exception when the tool is absent, when
@@ -388,7 +494,7 @@ def _diagnose_missing_file(command: tuple[str, ...], working_directory: Path) ->
         return f"Working directory does not exist: {working_directory}"
 
     tool_name = command[0] if command else "<empty command>"
-    resolved_path = shutil.which(tool_name)
+    resolved_path = _which(tool_name, environment, working_directory=working_directory)
     if resolved_path is None:
         return f"Executable not found on PATH: {tool_name}"
 
@@ -403,7 +509,9 @@ def _diagnose_missing_file(command: tuple[str, ...], working_directory: Path) ->
     # A dead entry earlier on PATH hides a working install behind it, so
     # reinstalling the tool does not help -- the new copy is never reached.
     # Naming the shadowed copy turns an unexplained failure into a PATH edit.
-    shadowed_copies = _path_matches_after_first(tool_name)
+    shadowed_copies = _path_matches_after_first(
+        tool_name, environment, working_directory=working_directory
+    )
     if shadowed_copies:
         return (
             f"{problem} A second copy is installed at {shadowed_copies[0]} but is "
@@ -414,16 +522,26 @@ def _diagnose_missing_file(command: tuple[str, ...], working_directory: Path) ->
     return f"{problem} This usually means a broken or stale install. Reinstall the tool."
 
 
-def _path_matches_after_first(tool_name: str) -> list[str]:
+def _path_matches_after_first(
+    tool_name: str,
+    environment: Mapping[str, str] | None = None,
+    *,
+    working_directory: Path | None = None,
+) -> list[str]:
     """List every other place on PATH where this tool name also resolves."""
 
     if os.path.dirname(tool_name):
         return []  # An explicit path cannot be shadowed by another PATH entry.
     matches: list[str] = []
-    for directory in os.environ.get("PATH", "").split(os.pathsep):
+    settings = os.environ if environment is None else environment
+    if environment is not None and os.name == "nt":
+        settings = {key.upper(): value for key, value in environment.items()}
+    for directory in settings.get("PATH", "").split(os.pathsep):
         if not directory:
             continue
-        found = shutil.which(tool_name, path=directory)
+        found = _which(
+            tool_name, environment, path=directory, working_directory=working_directory
+        )
         if found is not None:
             matches.append(found)
     return matches[1:]
