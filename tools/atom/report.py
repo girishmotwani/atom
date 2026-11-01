@@ -8,11 +8,13 @@ from dataclasses import asdict
 from atom.check import CheckReport
 from atom.context import FixedReviewEvidence
 from atom.gates import GateStatus
+from atom.go_selection import GoToolchainSelection
 from atom.index import SpikeSummary
 from atom.invoke import RunOutcome
 from atom.module_rules import ModuleReviewRules
 from atom.review import ReviewOutcome
 from atom.spike import SpikeKind, SpikeResult, Stage, Verdict
+from atom.toolchain import _go_selection_lines
 
 # Each report is its own machine contract, so each carries its own version.
 # A single shared number cannot be true for all of them: narrowing one report's
@@ -621,6 +623,8 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
         "findings": [_finding_payload(finding) for finding in outcome.findings],
     }
 
+    if outcome.toolchain.selection is not None:
+        payload["toolchain"]["selection"] = _go_selection_payload(outcome.toolchain.selection)
     if outcome.pull_request is not None:
         payload["pull_request"] = {
             **asdict(outcome.pull_request),
@@ -644,6 +648,41 @@ def _pr_review_limitations(outcome: ReviewOutcome) -> tuple[str, ...]:
         "only explicitly supplied caller evidence is included.",
         _PR_REVIEW_LIMITATIONS[2],
     )
+
+
+def _go_selection_payload(selection: GoToolchainSelection) -> dict[str, object]:
+    def command_record(result):
+        return {
+            "command": list(result.command),
+            "working_directory": str(result.working_directory),
+            "outcome": result.outcome.value,
+            "exit_code": result.exit_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "duration_seconds": round(result.duration_seconds, 3),
+        }
+
+    return {
+        "status": selection.status,
+        "requested_version": selection.request.version,
+        "request_source": selection.request.source,
+        "project_version": selection.request.project_version,
+        "selection_source": selection.selection_source,
+        "executable": str(selection.executable) if selection.executable is not None else None,
+        "executable_sha256": selection.executable_sha256,
+        "executable_sha256_after": selection.executable_sha256_after,
+        "goroot": str(selection.goroot) if selection.goroot is not None else None,
+        "observed_version": selection.observed_version,
+        "gofmt_executable": (
+            str(selection.gofmt_executable) if selection.gofmt_executable is not None else None
+        ),
+        "gofmt_sha256": selection.gofmt_sha256,
+        "gofmt_sha256_after": selection.gofmt_sha256_after,
+        "reason": selection.reason,
+        "discovery_diagnostics": list(selection.discovery_diagnostics),
+        "probes": [command_record(result) for result in selection.probes],
+        "commands": [command_record(result) for result in selection.commands],
+    }
 
 
 def _module_rules_payload(rules: ModuleReviewRules) -> dict[str, object]:
@@ -838,6 +877,9 @@ def _review_toolchain_lines(outcome: "ReviewOutcome") -> list[str]:
 
     evidence = outcome.toolchain
     lines = ["## Toolchain evidence", ""]
+    lines.extend(_go_selection_lines(evidence.selection))
+    if evidence.selection is not None:
+        lines.append("")
 
     if not evidence.was_run:
         reason = evidence.skip_reason or "no reason was recorded"

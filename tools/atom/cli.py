@@ -22,6 +22,9 @@ from atom.diff import (
 )
 from atom.buildsystem import detect
 from atom.gates import default_gates
+from atom.go_selection import (
+    GoToolchainConfigError, GoToolchainSelectionError, capture_go_toolchain_request,
+)
 from atom.index import list_spikes
 from atom.invoke import (
     DEFAULT_CONCURRENCY,
@@ -53,6 +56,7 @@ from atom.ship import DEFAULT_BASE_BRANCH, PrAction, ShipRefused, run_ship
 from atom.spike import NotASpikeError, run_spike
 from atom.state import STATE_FILE_VERSION, Project
 from atom.status import collect_status
+from atom.toolchain import _go_selection_lines
 from atom.storage import (
     StateFileCorrupt,
     StateFileError,
@@ -241,6 +245,14 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
     review_parser.add_argument(
         "--fixed-evidence", action="store_true",
         help="Exclude model-side tools and review only the supplied evidence.",
+    )
+    review_parser.add_argument(
+        "--go-version", metavar="1.X.Y",
+        help="Exact stable Go patch for review gates; overrides launch-module review_go_version.",
+    )
+    review_parser.add_argument(
+        "--go-executable", type=Path, metavar="PATH",
+        help="Installed direct bin/go executable; requires a configured or explicit Go version.",
     )
     review_parser.add_argument(
         "--no-module-rules", action="store_true",
@@ -644,7 +656,15 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
             )
         if arguments.context_file and not arguments.fixed_evidence:
             raise ValueError("context-file requires --fixed-evidence")
+        if arguments.skip_toolchain and (
+            arguments.go_version is not None or arguments.go_executable is not None
+        ):
+            raise ValueError("--go-version/--go-executable cannot be combined with --skip-toolchain")
         launch_directory = Path.cwd()
+        go_toolchain_request = capture_go_toolchain_request(
+            launch_directory, version_override=arguments.go_version,
+            executable_override=arguments.go_executable,
+        )
         module_rules = capture_module_review_rules(
             launch_directory, enabled=not arguments.no_module_rules,
             fixed_evidence=arguments.fixed_evidence,
@@ -677,6 +697,10 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
                 fixed_evidence=arguments.fixed_evidence,
                 context_documents=documents,
                 module_rules=module_rules,
+                **(
+                    {"go_toolchain_request": go_toolchain_request}
+                    if go_toolchain_request is not None else {}
+                ),
             )
             if prepared is not None:
                 outcome = replace(outcome, pull_request=prepared.provenance)
@@ -685,7 +709,10 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
         # would otherwise produce a clean-looking review that consulted nobody.
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_USAGE_ERROR
-    except (ModuleRulesInputError, ContextInputError, DiffUnavailable, PullRequestReviewError) as error:
+    except (
+        ModuleRulesInputError, ContextInputError, DiffUnavailable, PullRequestReviewError,
+        GoToolchainConfigError, GoToolchainSelectionError,
+    ) as error:
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_CHECK_FAILED
     except NoModelAvailable as error:
@@ -704,6 +731,8 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
             "atom review: required Go toolchain gates failed; review was not run.",
             file=sys.stderr,
         )
+        for line in _go_selection_lines(error.selection):
+            print(f"atom review: {line}", file=sys.stderr)
         for result in error.failures:
             print(f"atom review: {result.name}: {result.summary}", file=sys.stderr)
             if result.details.strip():

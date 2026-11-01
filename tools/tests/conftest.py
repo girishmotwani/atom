@@ -39,6 +39,7 @@ class FakeRunner:
         # callable taking the stdin text, for commands whose answer depends on
         # what was piped in (gofmt reading source on stdin).
         self.stdin_texts: list[str | None] = []
+        self.environments: list[dict[str, str] | None] = []
 
     def run(
         self,
@@ -46,10 +47,13 @@ class FakeRunner:
         working_directory: Path,
         timeout_seconds: float = 300.0,
         stdin_text: str | None = None,
+        *,
+        environment=None,
     ) -> CommandResult:
         command_tuple = tuple(command)
         self.calls.append((command_tuple, working_directory, timeout_seconds))
         self.stdin_texts.append(stdin_text)
+        self.environments.append(dict(environment) if environment is not None else None)
         if command_tuple not in self.scripted_results:
             return command_result(command_tuple, working_directory, CommandOutcome.TOOL_MISSING, None, "", f"missing: {command_tuple[0]}")
         scripted = self.scripted_results[command_tuple]

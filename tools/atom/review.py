@@ -18,11 +18,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+import os
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Sequence
 
 from atom.check import NotAGoModuleError, run_check
+from atom.buildsystem import detect
 from atom._review_format import capture_review_diff
 from atom.context import ContextDocument, FixedReviewEvidence, _validate_context_documents
 from atom.diff import CapturedDiff, DiffRequest, capture_diff
@@ -35,6 +37,10 @@ from atom.runner import CommandRunner
 from atom.pull_request import _PullRequestProvenance
 from atom.style import style_rules_block
 from atom.toolchain import ToolchainEvidence
+from atom.go_selection import (
+    GoToolchainRequest, GoToolchainSelection, GoToolchainSelectionError,
+    _SelectedGoRunner, resolve_go_toolchain,
+)
 
 # The two models Atom measured head to head, not a UI choice. The pairing is
 # evidence-backed: across 70 calls against a fixture with four planted defects,
@@ -80,8 +86,11 @@ Here is the diff:
 class ToolchainGateFailed(Exception):
     """Raised when required Go gates fail before model review can begin."""
 
-    def __init__(self, failures: Sequence[GateResult]) -> None:
+    def __init__(
+        self, failures: Sequence[GateResult], *, selection: GoToolchainSelection | None = None,
+    ) -> None:
         self.failures = tuple(failures)
+        self.selection = selection
         names = ", ".join(result.name for result in self.failures)
         super().__init__(f"Required toolchain gates failed: {names}")
 
@@ -267,6 +276,7 @@ def run_review(
     fixed_evidence: bool = False,
     context_documents: Sequence[ContextDocument] = (),
     module_rules: ModuleReviewRules | None = None,
+    go_toolchain_request: GoToolchainRequest | None = None,
 ) -> ReviewOutcome:
     """Capture a diff, ask every model about it, and merge what comes back.
 
@@ -296,12 +306,44 @@ def run_review(
     else:
         diff = capture_diff(request, runner, working_directory)
 
+    gate_runner = runner
+    selected_runner = None
+    if (
+        go_toolchain_request is not None and not skip_toolchain
+        and (working_directory / "go.mod").is_file()
+    ):
+        build_system = detect(working_directory)
+        delegated = [
+            " ".join(command)
+            for command in (build_system.build_command, build_system.test_command)
+            if command[0] != "go"
+        ]
+        if delegated:
+            raise GoToolchainSelectionError(
+                go_toolchain_request, "unsupported_wrapper",
+                "pinned review cannot attest delegated commands: " + ", ".join(delegated),
+            )
+        environment = dict(os.environ)
+        selected_runner = _SelectedGoRunner(
+            resolve_go_toolchain(
+                go_toolchain_request, runner, working_directory, environment=environment,
+            ),
+            runner, environment,
+        )
+        gate_runner = selected_runner
     toolchain = _collect_toolchain_evidence(
-        working_directory, runner, skip_toolchain=skip_toolchain,
+        working_directory, gate_runner, skip_toolchain=skip_toolchain,
         format_gate=format_gate,
     )
+    if selected_runner is not None:
+        toolchain = replace(toolchain, selection=selected_runner.finish())
+    elif go_toolchain_request is not None:
+        toolchain = replace(
+            toolchain,
+            selection=GoToolchainSelection(go_toolchain_request, reason=toolchain.skip_reason),
+        )
     if toolchain.blocking_failures:
-        raise ToolchainGateFailed(toolchain.blocking_failures)
+        raise ToolchainGateFailed(toolchain.blocking_failures, selection=toolchain.selection)
 
     prompt = REVIEW_PROMPT.format(
         toolchain=_prompt_toolchain_text(toolchain),

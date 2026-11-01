@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import uuid
+from collections.abc import Mapping
 from contextlib import contextmanager
 from ctypes import wintypes
 
@@ -231,7 +232,10 @@ class _Native:
                 raise OSError(f"{primary}; {detail}") from primary
             print(detail, file=sys.stderr)
 
-    def launch(self, command, working_directory, stdio, information=None):
+    def launch(
+        self, command, working_directory, stdio, information=None, *,
+        environment: Mapping[str, str] | None = None,
+    ):
         size = ctypes.c_size_t()
         # The first call obtains the variable-sized attribute buffer, not a launch.
         self.library.InitializeProcThreadAttributeList(None, 1, 0, ctypes.byref(size))
@@ -260,11 +264,23 @@ class _Native:
             if information is None:
                 information = _ProcessInfo()
             command_line = ctypes.create_unicode_buffer(subprocess.list2cmdline(command))
+            environment_block = None
+            creation_flags = 0x80000 | 4  # Extended startup info; suspended primary thread.
+            if environment is not None:
+                # CreateProcessW requires a sorted, double-NUL-terminated block.
+                # create_unicode_buffer supplies the second NUL, even for {}.
+                environment_block = ctypes.create_unicode_buffer(
+                    "\0".join(
+                        f"{key}={environment[key]}"
+                        for key in sorted(environment, key=str.upper)
+                    ) + "\0"
+                )
+                creation_flags |= 0x400  # CREATE_UNICODE_ENVIRONMENT
             self._check(
                 self.library.CreateProcessW(
                     None, command_line, None, None, True,
-                    0x80000 | 4,  # Extended startup info; primary thread remains suspended.
-                    None, str(working_directory), ctypes.byref(startup),
+                    creation_flags,
+                    environment_block, str(working_directory), ctypes.byref(startup),
                     ctypes.byref(information),
                 ),
                 "CreateProcessW",
@@ -450,14 +466,19 @@ class _WindowsProcess:
         finally:
             signal.signal(signal.SIGINT, previous)
 
-    def start(self, command, working_directory):
+    def start(
+        self, command, working_directory, *,
+        environment: Mapping[str, str] | None = None,
+    ):
         self.job = self.native.create_job()
         for name in ("stdin", "stdout", "stderr"):
             self.parents[name], self.children[name] = self.native.pipe(name != "stdin")
         # CreateProcess fills owner-held storage even if Python is interrupted
         # before the native wrapper can hand its return value back.
+        launch_options = {} if environment is None else {"environment": environment}
         self.native.launch(
-            command, working_directory, tuple(self.children.values()), self.information
+            command, working_directory, tuple(self.children.values()), self.information,
+            **launch_options,
         )
         self.native.assign(self.job, self.process)
         if not self.native.contains(self.job, self.process):

@@ -82,6 +82,29 @@ These rules keep the exclusion honest:
 checked and nothing is excluded, so a skipped gate costs attention rather than silently
 hiding findings.
 
+### Optional exact Go selection
+
+The launch module's existing `.atom/config.json` may set `review_go_version` to an
+exact stable `1.X.Y` patch (X >= 21). `--go-version 1.X.Y` overrides it for one run;
+`--go-executable PATH` selects an already installed direct `bin/go` (Windows:
+`bin/go.exe`) and requires an effective version. No installation, automatic upgrade,
+ancestor lookup or version inference from `go.mod` occurs. Malformed present config
+is an explicit error. Explicit paths resolve from launch cwd before PR preparation;
+target checkout policy never replaces the frozen launch request.
+
+Bounded installed-location discovery may need an explicit path for custom layouts.
+Selected direct Go gates and selected-root gofmt retain existing gate semantics;
+pinned Makefile build/test delegation fails before probes or recipes rather than
+bypassing the project's build. Unpinned delegation is unchanged. Advisory helper-Go
+settings are selected, not analyzer binaries/compiler internals or model tools.
+Child-only settings do not change defaults or make dependency activity network-free.
+
+Reports/prompts distinguish requested from observed versions. Configured pins with
+`--skip-toolchain`, or requests outside a root Go module, remain `not_run` with no
+observed executable/probes. Explicit Go flags plus `--skip-toolchain` are usage
+errors. Missing, mismatched or changed executable identities and required failures
+still block review; no compiler-text-based continuation is permitted.
+
 ## Step 3 — Run the models
 
 ```bash

@@ -12,6 +12,7 @@ from atom.pull_request import PullRequestReviewError, prepare_pull_request_revie
 from tests.conftest import command_result
 from tests.test_cli_review import ScriptedRunner
 from tests.test_pull_request import BASE, SOURCE, TARGET, CheckoutRunner
+from tests.test_go_selection import write_policy
 
 PR_URL = "https://dev.azure.com/example/project/_git/repository/pullrequest/42"
 
@@ -36,6 +37,43 @@ def test_pr_source_dispatch(monkeypatch, capsys):
     assert invoke("--pr", PR_URL) == EXIT_USAGE_ERROR
     assert [url for url, _ in calls] == [PR_URL]
     assert "test reached PR preparation" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("source", ["project", "cli", "ambient"])
+def test_pr_freezes_launch_toolchain_request(prepared_cli, monkeypatch, tmp_path, capsys, source):
+    import atom.cli as cli
+
+    if source == "project":
+        write_policy(tmp_path)
+    original_prepare = cli.prepare_pull_request_review
+    captured = []
+
+    @contextmanager
+    def mutate_policy(*args):
+        write_policy(tmp_path, "1.25.0")
+        with original_prepare(*args) as prepared:
+            write_policy(prepared.working_directory, "1.24.0")
+            yield prepared
+
+    def record_request(**kwargs):
+        captured.append(kwargs.get("go_toolchain_request"))
+        raise ValueError("captured launch request before model invocation")
+
+    monkeypatch.setattr(cli, "prepare_pull_request_review", mutate_policy)
+    monkeypatch.setattr(cli, "run_review", record_request)
+    relative = "installed"
+    options = ["--go-executable", relative] if source != "ambient" else []
+    if source == "cli":
+        options.extend(["--go-version", "1.26.9"])
+    assert invoke("--pr", PR_URL, *options) == EXIT_USAGE_ERROR
+    assert "captured launch request" in capsys.readouterr().err
+    if source == "ambient":
+        assert captured == [None]
+    else:
+        assert captured[0].version == "1.26.9"
+        assert captured[0].source == source
+        assert captured[0].executable == (tmp_path / relative).resolve()
+    assert prepared_cli[1].commands == []
 
 
 @pytest.mark.parametrize("extra", [
