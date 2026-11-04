@@ -303,7 +303,7 @@ def test_cli_rule_metadata_never_serializes_policy(tmp_path, monkeypatch, capsys
         assert str(tmp_path) not in text
         if output_format:
             payload = json.loads(text)
-            assert payload["schema_version"] == 2
+            assert payload["schema_version"] == 3
             metadata = payload.get("module_rules")
             assert metadata is not None, "reports must expose module-rule provenance"
             assert metadata == {

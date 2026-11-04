@@ -30,6 +30,8 @@ class GateResult:
     details: str
     required: bool
     duration_seconds: float
+    command_outcome: CommandOutcome | None = None
+    command_exit_code: int | None = None
 
 
 class Gate(Protocol):
@@ -100,6 +102,8 @@ class FormatGate:
                 command_result.combined_output,
                 self.required,
                 command_result.duration_seconds,
+                command_result.outcome,
+                command_result.exit_code,
             )
 
         unformatted_files = _non_empty_lines(command_result.stdout)
@@ -111,6 +115,8 @@ class FormatGate:
                 command_result.combined_output,
                 self.required,
                 command_result.duration_seconds,
+                command_result.outcome,
+                command_result.exit_code,
             )
 
         # Two classes of false failure are stripped out before a verdict: files
@@ -138,6 +144,8 @@ class FormatGate:
                 command_result.combined_output,
                 self.required,
                 command_result.duration_seconds,
+                command_result.outcome,
+                command_result.exit_code,
             )
 
         if line_ending_only:
@@ -154,6 +162,8 @@ class FormatGate:
                 command_result.combined_output,
                 self.required,
                 command_result.duration_seconds,
+                command_result.outcome,
+                command_result.exit_code,
             )
 
         return GateResult(
@@ -163,6 +173,8 @@ class FormatGate:
             command_result.combined_output,
             self.required,
             command_result.duration_seconds,
+            command_result.outcome,
+            command_result.exit_code,
         )
 
 
@@ -346,6 +358,8 @@ def _evaluate_go_test_gate(
             command_result.combined_output,
             required,
             command_result.duration_seconds,
+            command_result.outcome,
+            command_result.exit_code,
         )
 
     return GateResult(
@@ -355,6 +369,8 @@ def _evaluate_go_test_gate(
         command_result.combined_output,
         required,
         command_result.duration_seconds,
+        command_result.outcome,
+        command_result.exit_code,
     )
 
 
@@ -427,9 +443,18 @@ def _evaluate_exit_code_gate(
         return special_result
 
     if command_result.succeeded:
-        return GateResult(name, GateStatus.PASSED, f"{_format_command(command)} passed", command_result.combined_output, required, command_result.duration_seconds)
+        return GateResult(
+            name, GateStatus.PASSED, f"{_format_command(command)} passed",
+            command_result.combined_output, required, command_result.duration_seconds,
+            command_result.outcome, command_result.exit_code,
+        )
 
-    return GateResult(name, GateStatus.FAILED, f"{_format_command(command)} failed with exit code {command_result.exit_code}", command_result.combined_output, required, command_result.duration_seconds)
+    return GateResult(
+        name, GateStatus.FAILED,
+        f"{_format_command(command)} failed with exit code {command_result.exit_code}",
+        command_result.combined_output, required, command_result.duration_seconds,
+        command_result.outcome, command_result.exit_code,
+    )
 
 
 def _evaluate_advisory_exit_code_gate(
@@ -452,6 +477,8 @@ def _evaluate_advisory_exit_code_gate(
             command_result.combined_output,
             required,
             command_result.duration_seconds,
+            command_result.outcome,
+            command_result.exit_code,
         )
 
     if command_result.outcome is CommandOutcome.TIMED_OUT:
@@ -466,6 +493,8 @@ def _evaluate_advisory_exit_code_gate(
             command_result.combined_output,
             required,
             command_result.duration_seconds,
+            command_result.outcome,
+            command_result.exit_code,
         )
 
     if command_result.outcome is not CommandOutcome.COMPLETED:
@@ -476,6 +505,8 @@ def _evaluate_advisory_exit_code_gate(
             command_result.combined_output,
             required,
             command_result.duration_seconds,
+            command_result.outcome,
+            command_result.exit_code,
         )
 
     if command_result.succeeded:
@@ -486,6 +517,8 @@ def _evaluate_advisory_exit_code_gate(
             command_result.combined_output,
             required,
             command_result.duration_seconds,
+            command_result.outcome,
+            command_result.exit_code,
         )
 
     return GateResult(
@@ -495,6 +528,8 @@ def _evaluate_advisory_exit_code_gate(
         command_result.combined_output,
         required,
         command_result.duration_seconds,
+        command_result.outcome,
+        command_result.exit_code,
     )
 
 
@@ -504,12 +539,24 @@ def _result_for_non_completed_command(name: str, command_result: CommandResult, 
 
     if command_result.outcome is CommandOutcome.TOOL_MISSING:
         tool_name = command_result.command[0] if command_result.command else "<empty command>"
-        return GateResult(name, GateStatus.FAILED, f"Required tool missing: {tool_name}", command_result.combined_output, required, command_result.duration_seconds)
+        return GateResult(
+            name, GateStatus.FAILED, f"Required tool missing: {tool_name}",
+            command_result.combined_output, required, command_result.duration_seconds,
+            command_result.outcome, command_result.exit_code,
+        )
 
     if command_result.outcome is CommandOutcome.TIMED_OUT:
-        return GateResult(name, GateStatus.FAILED, "Command timed out before the gate could finish", command_result.combined_output, required, command_result.duration_seconds)
+        return GateResult(
+            name, GateStatus.FAILED, "Command timed out before the gate could finish",
+            command_result.combined_output, required, command_result.duration_seconds,
+            command_result.outcome, command_result.exit_code,
+        )
 
-    return GateResult(name, GateStatus.FAILED, "Command did not complete", command_result.combined_output, required, command_result.duration_seconds)
+    return GateResult(
+        name, GateStatus.FAILED, "Command did not complete",
+        command_result.combined_output, required, command_result.duration_seconds,
+        command_result.outcome, command_result.exit_code,
+    )
 
 
 def _format_command(command: tuple[str, ...]) -> str:

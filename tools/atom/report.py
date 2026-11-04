@@ -32,7 +32,8 @@ STATUS_SCHEMA_VERSION = 1
 # 2: A21 narrowed `is_corroborated` from "several models in this group" to
 # "several models on this line", so the same input now yields a different
 # answer.
-REVIEW_SCHEMA_VERSION = 2
+# 3: Phase 02 adds degraded status and a separate control-toolchain record.
+REVIEW_SCHEMA_VERSION = 3
 
 _PR_REVIEW_LIMITATIONS = (
     "Initialized module rules are not applied.",
@@ -127,6 +128,11 @@ def render_json(report: CheckReport) -> str:
                 "details": result.details,
                 "required": result.required,
                 "duration_seconds": round(result.duration_seconds, 3),
+                "command_outcome": (
+                    result.command_outcome.value
+                    if result.command_outcome is not None else None
+                ),
+                "command_exit_code": result.command_exit_code,
             }
             for result in report.gate_results
         ],
@@ -508,6 +514,12 @@ def render_review_markdown(outcome: "ReviewOutcome") -> str:
     """
 
     lines: list[str] = ["# Code review", ""]
+    if outcome.toolchain.degraded:
+        lines.extend([
+            "> **DEGRADED REVIEW:** the selected compiler failed; compatible control "
+            "checks passed without validating the selected compiler.",
+            "",
+        ])
     lines.extend(_review_header_lines(outcome))
     if outcome.pull_request is not None:
         lines.extend(["## Pull request", ""])
@@ -575,6 +587,8 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
         "toolchain": {
             "was_run": outcome.toolchain.was_run,
             "skip_reason": outcome.toolchain.skip_reason,
+            "degraded": outcome.toolchain.degraded,
+            "source_fingerprint": outcome.toolchain.source_fingerprint,
             "gates": [
                 {
                     "name": result.name,
@@ -583,8 +597,29 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
                     "details": result.details,
                     "required": result.required,
                     "duration_seconds": round(result.duration_seconds, 3),
+                    "command_outcome": (
+                        result.command_outcome.value
+                        if result.command_outcome is not None else None
+                    ),
+                    "command_exit_code": result.command_exit_code,
                 }
                 for result in outcome.toolchain.gate_results
+            ],
+            "control_gates": [
+                {
+                    "name": result.name,
+                    "status": result.status.value,
+                    "summary": result.summary,
+                    "details": result.details,
+                    "required": result.required,
+                    "duration_seconds": round(result.duration_seconds, 3),
+                    "command_outcome": (
+                        result.command_outcome.value
+                        if result.command_outcome is not None else None
+                    ),
+                    "command_exit_code": result.command_exit_code,
+                }
+                for result in outcome.toolchain.control_gate_results
             ],
         },
         "models": [
@@ -625,6 +660,10 @@ def render_review_json(outcome: "ReviewOutcome") -> str:
 
     if outcome.toolchain.selection is not None:
         payload["toolchain"]["selection"] = _go_selection_payload(outcome.toolchain.selection)
+    if outcome.toolchain.control_selection is not None:
+        payload["toolchain"]["control_selection"] = _go_selection_payload(
+            outcome.toolchain.control_selection,
+        )
     if outcome.pull_request is not None:
         payload["pull_request"] = {
             **asdict(outcome.pull_request),
@@ -899,6 +938,27 @@ def _review_toolchain_lines(outcome: "ReviewOutcome") -> list[str]:
             verdict += f" - {summary}"
         lines.append(f"| `{command}` | {verdict} |")
     lines.append("")
+    if evidence.degraded:
+        lines.extend([
+            "### Control toolchain evidence",
+            "",
+        ])
+        lines.extend(_go_selection_lines(evidence.control_selection))
+        lines.extend([
+            "",
+            "| Command | Verdict |",
+            "| --- | --- |",
+        ])
+        for result in evidence.control_gate_results:
+            lines.append(
+                f"| `{_toolchain_command_for_gate(result.name)}` | "
+                f"{_toolchain_verdict(result)} |"
+            )
+        lines.extend([
+            "",
+            f"Source fingerprint: `{evidence.source_fingerprint}`",
+            "",
+        ])
     if evidence.formatting_is_scoped:
         for result in evidence.gate_results:
             if result.name == "fmt":

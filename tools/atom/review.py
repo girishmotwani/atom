@@ -19,21 +19,24 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
+import shutil
+import stat
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Sequence
 
 from atom.check import NotAGoModuleError, run_check
 from atom.buildsystem import detect
-from atom._review_format import capture_review_diff
+from atom._review_format import ChangedFilesFormatGate, capture_review_diff
 from atom.context import ContextDocument, FixedReviewEvidence, _validate_context_documents
-from atom.diff import CapturedDiff, DiffRequest, capture_diff
+from atom.diff import CapturedDiff, DiffRequest, DiffSource, capture_diff
 from atom.extract import ExtractionReport, extract_all
-from atom.gates import Gate, GateResult, advisory_gates, default_gates
+from atom.gates import Gate, GateResult, GateStatus, advisory_gates, default_gates
 from atom.invoke import InvocationReport, RunOutcome, invoke_models
 from atom.merge import DEFAULT_PROXIMITY_WINDOW, MergedFinding, merge_findings
 from atom.module_rules import ModuleReviewRules, _validate_module_review_rules
-from atom.runner import CommandRunner
+from atom.runner import CommandOutcome, CommandRunner
 from atom.pull_request import _PullRequestProvenance
 from atom.style import style_rules_block
 from atom.toolchain import ToolchainEvidence
@@ -93,6 +96,14 @@ class ToolchainGateFailed(Exception):
         self.selection = selection
         names = ", ".join(result.name for result in self.failures)
         super().__init__(f"Required toolchain gates failed: {names}")
+
+
+class ControlToolchainError(Exception):
+    """Explain why no verified compatible control Go distribution is available."""
+
+
+class SourceFingerprintError(Exception):
+    """Keep unknown source identity distinct from a stable fingerprint."""
 
 
 @dataclass(frozen=True)
@@ -277,6 +288,8 @@ def run_review(
     context_documents: Sequence[ContextDocument] = (),
     module_rules: ModuleReviewRules | None = None,
     go_toolchain_request: GoToolchainRequest | None = None,
+    strict_toolchain: bool = False,
+    control_go_version: str | None = None,
 ) -> ReviewOutcome:
     """Capture a diff, ask every model about it, and merge what comes back.
 
@@ -331,9 +344,31 @@ def run_review(
             runner, environment,
         )
         gate_runner = selected_runner
+    continuation_candidate = _is_continuation_candidate(
+        working_directory / "go.mod",
+        go_toolchain_request,
+        selected_runner.selection if selected_runner is not None else None,
+        strict_toolchain=strict_toolchain,
+    )
+    module_minimum = (
+        _read_module_minimum_version(working_directory / "go.mod")
+        if continuation_candidate else None
+    )
+    source_fingerprint = None
+    if continuation_candidate:
+        if format_gate is None:
+            raise SourceFingerprintError(
+                "changed-file formatting scope is unavailable for control checks",
+            )
+        source_fingerprint = _fingerprint_review_snapshot(
+            working_directory,
+            format_gate,
+            verify_working_snapshot=request.source is DiffSource.WORKING,
+        )
     toolchain = _collect_toolchain_evidence(
         working_directory, gate_runner, skip_toolchain=skip_toolchain,
         format_gate=format_gate,
+        continuation_candidate=continuation_candidate,
     )
     if selected_runner is not None:
         toolchain = replace(toolchain, selection=selected_runner.finish())
@@ -343,7 +378,58 @@ def run_review(
             selection=GoToolchainSelection(go_toolchain_request, reason=toolchain.skip_reason),
         )
     if toolchain.blocking_failures:
-        raise ToolchainGateFailed(toolchain.blocking_failures, selection=toolchain.selection)
+        if (
+            continuation_candidate
+            and module_minimum is not None
+            and source_fingerprint is not None
+            and _has_proven_selected_build_failure(toolchain)
+        ):
+            environment = dict(os.environ)
+            control_selection = _resolve_control_toolchain(
+                module_minimum,
+                runner,
+                working_directory,
+                environment=environment,
+                exact_version=control_go_version,
+            )
+            control_runner = _SelectedGoRunner(control_selection, runner, environment)
+            control_results = _run_control_gates(
+                working_directory, control_runner, format_gate,
+            )
+            control_selection = control_runner.finish()
+            final_fingerprint = _fingerprint_review_snapshot(
+                working_directory, format_gate,
+            )
+            if final_fingerprint != source_fingerprint:
+                raise SourceFingerprintError(
+                    "changed Go-file inputs changed between selected and control checks",
+                )
+            control_failures = tuple(
+                replace(
+                    result,
+                    name=f"control {result.name}",
+                    status=GateStatus.FAILED,
+                    summary=f"Control gate did not pass: {result.summary}",
+                )
+                for result in control_results
+                if result.status is not GateStatus.PASSED
+            )
+            if control_failures:
+                raise ToolchainGateFailed(
+                    (*toolchain.blocking_failures, *control_failures),
+                    selection=toolchain.selection,
+                )
+            toolchain = replace(
+                toolchain,
+                control_gate_results=control_results,
+                control_selection=control_selection,
+                source_fingerprint=source_fingerprint,
+                degraded=True,
+            )
+        else:
+            raise ToolchainGateFailed(
+                toolchain.blocking_failures, selection=toolchain.selection,
+            )
 
     prompt = REVIEW_PROMPT.format(
         toolchain=_prompt_toolchain_text(toolchain),
@@ -431,6 +517,7 @@ def _collect_toolchain_evidence(
     runner: CommandRunner,
     skip_toolchain: bool,
     format_gate: Gate | None = None,
+    continuation_candidate: bool = False,
 ) -> ToolchainEvidence:
     """Run required and advisory Go gates before model review consumes the diff."""
 
@@ -442,23 +529,363 @@ def _collect_toolchain_evidence(
         )
 
     try:
-        required_gates = default_gates(enable_race=True)
-        if format_gate is not None:
-            required_gates = [
-                format_gate if gate.name == "fmt" else gate
-                for gate in required_gates
-            ]
-        required_report = run_check(working_directory, required_gates, runner)
+        if continuation_candidate:
+            if format_gate is None:
+                raise ValueError("continuation candidate is missing selected formatting evidence")
+            required_results = _collect_candidate_required_gates(
+                working_directory, runner, format_gate,
+            )
+        else:
+            required_gates = default_gates(enable_race=True)
+            if format_gate is not None:
+                required_gates = [
+                    format_gate if gate.name == "fmt" else gate
+                    for gate in required_gates
+                ]
+            required_report = run_check(working_directory, required_gates, runner)
+            required_results = required_report.gate_results
         advisory_report = run_check(working_directory, advisory_gates(), runner)
     except NotAGoModuleError as error:
         return ToolchainEvidence(gate_results=(), was_run=False, skip_reason=str(error))
 
     return ToolchainEvidence(
-        gate_results=required_report.gate_results + advisory_report.gate_results,
+        gate_results=required_results + advisory_report.gate_results,
         was_run=True,
         skip_reason="",
         formatting_is_scoped=format_gate is not None,
     )
+
+
+def _collect_candidate_required_gates(
+    working_directory: Path,
+    runner: CommandRunner,
+    format_gate: Gate,
+) -> tuple[GateResult, ...]:
+    """Run candidate gates in dependency order and preserve build-caused skips."""
+
+    gates_by_name = {gate.name: gate for gate in default_gates(enable_race=True)}
+    ordered_names = ("fmt", "build", "vet", "test", "race")
+    results = [format_gate.evaluate(runner, working_directory)]
+    if results[0].status is not GateStatus.PASSED:
+        return tuple(results)
+
+    build_result = gates_by_name["build"].evaluate(runner, working_directory)
+    results.append(build_result)
+    if build_result.status is GateStatus.FAILED:
+        # Only a completed non-zero build is the proven candidate; lifecycle
+        # failures remain blockers and must not be inferred from compiler text.
+        if (
+            build_result.command_outcome is not CommandOutcome.COMPLETED
+            or build_result.command_exit_code is None
+            or build_result.command_exit_code == 0
+        ):
+            return tuple(results)
+        for gate_name in ordered_names[2:]:
+            results.append(GateResult(
+                gate_name,
+                GateStatus.SKIPPED,
+                "Skipped because the selected build failed",
+                "",
+                True,
+                0.0,
+            ))
+        return tuple(results)
+
+    if build_result.status is not GateStatus.PASSED:
+        return tuple(results)
+
+    for gate_name in ordered_names[2:]:
+        results.append(gates_by_name[gate_name].evaluate(runner, working_directory))
+    return tuple(results)
+
+
+def _run_control_gates(
+    working_directory: Path,
+    runner: CommandRunner,
+    format_gate: Gate,
+) -> tuple[GateResult, ...]:
+    """Run the four POC-bounded control checks once, without race or analyzers."""
+
+    gates_by_name = {gate.name: gate for gate in default_gates(enable_race=True)}
+    gates_by_name["fmt"] = format_gate
+    return tuple(
+        gates_by_name[name].evaluate(runner, working_directory)
+        for name in ("fmt", "build", "vet", "test")
+    )
+
+
+def _read_module_minimum_version(go_mod: Path) -> tuple[int, int, int] | None:
+    """Return one unambiguous numeric Go minimum, or None when it cannot be parsed."""
+
+    try:
+        text = go_mod.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise ControlToolchainError(
+            f"reading Go module minimum from {go_mod}: {error}",
+        ) from error
+
+    directives = []
+    for line in text.splitlines():
+        uncommented = line.split("//", maxsplit=1)[0].strip()
+        if re.match(r"^go(?:\s|$)", uncommented):
+            directives.append(uncommented)
+
+    if len(directives) != 1:
+        return None
+
+    match = re.fullmatch(
+        r"go\s+(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:\.(0|[1-9][0-9]*))?",
+        directives[0],
+    )
+    if match is None:
+        return None
+
+    major, minor, patch = match.groups()
+    return int(major), int(minor), int(patch or 0)
+
+
+def _is_continuation_candidate(
+    go_mod: Path,
+    request: GoToolchainRequest | None,
+    selection: GoToolchainSelection | None,
+    *,
+    strict_toolchain: bool,
+) -> bool:
+    """Admit only an explicit verified selection below one parsed module minimum."""
+
+    if strict_toolchain or request is None or selection is None:
+        return False
+    if not go_mod.is_file():
+        return False
+    if (
+        selection.status != "verified"
+        or selection.request != request
+        or selection.executable is None
+        or selection.observed_version is None
+    ):
+        return False
+
+    minimum = _read_module_minimum_version(go_mod)
+    observed = _parse_go_version(selection.observed_version)
+    return minimum is not None and observed is not None and observed < minimum
+
+
+def _parse_go_version(version: str) -> tuple[int, int, int] | None:
+    match = re.fullmatch(
+        r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:\.(0|[1-9][0-9]*))?",
+        version,
+    )
+    if match is None:
+        return None
+    major, minor, patch = match.groups()
+    return int(major), int(minor), int(patch or 0)
+
+
+def _has_proven_selected_build_failure(toolchain: ToolchainEvidence) -> bool:
+    required = {
+        result.name: result
+        for result in toolchain.gate_results
+        if result.required
+    }
+    formatting = required.get("fmt")
+    build = required.get("build")
+    if (
+        formatting is None
+        or formatting.status is not GateStatus.PASSED
+        or build is None
+        or build.status is not GateStatus.FAILED
+        or build.command_outcome is not CommandOutcome.COMPLETED
+        or build.command_exit_code is None
+        or build.command_exit_code == 0
+    ):
+        return False
+    for gate_name in ("vet", "test", "race"):
+        gate = required.get(gate_name)
+        if (
+            gate is None
+            or gate.status is not GateStatus.SKIPPED
+            or gate.summary != "Skipped because the selected build failed"
+        ):
+            return False
+    return True
+
+
+def _resolve_path_control_toolchain(
+    minimum_version: tuple[int, int, int],
+    runner: CommandRunner,
+    working_directory: Path,
+    *,
+    environment: dict[str, str],
+) -> GoToolchainSelection:
+    """Verify only the direct Go distribution discoverable on PATH."""
+
+    path_value = environment.get("PATH", "")
+    if os.name == "nt" and not path_value:
+        path_value = next(
+            (value for key, value in environment.items() if key.casefold() == "path"),
+            "",
+        )
+    executable = shutil.which("go", path=path_value)
+    if executable is None:
+        raise ControlToolchainError("no Go executable was found on PATH")
+
+    binary = Path(executable)
+    try:
+        canonical_binary = binary.resolve(strict=True)
+        metadata = (canonical_binary.parent.parent / "VERSION").read_text(
+            encoding="utf-8",
+        ).splitlines()
+    except (OSError, RuntimeError, UnicodeError) as error:
+        raise ControlToolchainError(f"reading PATH Go distribution {binary}: {error}") from error
+
+    version = metadata[0].strip().removeprefix("go") if metadata else ""
+    parsed_version = _parse_go_version(version)
+    if parsed_version is None:
+        raise ControlToolchainError(
+            f"PATH Go distribution {binary} has no unambiguous stable VERSION",
+        )
+    if parsed_version < minimum_version:
+        raise ControlToolchainError(
+            f"PATH Go {version} is below module minimum "
+            f"{'.'.join(map(str, minimum_version))}",
+        )
+
+    request = GoToolchainRequest(version, "cli", executable=canonical_binary)
+    selection = resolve_go_toolchain(
+        request, runner, working_directory, environment=environment,
+    )
+    if _parse_go_version(selection.observed_version or "") != parsed_version:
+        raise ControlToolchainError(
+            f"PATH Go {binary} reported an unexpected observed version",
+        )
+    return replace(selection, selection_source="path")
+
+
+def _resolve_control_toolchain(
+    minimum_version: tuple[int, int, int],
+    runner: CommandRunner,
+    working_directory: Path,
+    *,
+    environment: dict[str, str],
+    exact_version: str | None = None,
+) -> GoToolchainSelection:
+    """Resolve the default PATH control or one exact locally installed override."""
+
+    if exact_version is None:
+        return _resolve_path_control_toolchain(
+            minimum_version, runner, working_directory, environment=environment,
+        )
+
+    request = GoToolchainRequest(exact_version, "cli")
+    selection = resolve_go_toolchain(
+        request, runner, working_directory, environment=environment,
+    )
+    observed = _parse_go_version(selection.observed_version or "")
+    if observed is None or observed < minimum_version:
+        raise ControlToolchainError(
+            f"control Go {selection.observed_version or 'unknown'} is below module minimum "
+            f"{'.'.join(map(str, minimum_version))}",
+        )
+    return selection
+
+
+def _fingerprint_review_snapshot(
+    root: Path,
+    format_gate: ChangedFilesFormatGate,
+    *,
+    verify_working_snapshot: bool = False,
+) -> str:
+    """Hash selected changed Go files, optionally checking the captured working snapshot."""
+
+    if root.is_symlink():
+        raise SourceFingerprintError(f"module root is a symlink: {root}")
+    try:
+        canonical_root = root.resolve(strict=True)
+    except (OSError, RuntimeError) as error:
+        raise SourceFingerprintError(f"resolving module root {root}: {error}") from error
+
+    fingerprint = hashlib.sha256()
+    for changed_file in sorted(format_gate.files, key=lambda item: item.path):
+        relative_path = Path(changed_file.path)
+        if (
+            not relative_path.parts
+            or relative_path.is_absolute()
+            or relative_path.drive
+            or ".." in relative_path.parts
+        ):
+            raise SourceFingerprintError(
+                f"invalid changed Go-file path: {changed_file.path!r}",
+            )
+        file_path = canonical_root / relative_path
+        current_path = canonical_root
+        for part in relative_path.parts:
+            current_path = current_path / part
+            try:
+                entry_stat = current_path.lstat()
+            except OSError as error:
+                raise SourceFingerprintError(
+                    f"inspecting changed Go-file path {current_path}: {error}",
+                ) from error
+            if stat.S_ISLNK(entry_stat.st_mode):
+                raise SourceFingerprintError(
+                    f"symlink is not fingerprintable: {current_path}",
+                )
+            if current_path != file_path and not stat.S_ISDIR(entry_stat.st_mode):
+                raise SourceFingerprintError(
+                    f"non-directory parent in changed Go-file path: {current_path}",
+                )
+        if not stat.S_ISREG(entry_stat.st_mode):
+            raise SourceFingerprintError(
+                f"non-regular changed Go file is not fingerprintable: {file_path}",
+            )
+        try:
+            resolved_path = file_path.resolve(strict=True)
+            resolved_path.relative_to(canonical_root)
+        except (OSError, RuntimeError, ValueError) as error:
+            raise SourceFingerprintError(
+                f"resolving changed Go-file path {file_path}: {error}",
+            ) from error
+
+        try:
+            path_bytes = relative_path.as_posix().encode("utf-8")
+            file_fingerprint = hashlib.sha256()
+            with file_path.open("rb") as source:
+                before = os.fstat(source.fileno())
+                if not stat.S_ISREG(before.st_mode):
+                    raise SourceFingerprintError(
+                        f"non-regular changed Go file is not fingerprintable: {file_path}",
+                    )
+                # Path checks precede open; verify the handle still names that checked file.
+                if (before.st_dev, before.st_ino) != (entry_stat.st_dev, entry_stat.st_ino):
+                    raise SourceFingerprintError(
+                        f"changed Go file was replaced between validation and opening: {file_path}",
+                    )
+                for content in iter(lambda: source.read(1024 * 1024), b""):
+                    file_fingerprint.update(content)
+                after = os.fstat(source.fileno())
+            if (before.st_size, before.st_mtime_ns, before.st_ino) != (
+                after.st_size, after.st_mtime_ns, after.st_ino,
+            ):
+                raise SourceFingerprintError(
+                    f"changed Go file changed while fingerprinting: {file_path}",
+                )
+            if (
+                verify_working_snapshot
+                and file_fingerprint.digest() != hashlib.sha256(changed_file.content).digest()
+            ):
+                raise SourceFingerprintError(
+                    "changed Go file does not match the captured working-tree snapshot: "
+                    f"{file_path}",
+                )
+        except (OSError, UnicodeError) as error:
+            raise SourceFingerprintError(
+                f"reading changed Go file {file_path}: {error}",
+            ) from error
+
+        fingerprint.update(len(path_bytes).to_bytes(8, "big"))
+        fingerprint.update(path_bytes)
+        fingerprint.update(file_fingerprint.digest())
+    return fingerprint.hexdigest()
 
 
 def _prompt_toolchain_text(toolchain: ToolchainEvidence) -> str:

@@ -17,7 +17,7 @@ from atom.gates import (
     GateResult, GateStatus, _belongs_to_a_nested_module,
     _result_for_non_completed_command,
 )
-from atom.runner import CommandRunner
+from atom.runner import CommandOutcome, CommandRunner
 
 
 _READ_GIT_BYTES = (
@@ -84,25 +84,28 @@ class ChangedFilesFormatGate:
                     self.name, GateStatus.FAILED,
                     f"{file.path!r}: {incomplete.summary}",
                     f"{incomplete.details}\n{scope}", True, duration,
+                    incomplete.command_outcome, incomplete.command_exit_code,
                 )
             if not result.succeeded:
                 return GateResult(
                     self.name, GateStatus.FAILED,
                     f"gofmt failed for {file.path!r}",
                     f"{result.combined_output}\n{scope}", True, duration,
+                    result.outcome, result.exit_code,
                 )
             if result.stdout != text:
                 return GateResult(
                     self.name, GateStatus.FAILED,
                     f"{file.path!r} needs gofmt ({self.source})",
                     f"{result.stderr}\n{scope}", True, duration,
+                    result.outcome, result.exit_code,
                 )
         names = ", ".join(repr(file.path) for file in self.files)
         return GateResult(
             self.name, GateStatus.PASSED,
             f"Checked {len(self.files)} changed Go file(s) from {self.source}: {names}",
             scope,
-            True, duration,
+            True, duration, CommandOutcome.COMPLETED, 0,
         )
 
 
@@ -252,7 +255,7 @@ def capture_review_diff(
                 for candidate in (content, content.replace(b"\r\n", b"\n"))
             ):
                 raise DiffUnavailable(f"Changed Go file {name!r} no longer matches the captured diff.")
-        files.append(FormattingFile(name, content))
+        files.append(FormattingFile(relative, content))
     if block_index != len(blocks):
         raise DiffUnavailable("Git manifest and patch entries do not match.")
     return CapturedDiff(patch, request, tuple(sorted(set(paths)))), ChangedFilesFormatGate(
