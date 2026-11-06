@@ -40,6 +40,10 @@ class ToolchainEvidence:
     skip_reason: str
     formatting_is_scoped: bool = False
     selection: GoToolchainSelection | None = None
+    control_gate_results: tuple[GateResult, ...] = ()
+    control_selection: GoToolchainSelection | None = None
+    source_fingerprint: str | None = None
+    degraded: bool = False
 
     @property
     def blocking_failures(self) -> tuple[GateResult, ...]:
@@ -91,6 +95,20 @@ class ToolchainEvidence:
             "A clean tool run is not evidence a problem is absent; it is "
             "evidence that one specific tool did not see it."
         )
+        if self.degraded:
+            control_verdicts = ", ".join(
+                f"{result.name}: {result.status.value}"
+                for result in self.control_gate_results
+            )
+            lines.extend([
+                "",
+                "Degraded continuation evidence:",
+                "Selected compiler did not pass the required build gate.",
+                f"Compatible control checks passed ({control_verdicts}); "
+                "control checks do not validate the requested compiler.",
+                "Race detection and advisory analyzers were not established by control; "
+                "keep those categories in review scope.",
+            ])
         return prefix + "\n".join(lines)
 
     def _command_verdict_lines(self) -> list[str]:

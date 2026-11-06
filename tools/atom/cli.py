@@ -23,7 +23,8 @@ from atom.diff import (
 from atom.buildsystem import detect
 from atom.gates import default_gates
 from atom.go_selection import (
-    GoToolchainConfigError, GoToolchainSelectionError, capture_go_toolchain_request,
+    GoToolchainConfigError, GoToolchainRequest, GoToolchainSelectionError,
+    capture_go_toolchain_request,
 )
 from atom.index import list_spikes
 from atom.invoke import (
@@ -49,7 +50,10 @@ from atom.report import (
     render_status_text,
     render_text,
 )
-from atom.review import DEFAULT_REVIEW_MODELS, ToolchainGateFailed, run_review
+from atom.review import (
+    ControlToolchainError, DEFAULT_REVIEW_MODELS, SourceFingerprintError,
+    ToolchainGateFailed, run_review,
+)
 from atom.runner import SubprocessRunner
 from atom.scaffold import ScaffoldError, SlugError, scaffold_spike
 from atom.ship import DEFAULT_BASE_BRANCH, PrAction, ShipRefused, run_ship
@@ -241,6 +245,15 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
             "Do not run Go toolchain checks before review; nothing will be "
             "excluded from the models' attention."
         ),
+    )
+    review_parser.add_argument(
+        "--strict-toolchain",
+        action="store_true",
+        help="Block review when any required selected-toolchain gate fails.",
+    )
+    review_parser.add_argument(
+        "--control-go-version", metavar="1.X.Y",
+        help="Use this exact installed Go version as the continuation control.",
     )
     review_parser.add_argument(
         "--fixed-evidence", action="store_true",
@@ -660,6 +673,18 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
             arguments.go_version is not None or arguments.go_executable is not None
         ):
             raise ValueError("--go-version/--go-executable cannot be combined with --skip-toolchain")
+        if arguments.strict_toolchain and arguments.skip_toolchain:
+            raise ValueError("--strict-toolchain cannot be combined with --skip-toolchain")
+        if arguments.strict_toolchain and arguments.control_go_version is not None:
+            raise ValueError("--control-go-version cannot be combined with --strict-toolchain")
+        if arguments.skip_toolchain and arguments.control_go_version is not None:
+            raise ValueError("--control-go-version cannot be combined with --skip-toolchain")
+        if arguments.control_go_version is not None:
+            GoToolchainRequest(arguments.control_go_version, "cli")
+            if arguments.go_version is None and arguments.go_executable is None:
+                raise ValueError(
+                    "--control-go-version requires --go-version or --go-executable",
+                )
         launch_directory = Path.cwd()
         go_toolchain_request = capture_go_toolchain_request(
             launch_directory, version_override=arguments.go_version,
@@ -697,6 +722,8 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
                 fixed_evidence=arguments.fixed_evidence,
                 context_documents=documents,
                 module_rules=module_rules,
+                strict_toolchain=arguments.strict_toolchain,
+                control_go_version=arguments.control_go_version,
                 **(
                     {"go_toolchain_request": go_toolchain_request}
                     if go_toolchain_request is not None else {}
@@ -711,7 +738,8 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
         return EXIT_USAGE_ERROR
     except (
         ModuleRulesInputError, ContextInputError, DiffUnavailable, PullRequestReviewError,
-        GoToolchainConfigError, GoToolchainSelectionError,
+        GoToolchainConfigError, GoToolchainSelectionError, ControlToolchainError,
+        SourceFingerprintError,
     ) as error:
         print(f"atom review: {error}", file=sys.stderr)
         return EXIT_CHECK_FAILED
@@ -748,6 +776,13 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
     else:
         print(render_review_markdown(outcome))
 
+    if outcome.toolchain.degraded:
+        print(
+            "atom review: degraded review; selected Go checks failed and compatible "
+            "control checks passed; exit remains non-zero.",
+            file=sys.stderr,
+        )
+
     problems = render_review_problems(outcome)
     if problems:
         print(problems.rstrip(), file=sys.stderr)
@@ -765,7 +800,10 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
     # B136: findings never change the exit code, but an incomplete review does.
     # A CI job where one model failed every run would otherwise stay green
     # forever while nobody read the banner.
-    return EXIT_CHECK_FAILED if outcome.is_partial else EXIT_PASSED
+    return (
+        EXIT_CHECK_FAILED
+        if outcome.is_partial or outcome.toolchain.degraded else EXIT_PASSED
+    )
 
 
 def _exit_code_for_spike(result) -> int:

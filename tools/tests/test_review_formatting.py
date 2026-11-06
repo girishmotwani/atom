@@ -16,6 +16,7 @@ from atom.cli import EXIT_PASSED, main
 from atom.context import load_context_documents
 from atom.gates import FormatGate, GateStatus
 from atom.invoke import InvocationReport, ModelAvailability, ModelRun, RunOutcome
+import atom.review as review_module
 from atom.review import ToolchainGateFailed, run_review
 from atom.runner import CommandOutcome, CommandResult, SubprocessRunner
 from tests.conftest import command_result
@@ -292,6 +293,25 @@ def test_module_boundary_exclusions_are_explicit_without_checking_other_modules(
     assert "outside selected module" in formatting.details
     assert "nested module" in formatting.details
     assert "service/nested/source.go" in formatting.details
+
+
+def test_nested_module_snapshot_paths_are_fingerprintable(repository: Path):
+    module = repository / "service"
+    module.mkdir()
+    (module / "go.mod").write_bytes(b"module example.invalid/service\n\ngo 1.23\n")
+    changed_file = module / "changed.go"
+    changed_file.write_bytes(BASE.encode())
+    git(repository, "add", "--all")
+    git(repository, "commit", "--quiet", "-m", "nested module baseline")
+    changed_file.write_bytes(CLEAN.encode())
+
+    diff, format_gate = review_module.capture_review_diff(
+        DiffRequest(DiffSource.WORKING), ReviewRunner(), module,
+    )
+
+    assert diff.files == ("service/changed.go",)
+    assert [file.path for file in format_gate.files] == ["changed.go"]
+    assert review_module._fingerprint_review_snapshot(module, format_gate)
 
 
 @pytest.mark.parametrize("has_go_change", (True, False))

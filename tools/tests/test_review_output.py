@@ -443,15 +443,12 @@ class TestJsonContract:
 
         assert payload["schema_version"] >= 1
 
-    def test_the_review_schema_version_records_the_corroboration_narrowing(self):
-        # A23. A21 narrowed what `is_corroborated` means for the same input,
-        # which is a breaking change to this contract even though the new
-        # `has_nearby_multi_model_reports` field beside it is additive. A
-        # consumer pinned to version 1 has to be able to see that.
+    def test_review_schema_version_increments_for_degraded_toolchain_evidence(self):
+        # Phase 02 adds degraded status and a separate control-toolchain record.
         payload = json.loads(render_review_json(outcome((finding(41),))))
 
         assert payload["schema_version"] == REVIEW_SCHEMA_VERSION
-        assert REVIEW_SCHEMA_VERSION == 2
+        assert REVIEW_SCHEMA_VERSION == 3
 
     def test_the_other_reports_did_not_change_and_keep_their_version(self):
         # Guard against over-correction: only the review contract moved, so

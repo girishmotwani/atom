@@ -18,6 +18,7 @@ from dataclasses import replace
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -27,7 +28,7 @@ from atom.go_selection import (
     GoToolchainConfigError, GoToolchainRequest, GoToolchainSelection, GoToolchainSelectionError,
 )
 from atom.review import DEFAULT_REVIEW_MODELS
-from atom.review import ToolchainGateFailed
+from atom.review import SourceFingerprintError, ToolchainGateFailed
 from atom.runner import CommandOutcome, CommandResult
 from tests.conftest import cli_review_events, cli_review_response
 from tests.test_go_selection import write_policy
@@ -113,6 +114,163 @@ def review(*args: str) -> int:
     return main(["review", *args])
 
 
+def test_review_help_documents_strict_toolchain_option(capsys):
+    with pytest.raises(SystemExit) as raised:
+        main(["review", "--help"])
+
+    assert raised.value.code == 0
+    assert "--strict-toolchain" in capsys.readouterr().out
+
+
+def test_review_help_documents_control_go_version_option(capsys):
+    with pytest.raises(SystemExit) as raised:
+        main(["review", "--help"])
+
+    assert raised.value.code == 0
+    assert "--control-go-version" in capsys.readouterr().out
+
+
+def test_degraded_review_prints_warning_and_exits_check_failed(
+    scripted, monkeypatch, tmp_path, capsys,
+):
+    import atom.cli as cli
+
+    monkeypatch.chdir(tmp_path)
+    outcome = SimpleNamespace(
+        toolchain=SimpleNamespace(degraded=True),
+        has_no_usable_response=False,
+        is_partial=False,
+    )
+    monkeypatch.setattr(cli, "run_review", lambda **kwargs: outcome)
+    monkeypatch.setattr(cli, "render_review_json", lambda value: '{"degraded": true}')
+    monkeypatch.setattr(cli, "render_review_problems", lambda value: "")
+
+    assert review("--working", "--runs", "1", "--json") == EXIT_CHECK_FAILED
+
+    captured = capsys.readouterr()
+    assert captured.out == '{"degraded": true}\n'
+    assert "degraded" in captured.err.lower()
+    assert scripted.commands == []
+
+
+def test_source_identity_failure_is_stderr_only_and_nonzero(
+    scripted, monkeypatch, tmp_path, capsys,
+):
+    import atom.cli as cli
+
+    monkeypatch.chdir(tmp_path)
+
+    def blocked(**kwargs):
+        raise SourceFingerprintError("module inputs changed during control checks")
+
+    monkeypatch.setattr(cli, "run_review", blocked)
+
+    assert review("--working", "--runs", "1", "--json") == EXIT_CHECK_FAILED
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "module inputs changed during control checks" in captured.err
+    assert scripted.commands == []
+
+
+@pytest.mark.parametrize("conflict", [
+    (),
+    ("--strict-toolchain",),
+    ("--skip-toolchain",),
+])
+def test_control_go_version_conflicts_fail_before_commands(
+    scripted, monkeypatch, tmp_path, capsys, conflict,
+):
+    monkeypatch.chdir(tmp_path)
+
+    assert review(
+        "--working", "--control-go-version", "1.27.3", *conflict,
+    ) == EXIT_USAGE_ERROR
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--control-go-version" in captured.err
+    assert scripted.commands == []
+
+
+def test_invalid_control_go_version_fails_before_commands(
+    scripted, monkeypatch, tmp_path, capsys,
+):
+    monkeypatch.chdir(tmp_path)
+
+    assert review("--working", "--control-go-version", "1.27") == EXIT_USAGE_ERROR
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "exact stable Go" in captured.err
+    assert scripted.commands == []
+
+
+def test_strict_toolchain_cannot_be_combined_with_skip_toolchain(
+    scripted, monkeypatch, tmp_path, capsys,
+):
+    monkeypatch.chdir(tmp_path)
+
+    assert review("--working", "--strict-toolchain", "--skip-toolchain") == EXIT_USAGE_ERROR
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--strict-toolchain" in captured.err
+    assert "--skip-toolchain" in captured.err
+    assert scripted.commands == []
+
+
+def test_strict_toolchain_option_reaches_review_pipeline(
+    scripted, monkeypatch, tmp_path, capsys,
+):
+    import atom.cli as cli
+
+    monkeypatch.chdir(tmp_path)
+    captured = {}
+    original = cli.run_review
+
+    def recording(**kwargs):
+        captured.update(kwargs)
+        return original(**kwargs)
+
+    monkeypatch.setattr("atom.cli.run_review", recording)
+
+    assert review("--working", "--strict-toolchain", "--runs", "1", "--json") == EXIT_PASSED
+
+    assert captured.get("strict_toolchain") is True
+    assert json.loads(capsys.readouterr().out)["toolchain"]["was_run"] is False
+
+
+def test_control_go_version_reaches_review_pipeline(
+    scripted, monkeypatch, tmp_path, capsys,
+):
+    import atom.cli as cli
+    monkeypatch.chdir(tmp_path)
+    captured = {}
+    captured = {}
+
+    def recording(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(
+            toolchain=SimpleNamespace(degraded=False),
+            has_no_usable_response=False,
+            is_partial=False,
+        )
+
+    monkeypatch.setattr(cli, "run_review", recording)
+    monkeypatch.setattr(cli, "render_review_json", lambda outcome: "{}")
+    monkeypatch.setattr(cli, "render_review_problems", lambda outcome: "")
+
+    assert review(
+        "--working", "--go-version", "1.26.9",
+        "--control-go-version", "1.27.3", "--runs", "1", "--json",
+    ) == EXIT_PASSED
+
+    assert captured.get("control_go_version") == "1.27.3"
+    assert captured["go_toolchain_request"].version == "1.26.9"
+    assert json.loads(capsys.readouterr().out) == {}
+
+
 def test_review_cli_captures_project_toolchain_policy(scripted, monkeypatch, tmp_path, capsys):
     monkeypatch.chdir(tmp_path)
     policy = write_policy(tmp_path)
@@ -122,6 +280,8 @@ def test_review_cli_captures_project_toolchain_policy(scripted, monkeypatch, tmp
     assert "selection" in payload["toolchain"], "CLI did not capture launch policy"
     assert payload["toolchain"]["selection"]["requested_version"] == "1.26.9"
     assert payload["toolchain"]["selection"]["status"] == "not_run"
+    assert payload["toolchain"]["degraded"] is False
+    assert payload["toolchain"]["control_gates"] == []
     assert policy.read_bytes() == original
 
 

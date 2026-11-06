@@ -142,6 +142,7 @@ def pinned_review_fixture(tmp_path, monkeypatch):
             )
     formatter = binary.with_name("gofmt.exe" if binary.name.endswith(".exe") else "gofmt")
     source = "package main\n"
+    (tmp_path / "main.go").write_bytes(source.encode())
     for executable in ("gofmt", str(formatter)):
         command = (executable,)
         runner.scripted_results[command] = command_result(command, tmp_path, stdout=source)
@@ -321,7 +322,7 @@ def test_pinned_evidence_is_consistent_across_outputs(tmp_path, monkeypatch, ski
     payload = json.loads(serialized)
     assert "selection" in payload["toolchain"], "report omitted requested selection"
     selection = payload["toolchain"]["selection"]
-    assert payload["schema_version"] == 2
+    assert payload["schema_version"] == 3
     assert set(selection) == {
         "status", "requested_version", "request_source", "project_version",
         "selection_source", "executable", "executable_sha256", "executable_sha256_after",
