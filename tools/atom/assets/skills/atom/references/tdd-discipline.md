@@ -216,7 +216,7 @@ Move it into helpers when it obscures the behaviour under test, and use
 `t.Helper()` so failures still point at the calling test.
 
 ---
-## TDD Does Not Replace the POC
+## TDD Does Not Resolve Unproven Technical Uncertainty
 
 TDD verifies behaviour you already decided to build. The POC discovers what
 behaviour is possible, practical, or false.
@@ -229,8 +229,15 @@ behaviour is possible, practical, or false.
 | Runs before design | Runs during build |
 | Can refute the plan | Implements the approved spec |
 
-Do not use tests as a substitute for the PROVE beat. Tests are precise after the
-question is known; the POC exists because the question is still risky.
+Do not use tests to gloss over unproven technical uncertainty. For an understood,
+reproducible defect, a failing regression may supply the defect proof under the
+approved evidence choice in [poc-discipline.md](poc-discipline.md); this does not
+waive the design-spec or implementation approval gates. Applicable approved
+evidence may be reused only with its assumptions and changed boundary checked.
+
+For a documentation-only spec with no runtime behavior, map claims to factual
+review and existing documentation/packaging checks. Record this adaptation; do
+not fabricate Go tests or claim a production RED/GREEN loop occurred.
 
 For POC rules, re-read [poc-discipline.md](poc-discipline.md). For Go style,
 re-read [go-style.md](go-style.md).

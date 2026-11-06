@@ -11,8 +11,8 @@ Read this file before doing any work in an Atom-enabled repository.
 
 > **Nothing gets designed until something has been proven to work.**
 
-Every unit of work — the whole project, and then each phase within it — follows the
-same three beats:
+Unproven technical work — the whole project, and then each phase within it —
+follows the same three beats:
 
 ```
    PROVE  ──────────▶  DESCRIBE  ──────────▶  BUILD
@@ -27,6 +27,15 @@ same three beats:
 Skipping straight to step 2 or 3 is the failure mode Atom is built to prevent. If you
 catch yourself reasoning "this is simple enough that a POC is unnecessary", see
 [anti-rationalization.md](skills/atom/references/anti-rationalization.md).
+
+Choose the next evidence step using
+[poc-discipline.md](skills/atom/references/poc-discipline.md): explain observed
+evidence, remaining uncertainty, one recommendation and its alternative, then let
+the developer decide. An understood regression may use a failing test as proof;
+applicable approved evidence can be reused with boundary validation; documentation
+needs factual review rather than an invented Go spike. Record the choice and
+preserve existing spec/implementation gates. Recommendations are not approval,
+and this guidance adds no commands or runtime enforcement.
 
 ---
 

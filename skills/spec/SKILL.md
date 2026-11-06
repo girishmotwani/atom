@@ -5,8 +5,8 @@ description: 'Write the high-level design spec for one phase, grounded in that p
 
 # /atom:spec
 
-The **DESCRIBE** beat. Writes the design spec for exactly one phase — after that
-phase's POC, never before.
+The **DESCRIBE** beat. Writes the design spec for exactly one phase after its
+applicable proof and approved evidence choice, never from unproven assumptions.
 
 The spec's job is to be precise enough that `/atom:tdd` can derive tests from it
 without guessing.
@@ -14,12 +14,16 @@ without guessing.
 ## When to use
 
 - A phase POC came back **Confirmed** and was approved
-- A phase's POC was justifiably skipped and the developer approved the skip
+- The developer approved using applicable prior evidence or a reproducible
+  regression as proof, with its scope and limits recorded
+- The phase has no material technical uncertainty and the developer explicitly
+  approved a specifically justified POC skip, recorded in `decisions.md`
 
 ## Never use when
 
-- No POC has been run for this phase and no skip was approved. Specifying an unproven
-  design is the failure mode Atom exists to prevent. Go to `/atom:poc`.
+- No applicable proof exists for this phase and no evidence choice was approved.
+  Specifying an unproven design is the failure mode Atom exists to prevent.
+  Go to `/atom:poc`.
 
 ## Writing artifacts
 
@@ -35,6 +39,17 @@ Read:
 2. [anti-rationalization.md](../atom/references/anti-rationalization.md)
 3. [human-gates.md](../atom/references/human-gates.md)
 4. This phase's `poc-report.md`, and the `phase-plan.md` entry for this phase
+
+For an approved evidence-reuse or regression route, read the cited evidence
+instead of requiring a fabricated POC report. Apply the source/assumption/boundary
+checks in [poc-discipline.md](../atom/references/poc-discipline.md). An absent,
+unapproved or inapplicable artifact does not justify design, and a regression
+recommendation does not waive this spec's approval gate.
+
+For an explicitly approved no-uncertainty skip, read the recorded justification
+and verify that the current scope still fits it. Documentation-only work needs
+factual review and relevant checks, not an invented POC report. State the evidence
+limits and assumptions; none of these routes waives approval of the resulting spec.
 
 ---
 
