@@ -17,6 +17,7 @@ Read:
 1. [AGENTS.md](../../AGENTS.md)
 2. [anti-rationalization.md](../atom/references/anti-rationalization.md)
 3. [human-gates.md](../atom/references/human-gates.md)
+4. [poc-discipline.md](../atom/references/poc-discipline.md) — recommend evidence proportionate to uncertainty
 
 **Re-read anti-rationalization.md at every step transition.** Not out of ritual —
 context compaction genuinely erases earlier file reads, and this is the longest
@@ -56,6 +57,12 @@ how steps quietly disappear.
 **Carry context forward.** Every downstream skill gets the accumulated artifacts and
 the confirmed build/test commands, so nothing re-detects what is already known.
 
+**Recommend evidence, do not invent uncertainty.** The diagram is the full path
+for unproven technical work. Explain any proposed regression proof, bounded
+evidence reuse, routine validation or documentation review using the shared POC
+guidance; let the developer decide and record the choice. This adds no entry
+points or changes to runtime phase checks, and never waives spec/TDD approvals.
+
 **Phases are sequential.** Phase N+1 starts after phase N ships. What phase N teaches
 routinely changes phase N+1's design — running them in parallel discards that.
 
@@ -84,8 +91,8 @@ For each phase in order:
 
 | Step | Skill | Gate | Notes |
 |---|---|---|---|
-| 1 | `/atom:poc` | ◆ | Skippable only with a specific recorded justification |
-| 2 | `/atom:spec` | ◆ | Never before the POC |
+| 1 | `/atom:poc` | ◆ | Skippable only with a specific recorded justification and explicit developer approval |
+| 2 | `/atom:spec` | ◆ | Never before applicable proof and approval of the evidence choice |
 | 3 | `/atom:tdd` | ◆ | Never before the spec is approved |
 | 4 | `/atom:review` | — | Models other than the one that wrote the code |
 | 5 | `/atom:ship` | — | Push only on explicit instruction |

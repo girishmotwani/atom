@@ -35,9 +35,22 @@ Read:
 5. [verification.md](../atom/references/verification.md)
 6. This phase's approved `design-spec.md`
 
+Apply [poc-discipline.md](../atom/references/poc-discipline.md) when choosing
+evidence. A reproducible regression can supply the defect proof, but production
+changes still need an approved spec and the RED/GREEN loop below. Reused evidence
+does not replace validation of the changed boundary. For a documentation-only
+spec with no runtime behavior, map its claims to factual review and existing
+documentation/packaging checks; record the adaptation rather than fabricating
+Go tests, a RED/GREEN claim, or an `atom check` result for absent Go code.
+
 ---
 
 ## Step 1 — Build the test spec
+
+The runtime test obligations and RED/GREEN loop below apply to runtime code.
+For an approved documentation-only spec, map each claim to factual review and
+existing documentation/packaging checks instead. Preserve the same spec,
+reconciliation and completion gates; record why runtime cases are not applicable.
 
 Map every numbered behaviour in the design spec to at least one test case, using
 [test-spec.md](../atom/templates/test-spec.md) at
@@ -156,11 +169,17 @@ Loosening an assertion to get to green converts a caught bug into a shipped one.
 
 ## Step 5 — Verify
 
+For runtime Go code:
+
 ```bash
 atom check
 ```
 
 Runs build, `vet`, `gofmt`, the full test suite, `-race`, and coverage.
+
+For documentation-only work with no runtime change, run the relevant factual,
+link and distribution checks named in the test spec. Do not invent Go gate
+results for absent Go code.
 
 Per [verification.md](../atom/references/verification.md): paste the real output.
 Never summarise, never round, never reconstruct from memory.
@@ -185,8 +204,9 @@ fix goes in `findings.md`.
 ## Step 7 — Gate
 
 Present per [human-gates.md](../atom/references/human-gates.md): the `atom check`
-output, behaviour-to-test coverage, what the spec had to change and why, what you
-left in `findings.md`, and one specific question.
+output for runtime Go code (or relevant documentation-check output for
+documentation-only work), behaviour-to-test/review coverage, what the spec had
+to change and why, what you left in `findings.md`, and one specific question.
 
 **End your turn. Wait.**
 
@@ -194,7 +214,9 @@ left in `findings.md`, and one specific question.
 
 ## Done when
 
-- [ ] Every numbered behaviour maps to at least one test case
+For runtime code (mark inapplicable obligations explicitly):
+
+- [ ] Every numbered runtime behaviour maps to at least one test case
 - [ ] No test asserts something the compiler or `go vet` already refuses
 - [ ] Silent-failure properties are covered or explicitly marked not applicable
 - [ ] Every test was watched failing, for the right reason, before its code existed
@@ -204,6 +226,15 @@ left in `findings.md`, and one specific question.
       non-obvious decision has a comment giving its reason; obvious code is uncommented
 - [ ] No test weakened; any test change justified in `decisions.md`
 - [ ] `atom check` fully green, output pasted verbatim
+
+For documentation-only work:
+
+- [ ] Every numbered claim maps to factual review and relevant existing checks
+- [ ] Factual, link and distribution checks pass, with actual output captured
+- [ ] Runtime obligations are marked not applicable with the reason; no fabricated RED/GREEN or Go gate claim
+
+For either scope:
+
 - [ ] Design spec reconciled to what was built
 - [ ] `findings.md` and `decisions.md` updated during the work
 - [ ] Presented at a gate and explicitly approved

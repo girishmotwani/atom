@@ -10,10 +10,21 @@ document is the narrative version — read it once before your first run.
 
 ## The idea in one paragraph
 
-Atom never lets an agent design or implement something before it has **run a program
-that proves the risky part works**. Every stage produces an artifact on disk, and
-every stage ends by stopping and asking you a question. You are not reviewing a
-finished result at the end; you are steering at roughly eight points along the way.
+Atom asks agents to prove material technical uncertainty before design, then
+implement against an approved spec. It recommends the evidence step and explains
+why; **you decide**. The full pipeline below is for unproven technical work.
+Guidance is not a technical guarantee that a model waits or follows a rejection.
+You steer at the applicable gates rather than only reviewing a finished result.
+
+An understood reproducible defect may use a failing regression as proof; a new
+caller can reuse approved helper evidence while validating the caller boundary.
+Already specified work needs relevant validation, and documentation-only work
+needs factual review and documentation checks, not an invented Go experiment.
+Missing intent requires discovery first. Evidence reuse must name its source,
+assumptions and limits. See the shared
+[recommendation guidance](../skills/atom/references/poc-discipline.md).
+These choices do not remove spec/implementation approvals or change runtime
+phase checks, and add no commands.
 
 ---
 
@@ -146,9 +157,12 @@ plan still holds — it often doesn't, and finding out costs one question.
 | **review** | Multi-model review, by models other than the author | `phase-NN-{slug}/review.md` |
 | **ship** | Commit and open a pull request | — |
 
-Ordering is enforced: the spec is never written before the POC, and TDD never starts
-before the spec is approved. A phase POC can be skipped only with a **specific,
-recorded justification** — not because it felt unnecessary at the time.
+Proof-first ordering remains: the spec follows applicable evidence, and production
+TDD follows spec approval. A phase spike can be replaced by applicable proof only
+with a **specific, recorded justification and developer approval** — not because
+it felt unnecessary. For a documentation-only spec with no runtime behavior,
+review its claims and run relevant documentation/packaging checks instead of
+fabricating Go tests.
 
 Review deliberately uses different models from the one that wrote the code, because a
 model reviewing its own output mostly agrees with itself. Every fix re-runs

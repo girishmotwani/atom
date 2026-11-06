@@ -9,8 +9,12 @@ the gate protocol, and the Go conventions this project deviates toward.
 
 > Nothing gets designed until something has been proven to work.
 
-PROVE (throwaway POC) → DESCRIBE (design spec) → BUILD (TDD). In that order, for the
-project and again for every phase.
+PROVE → DESCRIBE (design spec) → BUILD (TDD). In that order for unproven technical
+work. Use [poc-discipline.md](../skills/atom/references/poc-discipline.md) to
+recommend proportionate evidence: a new spike for material uncertainty, a failing
+regression for an understood defect, bounded reuse of approved evidence, or
+relevant validation/documentation review. Explain the recommendation, let the
+developer decide, record the choice, and preserve spec/implementation gates.
 
 ## Skills
 

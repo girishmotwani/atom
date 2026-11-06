@@ -86,6 +86,13 @@ contradiction. Quietly designing around a wrong premise wastes the whole pipelin
 
 ## Step 3 — Name the riskiest unknown
 
+First apply the evidence-step guidance in
+[poc-discipline.md](../atom/references/poc-discipline.md). If intent is still
+missing, continue the interview. If applicable approved evidence or an understood
+regression already covers the risk, explain that recommendation and its limits
+instead of inventing an unknown. Record the decision and preserve the applicable
+gates; the steps below apply when a new POC is needed.
+
 From everything gathered, pick **one** unknown to spike. Rank by what would be most
 expensive to discover late:
 

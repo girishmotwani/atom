@@ -42,8 +42,8 @@ If Atom is useful to you, consider
 
 > **Nothing gets designed until something has been proven to work.**
 
-Every unit of work — the project, and then each phase within it — runs the same three
-beats:
+Unproven technical work — the project, and then each phase within it — runs the
+same three beats:
 
 ```
    PROVE  ──────────▶  DESCRIBE  ──────────▶  BUILD
@@ -53,6 +53,13 @@ beats:
 1. **PROVE** — a throwaway Go program that answers one uncomfortable question. Run it.
 2. **DESCRIBE** — *now* write the design spec, informed by what actually happened.
 3. **BUILD** — red, green, refactor, with the developer in the loop.
+
+The evidence step is proportionate to what remains unknown. Atom explains a
+recommendation and its alternative; **the developer decides**. An understood
+regression can use a failing test as proof, approved evidence can be reused with
+boundary validation, and documentation needs factual review rather than an
+invented Go spike. Existing approval gates remain. See the
+[evidence-step guidance](skills/atom/references/poc-discipline.md).
 
 Most agent frameworks start at step 2. The design reads beautifully, the code gets
 written, and the assumption underneath it turns out to be wrong three days later. Atom
