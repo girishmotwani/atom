@@ -396,7 +396,7 @@ In both modes, structured review failures now report process-status summaries
 instead of dumping raw CLI streams. Raw stdout/stderr remain available on native
 `ModelRun` values for private programmatic diagnosis, not in ordinary reports.
 
-### Install the plugin — the only setup step
+### Install the plugin
 
 Atom ships as a Copilot CLI plugin. Installing it once puts the `/atom` commands into
 **every** repository you work in. When you onboard a Go repository, `atom init` also
@@ -404,6 +404,11 @@ captures the untouched no-race baseline, creates `specs/` and `poc/`, records th
 build and test commands it exercised, and copies a self-contained instruction and
 skill bundle into that repository. Later sessions do not need to read Atom's checkout
 or installed-plugin directory.
+
+The plugin installs workflow instructions, not the Python `atom` and
+`atom-write-artifact` commands. `/atom:init` follows the
+[bootstrap reference](skills/atom/references/bootstrap.md) to reuse working
+commands or obtain approval for an isolated installation when they are missing.
 
 Onboarding also maintains a marked `.gitignore` block for Atom's machine-local
 `.atom/baseline.json`, `.atom/events.jsonl`, and `.atom/events.lock` files. Shared
@@ -461,6 +466,9 @@ That is the only thing you type. Everything else is Atom's job.
 **What you will be asked to approve.** Onboarding runs shell commands, and Copilot
 asks before each one. A captured run on a previously un-onboarded Go repository needed
 **three approvals, no denials, and no file-write prompts at all**:
+
+That count describes the captured setup, not a fixed approval budget; missing
+command prerequisites require separately approved installation.
 
 | # | Approval | Why it appears |
 |---|---|---|

@@ -133,3 +133,204 @@ Remaining uncertainty is unchanged: Windows descendant/timeout cleanup, live mod
 The repaired-snapshot completion gate was explicitly approved and the developer renewed the push/PR request. Fresh archive Go and selected documentation/distribution checks passed; their exact output is retained in the phase tdd-log. No new model calls were made.
 
 Open findings remain Windows process-tree/wall-clock timeout validation, actual developer-control behavior, taxonomy completeness and live model stability. They are disclosed limitations, not evidence that these paths were validated. The earlier roadmap and review records are historical; publication does not implement later phases or authorize merging either stack layer.
+
+## Phase 09 Discovery Resumed: 2026-11-07
+
+The developer selected a CSV expense-category totals CLI built from scratch with
+Atom. Their main concern is following prompts/gates without the full methodology;
+they will first rehearse personally, explicitly as an experienced user. Genuine
+newcomer usability and clean-machine installation remain unproven. Historical
+WSL version observations have not been refreshed, and no setup or live model
+session has occurred.
+
+The [draft replay brief](phase-09-onboarding-example/poc-brief.md) proposes a
+bounded observed workflow trial rather than an artificial Go parser spike.
+The [phase findings](phase-09-onboarding-example/findings.md) disclose the
+published-version/empty-module boundaries and the scoped 30-test local baseline.
+Remote full CI remains red; the confirmed Ubuntu failure is inherited from #17
+and disclosed in #18. No CI repair is part of this phase.
+
+Earlier Phase 09 notes about an unchosen feature describe the earlier discovery
+state. The proposed contract, recipe and rehearsal cap now await approval; this
+does not authorize final documentation, Go code, installation or publication.
+
+## Brief Approval Recorded: 2026-11-07
+
+The developer selected "Approve the bounded rehearsal brief" after reviewing the
+artifact path, experienced-user evidence limitation, proposed CSV/refund/error
+contract, WSL-local setup scope, one interactive session and manually observed
+60-minute active-effort cap. The 30-test scoped baseline and 425 resolved links
+were disclosed; no full-suite, Linux runtime or newcomer-usability pass was claimed.
+
+This approves preparation and the named bounded rehearsal under ordinary command
+permissions and the example's own evidence/spec/implementation gates. It does not
+approve extra provisioning/login, additional agents/model-review batches, a final
+Phase 09 design, production example, commit, push, PR or release. Material recipe,
+condition or budget changes stop for a new decision. No WSL update, plugin install,
+live model session or Go implementation has occurred. Stop this gate turn before
+starting rehearsal preparation.
+
+## Phase 09 Linux Preflight Blocker: 2026-11-07
+
+The approved non-elevated Copilot update reported 1.0.107 downloaded, but Ubuntu's
+normal launcher still runs 1.0.5 and --no-auto-update runs 0.0.403. Neither meets
+the documented minimum. The phase findings preserve the actual command evidence;
+this is not a completed rehearsal or evidence of newcomer usability. No plugin,
+example module, authentication change or model session has been started.
+
+A pinned user-owned CLI installation with an explicit path is proposed to avoid
+changing the root-owned launcher or global defaults. It needs a developer setup
+scope decision; no new installation or elevated operation has occurred.
+
+## User-Owned CLI Setup Repair Approved: 2026-11-07
+
+The developer selected "Approve pinned user-owned installation with explicit
+executable path" after the failed activation/freeze checks and installation
+alternatives were presented. Authorize the official stable v1.0.107 installer
+as the ordinary Ubuntu user, with a new PREFIX of $HOME/.local/atom-phase09-tools.
+Stop if that destination already exists, is not a safe user-owned Linux-native
+location, or needs additional privilege/provisioning. Verify the resulting
+binary/version before installing Atom or starting the rehearsal.
+
+Use $HOME/.local/atom-phase09-tools/bin/copilot explicitly for version/plugin
+commands and the eventual interactive session; do not substitute the old PATH
+launcher. Prevent auto-update during the frozen attempt with supported options.
+This approved amendment supersedes the generic copilot launcher in the original
+candidate recipe; finish and freeze the exact commands after verification.
+
+Leave /usr/local/bin/copilot, shell PATH/profile, Windows tooling, Go/Python
+defaults and existing authentication unchanged. Do not run sudo/root commands,
+install Node/npm or another toolchain, log in, launch extra agents or simulate the
+developer. Record the intentionally separate CLI installation and actual plugin
+snapshot identity. The one-session/attempt and manually observed 60-minute
+active-rehearsal bound remain unchanged.
+
+No user-owned installer, plugin installation, example module or live model
+session has been executed at this approval gate. End the gate turn before
+performing this newly approved setup repair. The underlying updater cause and
+actual novice usability remain unproven.
+
+## Tool Preparation Verified And Recipe Frozen: 2026-11-07
+
+The approved user-owned Copilot CLI 1.0.107 installation passed checksum and
+explicit-version verification. Public Atom 0.2.0 is installed; all nine skills
+and three command files are present. The old launcher and shell profiles retain
+their captured hashes; no sudo, login, credential copying or global PATH edit.
+
+The [phase findings](phase-09-onboarding-example/findings.md) and
+[phase decisions](phase-09-onboarding-example/decisions.md) preserve the actual
+installer/plugin outputs, content inventory, earlier guard correction and
+verified private-recorder probe. The
+[frozen recipe](phase-09-onboarding-example/rehearsal-recipe.md) SHA-256 is
+69617ba5da1d9f277af92b5e1816058d625e5f57ea0c9d1ef38ec8edd9fb5052. Child-only PATH selects the pinned CLI without changing
+Go/Python/git resolution. One session/attempt and the manual 60-minute active
+bound remain; no additional agent/model batch or permission waiver.
+
+Authentication/model access remains unverified. No interactive rehearsal,
+example module, Go implementation, final Phase 09 design, commit or publication
+has occurred. The developer performs the next step; this is tool preparation,
+not a POC verdict or evidence of genuine newcomer usability.
+
+## Phase 09 First Rehearsal Inconclusive: 2026-11-07
+
+The participant's /atom:init attempt stopped because Atom's prescribed bare pip
+bootstrap is rejected by Ubuntu's externally managed Python environment.
+The intended Go module exists, but no .atom/ initialization or baseline was
+captured. The frozen bootstrap reference is unchanged; it lacks explicit Linux
+python3 handling and an isolated-install recipe.
+
+The [rehearsal report](phase-09-onboarding-example/poc-report.md) preserves
+the supplied excerpt, private recording identity and independent file observations.
+Grade Inconclusive under the approved setup-failure rule, not a passing first-use
+path or a failing Go baseline. Model identity/usage/active-time and final history
+remain unestablished. No venv/pipx workaround, system override or retry was run.
+
+Recommend fixing/validating actual bootstrap guidance before a revised rehearsal;
+manual environment preparation is a separately approved alternative with narrower
+evidence. Keep final Phase 09 design/implementation and further live spend gated.
+
+## Phase 09 Bootstrap Repair Brief Prepared: 2026-11-07
+
+Read-only Ubuntu checks confirm the missing python alias and available Python 3,
+venv and ensurepip. Canonical and bundled bootstrap guides still prescribe the
+same failing bare-pip route. No isolated installation has been executed.
+The [bounded repair brief](phase-09-onboarding-example/bootstrap-repair-brief.md)
+proposes actual helper, artifact-write and first-init validation in a private
+disposable setup; it does not restart the original Inconclusive user rehearsal.
+
+## Phase 09 Isolated Bootstrap Validation Confirmed: 2026-11-08
+
+The [bounded report](phase-09-onboarding-example/bootstrap-repair-report.md)
+records one public-source venv installation, both helper forms, byte-exact
+artifact writes, first init and unchanged known defaults/installations.
+The empty module's vet/test baseline failed and was captured; no Go or overall
+Phase 09 completion is claimed. The first live rehearsal remains Inconclusive.
+Experimental child-environment controls limit reuse claims; no source guidance
+change or live rerun has started.
+
+## Phase 09 Bootstrap Repair Spec Drafted: 2026-11-08
+
+The [short repair spec](phase-09-onboarding-example/bootstrap-repair-spec.md)
+uses the developer-selected shared user-owned Linux venv, preserves working
+installations and Windows opt-in behavior, and scopes canonical/package guidance
+plus a small README clarification. The selected prefix was only inspected.
+Normal user configuration differs from the proven private environment; a bounded
+validation run still needs separate approval. No guide implementation, provisioning,
+plugin update, live retry or final Phase 09 design has started.
+
+## Phase 09 Bootstrap Spec Approved; Boundary Run Not Approved: 2026-11-09
+
+The developer approved the
+[repair spec](phase-09-onboarding-example/bootstrap-repair-spec.md)
+and requested a separate
+[boundary-validation brief](phase-09-onboarding-example/bootstrap-boundary-brief.md).
+The brief is prepared, not executed: one proposed Ubuntu install at the selected
+shared prefix with normal user configuration, actual command/writer checks and
+a 900-second cap, without models. Run/provisioning and named fixture-writer
+approval remain outstanding. No source guide change or original rehearsal retry.
+
+## Phase 09 Normal-Environment Bootstrap Result: 2026-11-09
+
+The [boundary report](phase-09-onboarding-example/bootstrap-boundary-report.md)
+confirms one approved normal-user Ubuntu installation at the selected shared
+prefix, both real writer forms, init's honestly failing empty-module baseline
+and named preservation/reuse checks in 13.642572425000253 seconds.
+No material spec change was needed. Await result acceptance before the approved
+three-document repair; original rehearsal remains Inconclusive. No source guide
+edits, model calls, retry, cleanup or publication.
+
+## Phase 09 Bootstrap Guidance Repair Verified: 2026-11-09
+
+The [implementation validation](phase-09-onboarding-example/bootstrap-repair-test-spec.md)
+records 34 passing existing tests, semantic review of all nine approved behaviors,
+matching canonical/package source bytes and preserved Windows/history blocks.
+Only the two bootstrap references and the small README clarification changed
+outside specification artifacts. No runtime source, schema, tests or scripts
+changed, and no new install/model call/live retry ran.
+
+Await implementation acceptance. Installed plugins/local bundles still need
+separately approved delivery; the original experienced-user trial remains
+Inconclusive and Phase 09 is not complete.
+
+## Phase 09 Candidate Delivery Route Pending: 2026-11-09
+
+Read-only inspection confirms two stale delivery surfaces: installed plugin
+instructions and module-local bundles generated from atom-cli package assets.
+A plugin-only refresh is insufficient. The installed init interface offers no
+bundle-source override; do not use --force to discard approvals as an update.
+The original rehearsal remains untouched and Inconclusive.
+
+Recommend scoping an isolated local candidate with both repaired surfaces before
+a separately approved new rehearsal; publication first is the alternative.
+Delivery/loading/build mechanics and budget still need their own bounded approval.
+No install, plugin/bundle mutation, model call, publication or new rehearsal ran.
+
+## Phase 09 Local Candidate Route Stopped: 2026-11-09
+
+The approved zero-model [candidate check](phase-09-onboarding-example/candidate-delivery-report.md)
+reported installed and external atom entries together, hitting its duplicate-plugin
+stop condition. No candidate venv/install/init or new live rehearsal ran. The
+installed plugin inventory and named working-installation/default/original-evidence
+checks match. Retain the partial candidate; do not retry or patch the installation.
+The accepted bootstrap repair still stands. Recommend scoping its normal publication
+rather than further isolation work; acceptance/shipping/rehearsal remain gated.
