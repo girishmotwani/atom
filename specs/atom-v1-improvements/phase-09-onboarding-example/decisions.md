@@ -529,3 +529,53 @@ Re-run the approved 34 focused checks and document/link/integrity checks now.
 Use gh pr create with explicit main base rather than a state-driven phase ship
 that would imply the example is complete. Self-review the source and artifact
 changes; no additional model-review batch or runtime-code change is involved.
+
+## Continuation Stops At Inherited CI / Merge Decision: 2026-11-09
+
+The developer requested "lets continue." after publication of PR #20. Re-read
+AGENTS.md and all seven discipline references. Read the actual atom-status
+workflow and loaded pr-stack before preparing the potential landing gate.
+Performed only read-only GitHub/local status inspection and existing-run CI
+comparison, plus these findings/decision updates through atom-write-artifact.
+No model agent, CI rerun, production edit or new Go experiment was needed to
+compare existing evidence. The docs-only verification adaptation remains valid.
+
+The six failing CLI jobs match their exact main baseline's failed-test IDs and
+aggregate results. See [the findings](findings.md). This is an inherited red
+baseline, not passing CI. Keep the bootstrap PR focused: recommend obtaining
+explicit permission to land it with that disclosed limitation if normal GitHub
+protections allow; do not bypass protections. Fixing inherited CI instead is a
+separate scope choice and does not become authorized by this recommendation.
+
+The earlier permission covers commit/push/PR creation only. Generic continuation
+does not authorize merge, auto-merge, a protection override, environment refresh,
+release or another participant rehearsal. No such action has occurred. These
+new CI notes are local pending the next publication decision; do not amend the
+published commit. Phase 09 remains blocked on public delivery and a separately
+approved, newly frozen user-run attempt. Preserve the original Inconclusive
+attempt and the stopped local-candidate evidence.
+
+## CI Evidence Publication And Scoped Merge Authorized: 2026-11-09
+
+The developer selected exactly:
+"Publish notes and merge #20 without bypassing protections".
+The subsequent "lets continue" resumes that explicit permission. Publish only
+these Phase 09 CI evidence/decision updates, then merge the accepted bootstrap
+fix if GitHub permits it normally. The inherited failing CI baseline is disclosed
+and accepted for this merge, not waived or represented as a passing suite.
+No inherited runtime/test repair, release, installed-tool update, new participant
+recipe or live rehearsal is authorized.
+
+Fresh read-only preflight confirms PR #20 is standalone, open and non-draft at
+4ea0c7ba72b96702ef529270726fc3b433a24978, against unchanged main
+50622abf2b9f58bcfc2c9d538b7292cf0689ceee. Main is unprotected, its effective
+branch-rules response is empty, and merge/squash/rebase methods are allowed.
+No stack creation, rewrite, auto-merge, queue or protection bypass is needed.
+Revalidate the pushed head, membership and protections immediately before merge.
+
+Retain the approved documentation-only ship adaptation: this repository's
+tooling is Python and this update changes two Markdown journals only. Review
+the complete diff and run the existing documentation-link and whitespace checks;
+do not manufacture root Go/atom-check evidence or rerun unchanged Python tests
+merely to publish CI observations. Preserve the published commit and use a new
+notes commit with the required trailers.

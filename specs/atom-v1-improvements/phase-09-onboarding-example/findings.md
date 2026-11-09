@@ -387,3 +387,73 @@ on 2026-11-06 as 50622abf2b9f58bcfc2c9d538b7292cf0689ceee. Earlier references
 to "unmerged Phase 03" are historical scope cautions, not evidence that the
 installed snapshot excluded those changes. No runtime use or compliance follows
 from content equality. Preserve the frozen original recipe and observations.
+
+## PR #20 CI Compared With Its Exact Main Baseline: 2026-11-09
+
+PR #20 remains open and unmerged at
+4ea0c7ba72b96702ef529270726fc3b433a24978, targeting main. GitHub reports
+MERGEABLE but UNSTABLE, with no submitted reviews. Documentation links and
+all three POC jobs passed; all six Python/OS CLI jobs failed. CI is not green.
+
+Read-only evidence retrieval, both exit 0:
+
+```text
+gh run view 42641915538 --repo girishmotwani/atom --log-failed
+gh run view 42217217981 --repo girishmotwani/atom --log-failed
+```
+
+The [PR run](https://github.com/girishmotwani/atom/actions/runs/42641915538)
+is compared against the [main push run](https://github.com/girishmotwani/atom/actions/runs/42217217981)
+at its exact base 50622abf2b9f58bcfc2c9d538b7292cf0689ceee. Every matrix
+cell has exactly the same failed-test identity set and passed/failed/skipped
+counts. No newly failing test identity was observed. This comparison uses
+existing runs, not a rerun or a claim that the suite passes.
+
+Verbatim final pytest summaries, base followed by PR:
+
+```text
+atom CLI (py3.10, macos-latest)
+BASE: ================= 15 failed, 1632 passed, 52 skipped in 45.87s =================
+PR:   ================= 15 failed, 1632 passed, 52 skipped in 57.61s =================
+
+atom CLI (py3.10, ubuntu-latest)
+BASE: ================= 1 failed, 1646 passed, 52 skipped in 44.33s ==================
+PR:   ================= 1 failed, 1646 passed, 52 skipped in 35.53s ==================
+
+atom CLI (py3.10, windows-latest)
+BASE: =========== 21 failed, 1676 passed, 2 skipped in 130.14s (0:02:10) ============
+PR:   ============ 21 failed, 1676 passed, 2 skipped in 91.66s (0:01:31) ============
+
+atom CLI (py3.12, macos-latest)
+BASE: ================= 15 failed, 1632 passed, 52 skipped in 53.68s =================
+PR:   ============ 15 failed, 1632 passed, 52 skipped in 74.07s (0:01:14) ============
+
+atom CLI (py3.12, ubuntu-latest)
+BASE: ================= 1 failed, 1646 passed, 52 skipped in 42.25s ==================
+PR:   ================= 1 failed, 1646 passed, 52 skipped in 31.63s ==================
+
+atom CLI (py3.12, windows-latest)
+BASE: =========== 15 failed, 1682 passed, 2 skipped in 143.53s (0:02:23) ============
+PR:   =========== 15 failed, 1682 passed, 2 skipped in 139.44s (0:02:19) ============
+
+```
+
+The shared Ubuntu failure is:
+
+```text
+atom.review.ControlToolchainError: PATH Go 1.23.12 is below module minimum 1.27.0
+```
+
+macOS and Windows also expose path-alias comparisons; Windows Python 3.10
+has additional runner/process test failures. Do not repair these inherited
+runtime/test issues within the accepted documentation-only bootstrap scope
+without a separate scope decision. Matching failed-test sets alone do not
+establish that every failure has the same root cause or rule out hidden defects.
+
+`atom status` exits 0 but warns about multiple specs projects and selects
+artifact-writer/phase-01-dedicated-writer by fallback, not this active Phase 09.
+Its unrelated missing-artifact report is not Phase 09 completion evidence.
+No runtime state or unrelated project artifact was changed. The actual Phase 09
+files retain its brief and Inconclusive report, findings and decisions; an
+approved expense-example design, implementation and successful live rehearsal
+are still missing.
