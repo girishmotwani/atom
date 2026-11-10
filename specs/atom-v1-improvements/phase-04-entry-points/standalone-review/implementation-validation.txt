@@ -1,0 +1,18 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\Users\gimotwan\atom\tools
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 204 items
+
+tests\test_standalone_review_guidance.py ..................              [  8%]
+tests\test_onboarding.py ......................                          [ 19%]
+tests\test_cli_review.py ............................................... [ 42%]
+.............................                                            [ 56%]
+tests\test_report.py ...................                                 [ 66%]
+tests\test_merge.py ..............................................       [ 88%]
+tests\test_artifact_integration.py ............                          [ 94%]
+tests\test_plugin.py ...........                                         [100%]
+
+============================ 204 passed in 46.21s =============================
+

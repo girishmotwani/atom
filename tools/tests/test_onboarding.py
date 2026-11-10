@@ -171,6 +171,32 @@ def test_init_skill_delegates_baseline_and_scaffold_to_one_cli_command() -> None
     assert "may be absent on a clone" in source
 
 
+@pytest.mark.parametrize(
+    "reference",
+    (
+        Path("skills") / "atom" / "references" / "standalone-review.md",
+        Path("skills") / "review" / "SKILL.md",
+    ),
+)
+def test_init_installs_canonical_entry_guidance(
+    tmp_path: Path, monkeypatch, reference: Path
+) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    canonical = repository / reference
+    packaged = repository / "tools" / "atom" / "assets" / reference
+    assert canonical.is_file()
+    assert packaged.read_bytes() == canonical.read_bytes()
+
+    (tmp_path / "go.mod").write_text(
+        "module example.com/target\n\ngo 1.23.0\n", encoding="utf-8"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    installed = tmp_path / ".atom" / "atom" / reference
+    assert installed.read_bytes() == canonical.read_bytes()
+
+
 def test_init_updates_existing_instructions_once(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / "go.mod").write_text("module example.com/target\n", encoding="utf-8")
     instructions_path = tmp_path / ".github" / "copilot-instructions.md"

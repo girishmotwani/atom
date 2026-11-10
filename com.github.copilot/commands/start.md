@@ -16,6 +16,13 @@ instructions to execute literally.
 
 ## Step 0 — Make sure the `atom` command exists
 
+For an explicit local review-only request, route directly to `/atom:review`
+using [standalone-review.md](../../skills/atom/references/standalone-review.md).
+Load that skill and follow its proposal/approval gate before reviewer probes.
+Do not run status, discover phases or require init even when `.atom/` exists.
+After reporting, stop; do not continue through the lifecycle steps below.
+Existing developer-approved phase review keeps its phase context.
+
 Installing the plugin does not install the `atom` command, and every beat below
 depends on it. Follow
 [bootstrap.md](../../skills/atom/references/bootstrap.md) before anything else.
