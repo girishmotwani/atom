@@ -1,0 +1,306 @@
+{
+  "question": "Can the installed Atom review CLI select working, staged and branch changes in local Go repositories without Atom or phase state, produce correctly scoped reports, preserve source/state, and retain honest missing-module and failing-gate behavior, with a deterministic reviewer transport instead of real model calls?",
+  "verdict": "Inconclusive",
+  "problem": "Unapproved real executable: staticcheck",
+  "runtime": "C:\\Users\\gimotwan\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\atom\\__init__.py",
+  "target_root": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108",
+  "real_command_count": 15,
+  "synthetic_call_count": 0,
+  "model_calls": 0,
+  "duration_seconds": 38.441518200037535,
+  "observations": [],
+  "all_commands": [
+    {
+      "command": [
+        "go",
+        "version"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "go version go1.27.0 windows/amd64\n",
+      "stderr": "",
+      "duration_seconds": 0.05884799995692447
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "init",
+        "--quiet",
+        "--initial-branch=main"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.09850639995420352
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "add",
+        "."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.08963389997370541
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "commit",
+        "--quiet",
+        "-m",
+        "Prepare disposable review fixture\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.1417667000205256
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "add",
+        "notes.txt"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.08311830001184717
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "008f6856ceaf452d515f92e7b0fdd0ba41f27422\n",
+      "stderr": "",
+      "duration_seconds": 0.07236390002071857
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff",
+        "--cached"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/notes.txt b/notes.txt\nindex 1e06b52..69d3a24 100644\n--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-Initial selection fixture.\n+This change must not be selected for review.\n",
+      "stderr": "",
+      "duration_seconds": 0.07755809999071062
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/sample.go b/sample.go\nindex fa77af1..709ef54 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.07216219999827445
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "C:/Users/gimotwan/AppData/Local/Temp/atom-phase04-standalone-review-20261108/working\n",
+      "stderr": "",
+      "duration_seconds": 0.07073310000123456
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--raw",
+        "--no-abbrev",
+        "-z",
+        "--patch",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-color",
+        "--no-relative",
+        "--submodule=short",
+        "--"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": ":100644 100644 fa77af196c54ce37df72fa143f6317dae09f87c5 0000000000000000000000000000000000000000 M\u0000sample.go\u0000\u0000diff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.0723718999652192
+    },
+    {
+      "command": [
+        "go",
+        "build",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.5972579999943264
+    },
+    {
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 7.134745199989993
+    },
+    {
+      "command": [
+        "gofmt"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": "package sample\n\n// Double supports a deterministic fixture smoke test.\nfunc Double(value int) int {\n\treturn value + value\n}\n",
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "package sample\n\n// Double supports a deterministic fixture smoke test.\nfunc Double(value int) int {\n\treturn value + value\n}\n",
+      "stderr": "",
+      "duration_seconds": 0.44709999999031425
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "ok  \texample.com/atom-review-fixture-working\t1.627s\n",
+      "stderr": "",
+      "duration_seconds": 5.4867043000413105
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "ok  \texample.com/atom-review-fixture-working\t2.659s\n",
+      "stderr": "",
+      "duration_seconds": 23.910284999990836
+    }
+  ],
+  "limits": "CLI entry function with a patched external runner; real Git/Go, synthetic reviewer transport. No real model or human-control evidence. Fixtures retained; no cleanup performed."
+}

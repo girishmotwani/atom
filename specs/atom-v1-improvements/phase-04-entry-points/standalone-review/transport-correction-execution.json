@@ -1,0 +1,982 @@
+{
+  "question": "Can the installed Atom review CLI select working, staged and branch changes in local Go repositories without Atom or phase state, produce correctly scoped reports, preserve source/state, and retain honest missing-module and failing-gate behavior, with a deterministic reviewer transport instead of real model calls?",
+  "verdict": "Inconclusive",
+  "problem": "Unapproved real executable: C:\\Users\\gimotwan\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe",
+  "runtime": "C:\\Users\\gimotwan\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\atom\\__init__.py",
+  "target_root": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108",
+  "real_command_count": 30,
+  "synthetic_call_count": 4,
+  "model_calls": 0,
+  "duration_seconds": 24.113139700028114,
+  "observations": [
+    {
+      "name": "working",
+      "target": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "cli_arguments": [
+        "review",
+        "--working",
+        "--runs",
+        "1",
+        "--concurrency",
+        "1",
+        "--model",
+        "fixture-reviewer-one",
+        "--model",
+        "fixture-reviewer-two",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"diff\": {\n    \"changed_lines\": 2,\n    \"files\": [\n      \"sample.go\"\n    ],\n    \"source\": \"working\"\n  },\n  \"findings\": [\n    {\n      \"agreement\": [\n        {\n          \"model\": \"fixture-reviewer-one\",\n          \"runs_reporting\": 1,\n          \"runs_total\": 1\n        },\n        {\n          \"model\": \"fixture-reviewer-two\",\n          \"runs_reporting\": 1,\n          \"runs_total\": 1\n        }\n      ],\n      \"file\": \"sample.go\",\n      \"has_nearby_multi_model_reports\": false,\n      \"has_severity_disagreement\": false,\n      \"highest_severity\": \"low\",\n      \"is_corroborated\": true,\n      \"line\": 5,\n      \"lines\": [\n        5\n      ],\n      \"messages\": [\n        {\n          \"line\": 5,\n          \"message\": \"Synthetic transport sentinel; not a real code defect.\",\n          \"model\": \"fixture-reviewer-one\",\n          \"run_index\": 1,\n          \"severity\": \"low\"\n        },\n        {\n          \"line\": 5,\n          \"message\": \"Synthetic transport sentinel; not a real code defect.\",\n          \"model\": \"fixture-reviewer-two\",\n          \"run_index\": 1,\n          \"severity\": \"low\"\n        }\n      ],\n      \"severities\": [\n        \"low\"\n      ]\n    }\n  ],\n  \"has_no_usable_response\": false,\n  \"is_partial\": false,\n  \"models\": [\n    {\n      \"model\": \"fixture-reviewer-one\",\n      \"runs_answered\": 1,\n      \"runs_completed\": 1,\n      \"runs_requested\": 1\n    },\n    {\n      \"model\": \"fixture-reviewer-two\",\n      \"runs_answered\": 1,\n      \"runs_completed\": 1,\n      \"runs_requested\": 1\n    }\n  ],\n  \"module_rules\": {\n    \"provenance\": \"local-launch\",\n    \"sources\": [],\n    \"status\": \"not-found\"\n  },\n  \"schema_version\": 3,\n  \"silent_runs\": [],\n  \"toolchain\": {\n    \"control_gates\": [],\n    \"degraded\": false,\n    \"gates\": [\n      {\n        \"command_exit_code\": 0,\n        \"command_outcome\": \"completed\",\n        \"details\": \"\",\n        \"duration_seconds\": 0.348,\n        \"name\": \"build\",\n        \"required\": true,\n        \"status\": \"passed\",\n        \"summary\": \"go build ./... passed\"\n      },\n      {\n        \"command_exit_code\": 0,\n        \"command_outcome\": \"completed\",\n        \"details\": \"\",\n        \"duration_seconds\": 6.409,\n        \"name\": \"vet\",\n        \"required\": true,\n        \"status\": \"passed\",\n        \"summary\": \"go vet ./... passed\"\n      },\n      {\n        \"command_exit_code\": 0,\n        \"command_outcome\": \"completed\",\n        \"details\": \"Formatting checks selected snapshots from unstaged working-tree changes: 'sample.go'\",\n        \"duration_seconds\": 0.039,\n        \"name\": \"fmt\",\n        \"required\": true,\n        \"status\": \"passed\",\n        \"summary\": \"Checked 1 changed Go file(s) from unstaged working-tree changes: 'sample.go'\"\n      },\n      {\n        \"command_exit_code\": 0,\n        \"command_outcome\": \"completed\",\n        \"details\": \"ok  \\texample.com/atom-review-fixture-working\\t1.836s\\n\",\n        \"duration_seconds\": 6.097,\n        \"name\": \"test\",\n        \"required\": true,\n        \"status\": \"passed\",\n        \"summary\": \"go test ./... passed\"\n      },\n      {\n        \"command_exit_code\": 0,\n        \"command_outcome\": \"completed\",\n        \"details\": \"ok  \\texample.com/atom-review-fixture-working\\t3.697s\\n\",\n        \"duration_seconds\": 9.135,\n        \"name\": \"race\",\n        \"required\": true,\n        \"status\": \"passed\",\n        \"summary\": \"go test -race ./... passed\"\n      },\n      {\n        \"command_exit_code\": null,\n        \"command_outcome\": \"tool_missing\",\n        \"details\": \"Executable not found on PATH: staticcheck\",\n        \"duration_seconds\": 0.005,\n        \"name\": \"staticcheck\",\n        \"required\": false,\n        \"status\": \"skipped\",\n        \"summary\": \"staticcheck is not installed; staticcheck was not checked\"\n      },\n      {\n        \"command_exit_code\": null,\n        \"command_outcome\": \"tool_missing\",\n        \"details\": \"Executable not found on PATH: errcheck\",\n        \"duration_seconds\": 0.004,\n        \"name\": \"errcheck\",\n        \"required\": false,\n        \"status\": \"skipped\",\n        \"summary\": \"errcheck is not installed; errcheck was not checked\"\n      },\n      {\n        \"command_exit_code\": null,\n        \"command_outcome\": \"tool_missing\",\n        \"details\": \"Executable not found on PATH: govulncheck\",\n        \"duration_seconds\": 0.005,\n        \"name\": \"govulncheck\",\n        \"required\": false,\n        \"status\": \"skipped\",\n        \"summary\": \"govulncheck is not installed; govulncheck was not checked\"\n      }\n    ],\n    \"skip_reason\": \"\",\n    \"source_fingerprint\": null,\n    \"was_run\": true\n  },\n  \"unavailable_models\": [],\n  \"unparsed_responses\": []\n}\n",
+      "stderr": "",
+      "before": {
+        "files": {
+          "go.mod": "41066d231b1ae03426c1edea054ef65da6113d296401f739b20de130b134752f",
+          "notes.txt": "bc592aae318ccff9df0dab59fe51c60f2bb1ab1a1b42ece0d5fcba2caaa1837a",
+          "observer-sentinel.txt": "d252fa216bacd630a1fc079c1c71c83b94b4ee1cf4751b1da4efafcae4ea6c49",
+          "sample.go": "5495572683d26f9524fb87f635f29d92b6a552d491b7057dc729804e3ef5c5bb",
+          "sample_test.go": "a1a07eeb8d307b25e4a0ef8f0651e4c07290ef442ce0ee0807b5a3c958d8e2e8"
+        },
+        "head": "4dab73b55adb711bcc0fd7b4910f1e392d805543\n",
+        "staged_diff": "diff --git a/notes.txt b/notes.txt\nindex 1e06b52..69d3a24 100644\n--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-Initial selection fixture.\n+This change must not be selected for review.\n",
+        "working_diff": "diff --git a/sample.go b/sample.go\nindex fa77af1..709ef54 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+        "unexpected_pipeline_paths": []
+      },
+      "after": {
+        "files": {
+          "go.mod": "41066d231b1ae03426c1edea054ef65da6113d296401f739b20de130b134752f",
+          "notes.txt": "bc592aae318ccff9df0dab59fe51c60f2bb1ab1a1b42ece0d5fcba2caaa1837a",
+          "observer-sentinel.txt": "d252fa216bacd630a1fc079c1c71c83b94b4ee1cf4751b1da4efafcae4ea6c49",
+          "sample.go": "5495572683d26f9524fb87f635f29d92b6a552d491b7057dc729804e3ef5c5bb",
+          "sample_test.go": "a1a07eeb8d307b25e4a0ef8f0651e4c07290ef442ce0ee0807b5a3c958d8e2e8"
+        },
+        "head": "4dab73b55adb711bcc0fd7b4910f1e392d805543\n",
+        "staged_diff": "diff --git a/notes.txt b/notes.txt\nindex 1e06b52..69d3a24 100644\n--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-Initial selection fixture.\n+This change must not be selected for review.\n",
+        "working_diff": "diff --git a/sample.go b/sample.go\nindex fa77af1..709ef54 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+        "unexpected_pipeline_paths": []
+      },
+      "reviewer_calls": 4,
+      "commands": [
+        {
+          "command": [
+            "git",
+            "rev-parse",
+            "--show-toplevel"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "C:/Users/gimotwan/AppData/Local/Temp/atom-phase04-standalone-review-corrected-20261108/working\n",
+          "stderr": "",
+          "duration_seconds": 0.0713429999887012
+        },
+        {
+          "command": [
+            "git",
+            "diff",
+            "--raw",
+            "--no-abbrev",
+            "-z",
+            "--patch",
+            "--full-index",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--no-color",
+            "--no-relative",
+            "--submodule=short",
+            "--"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": ":100644 100644 fa77af196c54ce37df72fa143f6317dae09f87c5 0000000000000000000000000000000000000000 M\u0000sample.go\u0000\u0000diff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+          "stderr": "",
+          "duration_seconds": 0.07068760000402108
+        },
+        {
+          "command": [
+            "go",
+            "build",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "",
+          "duration_seconds": 0.34782429999904707
+        },
+        {
+          "command": [
+            "go",
+            "vet",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "",
+          "duration_seconds": 6.408832799992524
+        },
+        {
+          "command": [
+            "gofmt"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": "package sample\n\n// Double supports a deterministic fixture smoke test.\nfunc Double(value int) int {\n\treturn value + value\n}\n",
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "package sample\n\n// Double supports a deterministic fixture smoke test.\nfunc Double(value int) int {\n\treturn value + value\n}\n",
+          "stderr": "",
+          "duration_seconds": 0.03931840002769604
+        },
+        {
+          "command": [
+            "go",
+            "test",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "ok  \texample.com/atom-review-fixture-working\t1.836s\n",
+          "stderr": "",
+          "duration_seconds": 6.097193899971899
+        },
+        {
+          "command": [
+            "go",
+            "test",
+            "-race",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "ok  \texample.com/atom-review-fixture-working\t3.697s\n",
+          "stderr": "",
+          "duration_seconds": 9.13458879996324
+        },
+        {
+          "command": [
+            "staticcheck",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "tool_missing",
+          "exit_code": null,
+          "stdout": "",
+          "stderr": "Executable not found on PATH: staticcheck",
+          "duration_seconds": 0.004519100009929389
+        },
+        {
+          "command": [
+            "errcheck",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "tool_missing",
+          "exit_code": null,
+          "stdout": "",
+          "stderr": "Executable not found on PATH: errcheck",
+          "duration_seconds": 0.004274700011592358
+        },
+        {
+          "command": [
+            "govulncheck",
+            "./..."
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": false,
+          "stdin": null,
+          "outcome": "tool_missing",
+          "exit_code": null,
+          "stdout": "",
+          "stderr": "Executable not found on PATH: govulncheck",
+          "duration_seconds": 0.005401999980676919
+        },
+        {
+          "command": [
+            "copilot",
+            "-p",
+            "ping",
+            "--silent",
+            "--model",
+            "fixture-reviewer-one",
+            "--no-custom-instructions",
+            "--disable-builtin-mcps"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": true,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "synthetic availability response",
+          "stderr": "",
+          "duration_seconds": 0.0
+        },
+        {
+          "command": [
+            "copilot",
+            "-p",
+            "ping",
+            "--silent",
+            "--model",
+            "fixture-reviewer-two",
+            "--no-custom-instructions",
+            "--disable-builtin-mcps"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": true,
+          "stdin": null,
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "synthetic availability response",
+          "stderr": "",
+          "duration_seconds": 0.0
+        },
+        {
+          "command": [
+            "copilot",
+            "--output-format",
+            "json",
+            "--model",
+            "fixture-reviewer-one",
+            "--no-custom-instructions",
+            "--disable-builtin-mcps"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": true,
+          "stdin": "You are reviewing a Go diff. Report real problems only.\nA Go toolchain ran over this code before review. These results are mechanical proof, not opinion.\n\n  go build ./...            PASSED\n  go vet ./...              PASSED\n  gofmt (changed Go files)  PASSED - Checked 1 changed Go file(s) from unstaged working-tree changes: 'sample.go'\nFormatting checks selected snapshots from unstaged working-tree changes: 'sample.go'\n  go test ./...             PASSED\n  go test -race ./...       PASSED\n  staticcheck ./...         not installed - not checked\n  errcheck ./...            not installed - not checked\n  govulncheck ./...         not installed - not checked\n\nDo not report these mechanically checked categories: build errors, vet diagnostics (printf verb mismatches, lost cancel, copied locks), formatting in the checked files only, failing tests, and a data race on a path the tests execute.\n\nWhat these tools cannot see: the race detector only observes paths the tests actually executed, so untested concurrent code is unchecked. errcheck finds discarded errors, not errors caught and handled wrongly. govulncheck finds known vulnerabilities in dependencies, not unsafe handling of input in this code. No tool here judges whether a name misleads a reader, whether a function has grown too long to follow, or whether this change will be easy to extend without editing existing behaviour.\n\nA clean tool run is not evidence a problem is absent; it is evidence that one specific tool did not see it.\n\nThese seven things no tool can check. Each one names what breaks.\n\n1. An error returned without naming the operation reaches the caller\n   as \"no such file\" with nothing saying what was being opened.\n   Wrap it: fmt.Errorf(\"loading config %s: %w\", path, err).\n\n2. Every method on an interface must be implemented by every\n   implementer and every test fake. A six-method interface makes\n   adding a seventh a change to all of them. Keep interfaces to the\n   methods the caller actually uses, declared where they are used.\n\n3. Package-level state that can be written is reachable from every\n   function in the package and from every test. It cannot be\n   substituted, so code reading it cannot be tested without it, and\n   tests touching it cannot run at once. Declare variables inside\n   functions and pass dependencies in. If a value must live at\n   package level, make it const. Go cannot make a slice or map\n   const, so return a copy from a function instead.\n\n4. A goroutine with no stated way to stop leaks. It appears as\n   memory growth in production and never in a test, and the race\n   detector cannot see it. Whoever starts it says in a comment how\n   it ends.\n\n5. Unexporting an identifier later breaks every caller; exporting\n   one later breaks nobody. Export only what a caller outside the\n   package must reach.\n\n6. An abbreviated name (cfg, msg, n, v) makes every later reader\n   rebuild its meaning from surrounding code. The author pays once,\n   each reader pays again.\n\n7. A doc comment that restates the signature goes stale without\n   anyone noticing and then actively misleads. An exported symbol\n   carrying no doc comment, or a non-obvious branch carrying no\n   stated reason, forces every later reader to reconstruct the\n   intent from the code -- and the maintainer who reconstructs it\n   wrong deletes a guard believing it was incidental. Say why the\n   thing exists and what breaks without it; leave obvious code\n   uncommented.\n\nRespond with a JSON array. Every element must be an object with exactly these keys:\n  \"file\": string, the path from the diff\n  \"line\": integer, the line number in the new file\n  \"severity\": one of \"critical\", \"high\", \"medium\", \"low\"\n  \"message\": string, one sentence describing the problem\n\nRespond with the JSON array and nothing else. No prose, no explanation, no headings.\n\nHere is the diff:\n\ndiff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n\n",
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "{\"type\": \"assistant.message\", \"data\": {\"content\": \"[{\\\"file\\\": \\\"sample.go\\\", \\\"line\\\": 5, \\\"severity\\\": \\\"low\\\", \\\"message\\\": \\\"Synthetic transport sentinel; not a real code defect.\\\"}]\", \"phase\": \"final_answer\"}}\n{\"type\": \"result\", \"exitCode\": 0, \"sessionId\": \"synthetic-review-session\"}",
+          "stderr": "",
+          "duration_seconds": 0.0
+        },
+        {
+          "command": [
+            "copilot",
+            "--output-format",
+            "json",
+            "--model",
+            "fixture-reviewer-two",
+            "--no-custom-instructions",
+            "--disable-builtin-mcps"
+          ],
+          "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+          "synthetic": true,
+          "stdin": "You are reviewing a Go diff. Report real problems only.\nA Go toolchain ran over this code before review. These results are mechanical proof, not opinion.\n\n  go build ./...            PASSED\n  go vet ./...              PASSED\n  gofmt (changed Go files)  PASSED - Checked 1 changed Go file(s) from unstaged working-tree changes: 'sample.go'\nFormatting checks selected snapshots from unstaged working-tree changes: 'sample.go'\n  go test ./...             PASSED\n  go test -race ./...       PASSED\n  staticcheck ./...         not installed - not checked\n  errcheck ./...            not installed - not checked\n  govulncheck ./...         not installed - not checked\n\nDo not report these mechanically checked categories: build errors, vet diagnostics (printf verb mismatches, lost cancel, copied locks), formatting in the checked files only, failing tests, and a data race on a path the tests execute.\n\nWhat these tools cannot see: the race detector only observes paths the tests actually executed, so untested concurrent code is unchecked. errcheck finds discarded errors, not errors caught and handled wrongly. govulncheck finds known vulnerabilities in dependencies, not unsafe handling of input in this code. No tool here judges whether a name misleads a reader, whether a function has grown too long to follow, or whether this change will be easy to extend without editing existing behaviour.\n\nA clean tool run is not evidence a problem is absent; it is evidence that one specific tool did not see it.\n\nThese seven things no tool can check. Each one names what breaks.\n\n1. An error returned without naming the operation reaches the caller\n   as \"no such file\" with nothing saying what was being opened.\n   Wrap it: fmt.Errorf(\"loading config %s: %w\", path, err).\n\n2. Every method on an interface must be implemented by every\n   implementer and every test fake. A six-method interface makes\n   adding a seventh a change to all of them. Keep interfaces to the\n   methods the caller actually uses, declared where they are used.\n\n3. Package-level state that can be written is reachable from every\n   function in the package and from every test. It cannot be\n   substituted, so code reading it cannot be tested without it, and\n   tests touching it cannot run at once. Declare variables inside\n   functions and pass dependencies in. If a value must live at\n   package level, make it const. Go cannot make a slice or map\n   const, so return a copy from a function instead.\n\n4. A goroutine with no stated way to stop leaks. It appears as\n   memory growth in production and never in a test, and the race\n   detector cannot see it. Whoever starts it says in a comment how\n   it ends.\n\n5. Unexporting an identifier later breaks every caller; exporting\n   one later breaks nobody. Export only what a caller outside the\n   package must reach.\n\n6. An abbreviated name (cfg, msg, n, v) makes every later reader\n   rebuild its meaning from surrounding code. The author pays once,\n   each reader pays again.\n\n7. A doc comment that restates the signature goes stale without\n   anyone noticing and then actively misleads. An exported symbol\n   carrying no doc comment, or a non-obvious branch carrying no\n   stated reason, forces every later reader to reconstruct the\n   intent from the code -- and the maintainer who reconstructs it\n   wrong deletes a guard believing it was incidental. Say why the\n   thing exists and what breaks without it; leave obvious code\n   uncommented.\n\nRespond with a JSON array. Every element must be an object with exactly these keys:\n  \"file\": string, the path from the diff\n  \"line\": integer, the line number in the new file\n  \"severity\": one of \"critical\", \"high\", \"medium\", \"low\"\n  \"message\": string, one sentence describing the problem\n\nRespond with the JSON array and nothing else. No prose, no explanation, no headings.\n\nHere is the diff:\n\ndiff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n\n",
+          "outcome": "completed",
+          "exit_code": 0,
+          "stdout": "{\"type\": \"assistant.message\", \"data\": {\"content\": \"[{\\\"file\\\": \\\"sample.go\\\", \\\"line\\\": 5, \\\"severity\\\": \\\"low\\\", \\\"message\\\": \\\"Synthetic transport sentinel; not a real code defect.\\\"}]\", \"phase\": \"final_answer\"}}\n{\"type\": \"result\", \"exitCode\": 0, \"sessionId\": \"synthetic-review-session\"}",
+          "stderr": "",
+          "duration_seconds": 0.0
+        }
+      ]
+    }
+  ],
+  "all_commands": [
+    {
+      "command": [
+        "go",
+        "version"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "go version go1.27.0 windows/amd64\n",
+      "stderr": "",
+      "duration_seconds": 0.2576569999800995
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "init",
+        "--quiet",
+        "--initial-branch=main"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.10944430000381544
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "add",
+        "."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.0984656999935396
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "commit",
+        "--quiet",
+        "-m",
+        "Prepare disposable review fixture\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.12343310000142083
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "add",
+        "notes.txt"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.08218759996816516
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "4dab73b55adb711bcc0fd7b4910f1e392d805543\n",
+      "stderr": "",
+      "duration_seconds": 0.07238179998239502
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff",
+        "--cached"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/notes.txt b/notes.txt\nindex 1e06b52..69d3a24 100644\n--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-Initial selection fixture.\n+This change must not be selected for review.\n",
+      "stderr": "",
+      "duration_seconds": 0.07074990001274273
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/sample.go b/sample.go\nindex fa77af1..709ef54 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.07017779996385798
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "C:/Users/gimotwan/AppData/Local/Temp/atom-phase04-standalone-review-corrected-20261108/working\n",
+      "stderr": "",
+      "duration_seconds": 0.0713429999887012
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--raw",
+        "--no-abbrev",
+        "-z",
+        "--patch",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-color",
+        "--no-relative",
+        "--submodule=short",
+        "--"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": ":100644 100644 fa77af196c54ce37df72fa143f6317dae09f87c5 0000000000000000000000000000000000000000 M\u0000sample.go\u0000\u0000diff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.07068760000402108
+    },
+    {
+      "command": [
+        "go",
+        "build",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.34782429999904707
+    },
+    {
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 6.408832799992524
+    },
+    {
+      "command": [
+        "gofmt"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": "package sample\n\n// Double supports a deterministic fixture smoke test.\nfunc Double(value int) int {\n\treturn value + value\n}\n",
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "package sample\n\n// Double supports a deterministic fixture smoke test.\nfunc Double(value int) int {\n\treturn value + value\n}\n",
+      "stderr": "",
+      "duration_seconds": 0.03931840002769604
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "ok  \texample.com/atom-review-fixture-working\t1.836s\n",
+      "stderr": "",
+      "duration_seconds": 6.097193899971899
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "ok  \texample.com/atom-review-fixture-working\t3.697s\n",
+      "stderr": "",
+      "duration_seconds": 9.13458879996324
+    },
+    {
+      "command": [
+        "staticcheck",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "tool_missing",
+      "exit_code": null,
+      "stdout": "",
+      "stderr": "Executable not found on PATH: staticcheck",
+      "duration_seconds": 0.004519100009929389
+    },
+    {
+      "command": [
+        "errcheck",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "tool_missing",
+      "exit_code": null,
+      "stdout": "",
+      "stderr": "Executable not found on PATH: errcheck",
+      "duration_seconds": 0.004274700011592358
+    },
+    {
+      "command": [
+        "govulncheck",
+        "./..."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "tool_missing",
+      "exit_code": null,
+      "stdout": "",
+      "stderr": "Executable not found on PATH: govulncheck",
+      "duration_seconds": 0.005401999980676919
+    },
+    {
+      "command": [
+        "copilot",
+        "-p",
+        "ping",
+        "--silent",
+        "--model",
+        "fixture-reviewer-one",
+        "--no-custom-instructions",
+        "--disable-builtin-mcps"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": true,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "synthetic availability response",
+      "stderr": "",
+      "duration_seconds": 0.0
+    },
+    {
+      "command": [
+        "copilot",
+        "-p",
+        "ping",
+        "--silent",
+        "--model",
+        "fixture-reviewer-two",
+        "--no-custom-instructions",
+        "--disable-builtin-mcps"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": true,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "synthetic availability response",
+      "stderr": "",
+      "duration_seconds": 0.0
+    },
+    {
+      "command": [
+        "copilot",
+        "--output-format",
+        "json",
+        "--model",
+        "fixture-reviewer-one",
+        "--no-custom-instructions",
+        "--disable-builtin-mcps"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": true,
+      "stdin": "You are reviewing a Go diff. Report real problems only.\nA Go toolchain ran over this code before review. These results are mechanical proof, not opinion.\n\n  go build ./...            PASSED\n  go vet ./...              PASSED\n  gofmt (changed Go files)  PASSED - Checked 1 changed Go file(s) from unstaged working-tree changes: 'sample.go'\nFormatting checks selected snapshots from unstaged working-tree changes: 'sample.go'\n  go test ./...             PASSED\n  go test -race ./...       PASSED\n  staticcheck ./...         not installed - not checked\n  errcheck ./...            not installed - not checked\n  govulncheck ./...         not installed - not checked\n\nDo not report these mechanically checked categories: build errors, vet diagnostics (printf verb mismatches, lost cancel, copied locks), formatting in the checked files only, failing tests, and a data race on a path the tests execute.\n\nWhat these tools cannot see: the race detector only observes paths the tests actually executed, so untested concurrent code is unchecked. errcheck finds discarded errors, not errors caught and handled wrongly. govulncheck finds known vulnerabilities in dependencies, not unsafe handling of input in this code. No tool here judges whether a name misleads a reader, whether a function has grown too long to follow, or whether this change will be easy to extend without editing existing behaviour.\n\nA clean tool run is not evidence a problem is absent; it is evidence that one specific tool did not see it.\n\nThese seven things no tool can check. Each one names what breaks.\n\n1. An error returned without naming the operation reaches the caller\n   as \"no such file\" with nothing saying what was being opened.\n   Wrap it: fmt.Errorf(\"loading config %s: %w\", path, err).\n\n2. Every method on an interface must be implemented by every\n   implementer and every test fake. A six-method interface makes\n   adding a seventh a change to all of them. Keep interfaces to the\n   methods the caller actually uses, declared where they are used.\n\n3. Package-level state that can be written is reachable from every\n   function in the package and from every test. It cannot be\n   substituted, so code reading it cannot be tested without it, and\n   tests touching it cannot run at once. Declare variables inside\n   functions and pass dependencies in. If a value must live at\n   package level, make it const. Go cannot make a slice or map\n   const, so return a copy from a function instead.\n\n4. A goroutine with no stated way to stop leaks. It appears as\n   memory growth in production and never in a test, and the race\n   detector cannot see it. Whoever starts it says in a comment how\n   it ends.\n\n5. Unexporting an identifier later breaks every caller; exporting\n   one later breaks nobody. Export only what a caller outside the\n   package must reach.\n\n6. An abbreviated name (cfg, msg, n, v) makes every later reader\n   rebuild its meaning from surrounding code. The author pays once,\n   each reader pays again.\n\n7. A doc comment that restates the signature goes stale without\n   anyone noticing and then actively misleads. An exported symbol\n   carrying no doc comment, or a non-obvious branch carrying no\n   stated reason, forces every later reader to reconstruct the\n   intent from the code -- and the maintainer who reconstructs it\n   wrong deletes a guard believing it was incidental. Say why the\n   thing exists and what breaks without it; leave obvious code\n   uncommented.\n\nRespond with a JSON array. Every element must be an object with exactly these keys:\n  \"file\": string, the path from the diff\n  \"line\": integer, the line number in the new file\n  \"severity\": one of \"critical\", \"high\", \"medium\", \"low\"\n  \"message\": string, one sentence describing the problem\n\nRespond with the JSON array and nothing else. No prose, no explanation, no headings.\n\nHere is the diff:\n\ndiff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n\n",
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "{\"type\": \"assistant.message\", \"data\": {\"content\": \"[{\\\"file\\\": \\\"sample.go\\\", \\\"line\\\": 5, \\\"severity\\\": \\\"low\\\", \\\"message\\\": \\\"Synthetic transport sentinel; not a real code defect.\\\"}]\", \"phase\": \"final_answer\"}}\n{\"type\": \"result\", \"exitCode\": 0, \"sessionId\": \"synthetic-review-session\"}",
+      "stderr": "",
+      "duration_seconds": 0.0
+    },
+    {
+      "command": [
+        "copilot",
+        "--output-format",
+        "json",
+        "--model",
+        "fixture-reviewer-two",
+        "--no-custom-instructions",
+        "--disable-builtin-mcps"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": true,
+      "stdin": "You are reviewing a Go diff. Report real problems only.\nA Go toolchain ran over this code before review. These results are mechanical proof, not opinion.\n\n  go build ./...            PASSED\n  go vet ./...              PASSED\n  gofmt (changed Go files)  PASSED - Checked 1 changed Go file(s) from unstaged working-tree changes: 'sample.go'\nFormatting checks selected snapshots from unstaged working-tree changes: 'sample.go'\n  go test ./...             PASSED\n  go test -race ./...       PASSED\n  staticcheck ./...         not installed - not checked\n  errcheck ./...            not installed - not checked\n  govulncheck ./...         not installed - not checked\n\nDo not report these mechanically checked categories: build errors, vet diagnostics (printf verb mismatches, lost cancel, copied locks), formatting in the checked files only, failing tests, and a data race on a path the tests execute.\n\nWhat these tools cannot see: the race detector only observes paths the tests actually executed, so untested concurrent code is unchecked. errcheck finds discarded errors, not errors caught and handled wrongly. govulncheck finds known vulnerabilities in dependencies, not unsafe handling of input in this code. No tool here judges whether a name misleads a reader, whether a function has grown too long to follow, or whether this change will be easy to extend without editing existing behaviour.\n\nA clean tool run is not evidence a problem is absent; it is evidence that one specific tool did not see it.\n\nThese seven things no tool can check. Each one names what breaks.\n\n1. An error returned without naming the operation reaches the caller\n   as \"no such file\" with nothing saying what was being opened.\n   Wrap it: fmt.Errorf(\"loading config %s: %w\", path, err).\n\n2. Every method on an interface must be implemented by every\n   implementer and every test fake. A six-method interface makes\n   adding a seventh a change to all of them. Keep interfaces to the\n   methods the caller actually uses, declared where they are used.\n\n3. Package-level state that can be written is reachable from every\n   function in the package and from every test. It cannot be\n   substituted, so code reading it cannot be tested without it, and\n   tests touching it cannot run at once. Declare variables inside\n   functions and pass dependencies in. If a value must live at\n   package level, make it const. Go cannot make a slice or map\n   const, so return a copy from a function instead.\n\n4. A goroutine with no stated way to stop leaks. It appears as\n   memory growth in production and never in a test, and the race\n   detector cannot see it. Whoever starts it says in a comment how\n   it ends.\n\n5. Unexporting an identifier later breaks every caller; exporting\n   one later breaks nobody. Export only what a caller outside the\n   package must reach.\n\n6. An abbreviated name (cfg, msg, n, v) makes every later reader\n   rebuild its meaning from surrounding code. The author pays once,\n   each reader pays again.\n\n7. A doc comment that restates the signature goes stale without\n   anyone noticing and then actively misleads. An exported symbol\n   carrying no doc comment, or a non-obvious branch carrying no\n   stated reason, forces every later reader to reconstruct the\n   intent from the code -- and the maintainer who reconstructs it\n   wrong deletes a guard believing it was incidental. Say why the\n   thing exists and what breaks without it; leave obvious code\n   uncommented.\n\nRespond with a JSON array. Every element must be an object with exactly these keys:\n  \"file\": string, the path from the diff\n  \"line\": integer, the line number in the new file\n  \"severity\": one of \"critical\", \"high\", \"medium\", \"low\"\n  \"message\": string, one sentence describing the problem\n\nRespond with the JSON array and nothing else. No prose, no explanation, no headings.\n\nHere is the diff:\n\ndiff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n\n",
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "{\"type\": \"assistant.message\", \"data\": {\"content\": \"[{\\\"file\\\": \\\"sample.go\\\", \\\"line\\\": 5, \\\"severity\\\": \\\"low\\\", \\\"message\\\": \\\"Synthetic transport sentinel; not a real code defect.\\\"}]\", \"phase\": \"final_answer\"}}\n{\"type\": \"result\", \"exitCode\": 0, \"sessionId\": \"synthetic-review-session\"}",
+      "stderr": "",
+      "duration_seconds": 0.0
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "4dab73b55adb711bcc0fd7b4910f1e392d805543\n",
+      "stderr": "",
+      "duration_seconds": 0.06955990003189072
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff",
+        "--cached"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/notes.txt b/notes.txt\nindex 1e06b52..69d3a24 100644\n--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-Initial selection fixture.\n+This change must not be selected for review.\n",
+      "stderr": "",
+      "duration_seconds": 0.07484189997194335
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\working",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/sample.go b/sample.go\nindex fa77af1..709ef54 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.07313400000566617
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "init",
+        "--quiet",
+        "--initial-branch=main"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.0937316999770701
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "add",
+        "."
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.08403369999723509
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "commit",
+        "--quiet",
+        "-m",
+        "Prepare disposable review fixture\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.12479059997713193
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "add",
+        "sample.go"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_seconds": 0.08569180004997179
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "be8d53cffcf1a2bc185db4860385d3fd2b08c0fb\n",
+      "stderr": "",
+      "duration_seconds": 0.07510890002595261
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff",
+        "--cached"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/sample.go b/sample.go\nindex fa77af1..709ef54 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.07444939995184541
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.hooksPath=C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\disabled-hooks",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "user.name=Atom Fixture",
+        "-c",
+        "user.email=atom-fixture@example.com",
+        "diff"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "diff --git a/notes.txt b/notes.txt\nindex 1e06b52..69d3a24 100644\n--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-Initial selection fixture.\n+This change must not be selected for review.\n",
+      "stderr": "",
+      "duration_seconds": 0.07341810001526028
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": "C:/Users/gimotwan/AppData/Local/Temp/atom-phase04-standalone-review-corrected-20261108/staged\n",
+      "stderr": "",
+      "duration_seconds": 0.06785250001121312
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--staged",
+        "--raw",
+        "--no-abbrev",
+        "-z",
+        "--patch",
+        "--full-index",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-color",
+        "--no-relative",
+        "--submodule=short",
+        "--"
+      ],
+      "cwd": "C:\\Users\\gimotwan\\AppData\\Local\\Temp\\atom-phase04-standalone-review-corrected-20261108\\staged",
+      "synthetic": false,
+      "stdin": null,
+      "outcome": "completed",
+      "exit_code": 0,
+      "stdout": ":100644 100644 fa77af196c54ce37df72fa143f6317dae09f87c5 709ef543d7f7c56940ebc7b931b28ca12ba8b08b M\u0000sample.go\u0000\u0000diff --git a/sample.go b/sample.go\nindex fa77af196c54ce37df72fa143f6317dae09f87c5..709ef543d7f7c56940ebc7b931b28ca12ba8b08b 100644\n--- a/sample.go\n+++ b/sample.go\n@@ -2,5 +2,5 @@ package sample\n \n // Double supports a deterministic fixture smoke test.\n func Double(value int) int {\n-\treturn value * 2\n+\treturn value + value\n }\n",
+      "stderr": "",
+      "duration_seconds": 0.07654560002265498
+    }
+  ],
+  "limits": "CLI entry function with a patched external runner; real Git/Go, synthetic reviewer transport. No real model or human-control evidence. Fixtures retained; no cleanup performed."
+}

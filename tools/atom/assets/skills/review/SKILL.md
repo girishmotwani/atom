@@ -1,6 +1,6 @@
 ---
 name: review
-description: 'Multi-model review of a Go diff, merged into one deduplicated report with severities. Keywords: review, code review, multi-model review, review my changes, review the diff, critique.'
+description: 'Standalone or phase multi-model review of a Go diff, merged into one report with severities. Keywords: review, code review, multi-model review, review my changes, review the diff, critique.'
 ---
 
 # /atom:review
@@ -21,6 +21,7 @@ and running one instead is the rationalization this skill exists to prevent.
 
 ## When to use
 
+- For a bounded standalone review, without Atom initialization or phase state
 - After `/atom:tdd` for a phase
 - Before `/atom:ship`
 - Any time a diff is large enough that reading it once isn't enough
@@ -31,22 +32,36 @@ Send complete review reports, findings, and decisions as UTF-8 standard input to
 `atom-write-artifact <relative-path>`. Treat any refusal or non-zero exit as a blocker;
 never bypass it with a generic editor or another shell command.
 
-## Step 1 — Establish the diff
+## Step 0 — Scope, propose and wait
+
+Read [standalone-review.md](../atom/references/standalone-review.md) first.
+Follow its mode, prerequisite, consent, model-budget and artifact contract in
+both standalone and phase contexts. Explicit review-only intent remains standalone
+even in an initialized project. Do not require phase discovery or onboarding.
+
+Propose the exact target/diff, actual models, runs/concurrency, evidence and file
+effects before availability probes or review submissions. Wait for approval;
+refusal launches no reviewers and creates no bundle. Do not call `atom review`
+merely to discover the diff or probe models before that gate.
+
+## Step 1 — Establish the diff without calling reviewers
 
 ```bash
-atom review --base main          # branch diff
-atom review --staged             # staged changes
-atom review --working            # working tree
+git diff main...HEAD             # inspect committed changes against agreed main
+git diff --staged                # inspect staged changes
+git diff                         # inspect unstaged working changes
 ```
 
-Review the diff **with** the surrounding file, not the hunks alone. Context-free hunk
-review produces confident nonsense about code that is already handled ten lines up.
+Choose only the intended source/reference; main above is an example, not a default.
+Inspect surrounding code as needed for triage. The CLI supplies the selected diff
+and its evidence, not an automatic whole-file context or approved design spec.
+Do not claim reviewers received context that was not actually supplied.
 
 ## Step 2 — Let the toolchain answer first
 
 No separate command: the gate runs inside `atom review`, before the models.
 
-Before a single model is called, Atom runs `go build`, `go vet`, `gofmt`, `go test`
+For a normal review with a root Go module, Atom runs `go build`, `go vet`, `gofmt`, `go test`
 and `go test -race`, plus `staticcheck`, `errcheck` and `govulncheck` when they are
 installed.
 
@@ -56,11 +71,13 @@ source. Untouched files are not scanned. The report names checked paths and
 outside-module or nested-module exclusions; zero applicable files means SKIPPED,
 not a formatting pass. Other review checks retain their existing module-wide
 scope, and standalone `atom check` retains module-wide formatting.
+Those module-wide checks run against the working tree, not an isolated staged
+or committed tree. Without root `go.mod`, tooling is explicitly skipped: an exit-0
+report does not verify a build. Missing optional tools exclude nothing.
 
-**A failing required gate stops the review.** Reviewing code that does not compile, or
-that `go vet` already objects to, spends model attention on a question that has an
-exact free answer — and the findings would be about code you are about to change
-anyway.
+**A failing required gate normally blocks reviewer calls.** The selected-Go
+degraded-continuation exception below must be disclosed in the proposal.
+Use explicitly approved `--strict-toolchain` when a hard stop is required.
 
 What passed is then written into the prompt as **excluded**: the models are told not to
 re-report an ignored error, a vet diagnostic, a formatting complaint, or a data race on
@@ -81,6 +98,8 @@ These rules keep the exclusion honest:
 `--skip-toolchain` bypasses the gate. The prompt then tells the models that nothing was
 checked and nothing is excluded, so a skipped gate costs attention rather than silently
 hiding findings.
+Do not select this bypass or another Go version as automatic failure recovery;
+the shared entry contract requires approval of changed evidence/scope.
 
 ### Optional exact Go selection
 
@@ -102,25 +121,42 @@ Child-only settings do not change defaults or make dependency activity network-f
 Reports/prompts distinguish requested from observed versions. Configured pins with
 `--skip-toolchain`, or requests outside a root Go module, remain `not_run` with no
 observed executable/probes. Explicit Go flags plus `--skip-toolchain` are usage
-errors. Missing, mismatched or changed executable identities and required failures
-still block review; no compiler-text-based continuation is permitted.
+errors. Missing, mismatched or changed executable identities still block review;
+compiler text alone cannot justify continuation.
+
+Before approval, name the effective launch Go pin and any explicit executable.
+Without `--strict-toolchain`, a verified selected Go older than the root module
+minimum can qualify for degraded continuation after a proven selected build
+failure. Compatible control gates must pass and the checked input fingerprint
+must remain unchanged before reviewer calls. This can apply to `review_go_version`
+without CLI Go flags; not every pin or failure qualifies. Preserve the failures,
+control evidence and warning: a degraded review exits nonzero, not clean or
+gate-passed. This existing runtime policy is not permission for an agent to retry,
+switch versions or expand the approved plan. Propose `--strict-toolchain` explicitly
+if desired; do not silently change defaults.
 
 ## Step 3 — Run the models
 
 ```bash
-atom review --base main --models <model-a>,<model-b>,<model-c>
+atom review --branch main --model MODEL_A --model MODEL_B --runs 1 --concurrency 1
 ```
 
-Each model reviews each changed file independently, in parallel. They do not see each
-other's findings — shared context would collapse them into agreement, which is exactly
-the diversity you are paying for.
+Run only the complete approved command. MODEL_A and MODEL_B are placeholders for
+actual approved available models, neither the author. Use the agreed selector;
+working/staged alternatives are in the shared reference. Runs=1/concurrency=1 is
+a bounded recommendation, not the CLI default.
 
-Models are resolved from `.atom/config.json`. Never hard-code a version; see
-[model-guidance.md](../atom/references/model-guidance.md).
+Each model run receives the full selected diff and evidence, not a separate
+invocation for each file. Runs do not receive each other's findings; concurrency
+is controlled by the approved option. The CLI uses repeated `--model` values or
+built-in defaults, not general model-role resolution from `.atom/config.json`.
+Report unavailable, silent, unparsed or insufficient independent responses
+honestly; do not substitute a clean review or automatically retry.
 
 ## Step 4 — What reviewers look for
 
-Everything the toolchain decides has already been decided and excluded. What is left is
+Only successful, applicable toolchain evidence is excluded. Unchecked concerns remain
+in scope. What is left is
 the set of questions no tool can answer — and it is deliberately short, because a
 reviewer handed thirty concerns reports on none of them well.
 
@@ -153,51 +189,63 @@ about formatting there.
 > `tools/atom/review.py`. Changing this table alone changes nothing the models see —
 > if you want different findings, change the prompt and re-measure.
 
-## Step 5 — Merge
+## Step 5 — Capture the actual merged report
 
-Findings are deduplicated by file, line and substance, then merged into one report at
-`specs/{project}/phase-NN-{slug}/review.md`.
+The runtime groups findings by file and line proximity, retaining every message
+and severity disagreement. This is not semantic deduplication: nearby reports
+may describe different defects. It emits Markdown or JSON to stdout.
+
+Persist the report at the approved mode-specific path from the shared reference.
+Standalone uses its small review/findings/decisions bundle; phase review retains
+`specs/{project}/phase-NN-{slug}/review.md` and existing project audit locations.
 
 Each merged finding carries:
 
-- **Severity** — Blocker / Major / Minor / Nit
-- **Agreement** — how many models raised it
+- **Severity** — critical / high / medium / low, with disagreements retained
+- **Agreement** — participating models and per-model reporting runs
 - **Location** — `file:line`
-- **The finding**, and a concrete suggested fix
+- **Messages** — the original findings; a concrete suggested fix is not guaranteed
 
-**Agreement is a signal, not a verdict.** Something all three models flagged is
-probably real. Something one model flagged may be the one that understood the code —
-single-model findings at Blocker or Major severity get read individually, never
-dismissed for lacking consensus.
+**Agreement is a signal, not a verdict.** Read critical/high findings individually,
+including single-model findings. Group proximity or identical synthetic replies
+are not proof of independent corroboration or correctness.
 
 ## Step 6 — Triage with the developer
 
-Go through Blockers and Majors together. For each: fix now, defer to `findings.md`
-with a reason, or reject with a reason.
+Go through critical/high findings together. For each: propose a separately
+approved fix, defer to `findings.md` with a reason, or reject with a reason.
+Review-only approval does not authorize editing source.
 
 **Reject freely, silently never.** Reviewers are often wrong about a codebase they saw
 in fragments. A rejected finding with a written reason is a good outcome; a finding
 quietly dropped is a lost bug.
 
-Every fix re-runs `atom check`. Every deferral and rejection is recorded.
+Every approved code fix requires appropriate verification (`atom check` for
+phase Go implementation). Every deferral and rejection is recorded.
 
 ## Step 7 — Report
 
-Present the merged report, the triage outcome, and what remains open.
+Present the actual report, participation/tooling limits, triage and what remains
+open. Always persist findings/decisions, explicitly empty when appropriate.
+Standalone stops without fixes, phase advancement or publication. Phase review
+presents its existing gate; a next-step recommendation is not permission to act.
 
 ---
 
 ## Done when
 
-- [ ] The toolchain gate passed before any model was called
+- [ ] Exact scope, model/probe budget and output effects approved before calls
+- [ ] Applicable gates passed, or approved missing/skipped/degraded evidence is explicit
 - [ ] At least two **different** models reviewed, none of them the author of the code
-- [ ] Every changed file reviewed with its surrounding context
-- [ ] Findings merged, deduplicated, severity-ranked
-- [ ] Single-model Blockers and Majors read individually, not dismissed
-- [ ] Blockers and Majors triaged with the developer
-- [ ] Fixes verified by a fresh `atom check`
-- [ ] Deferrals in `findings.md`, rejections recorded with reasons
+- [ ] Actual supplied context and response/participation limits stated
+- [ ] Findings grouped, severity-ranked, with messages/disagreements retained
+- [ ] Critical/high findings, including single-model ones, triaged with developer
+- [ ] Any separately approved fixes verified; no review-only source edits
+- [ ] Review, findings and decisions persisted at approved locations
 
 ## Next
 
-`/atom:ship`, or the next phase's `/atom:poc`.
+Standalone: stop at the review result.
+
+Phase review: after its gate, recommend `/atom:ship` or the next phase's
+`/atom:poc` when applicable. Do not execute it automatically.

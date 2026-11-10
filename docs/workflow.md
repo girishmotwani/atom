@@ -235,6 +235,50 @@ runs:
 For a single step rather than the whole pipeline, invoke that skill directly —
 `/atom:poc`, `/atom:review`, and so on.
 
+### Review without the project lifecycle
+
+For one local diff, use `/atom:review` directly. An explicit review-only request
+routes there before status/phase discovery, even if `.atom/` exists. You do not
+need onboarding, a registered phase or a root `go.mod`. The
+[shared review-entry contract](../skills/atom/references/standalone-review.md)
+defines the bounded action.
+
+The skill inspects the target read-only and proposes the exact working, staged
+or branch source, concrete independent models, runs/concurrency, availability
+probes and review submissions, normal checks and output effects. It waits for
+approval before reviewer calls. Declining creates no report bundle or setup;
+revised scope requires a new decision. Ordinary Go checks may use dependencies,
+project build commands and caches; review is not inherently offline.
+The proposal also names the effective launch Go pin (`review_go_version` or
+`--go-version`, plus any explicit executable) and possible degraded continuation.
+If a hard stop on required failures is wanted, propose `--strict-toolchain`
+explicitly rather than silently changing defaults.
+
+The CLI's actual options are `--working`, `--staged`, `--branch REF` and repeated
+`--model NAME`. Models come from those flags or built-in defaults, not general
+role resolution from `.atom/config.json`. Explicit Go-version policy is separate.
+The CLI emits Markdown or `--json` to stdout; the skill proposes a small approved
+`specs/reviews/<slug>/` bundle containing review, findings and decisions rather
+than creating lifecycle state. Audit-file refusal is surfaced, not silently waived.
+
+Required-gate failures normally block reviewer calls. Without `--strict-toolchain`,
+a verified selected Go older than the root module minimum can qualify for
+degraded continuation after a proven selected build failure, including when a
+launch configuration supplies the pin. Compatible control gates must pass and
+the checked input fingerprint must remain unchanged; not every pin or failure
+qualifies. Preserve the failure and control evidence: a degraded review exits
+nonzero, not clean or gate-passed. This runtime policy is not permission for an
+agent to retry or change toolchains. Without root `go.mod`, tooling is explicitly
+skipped; a completed report is not a verified application.
+Formatting checks selected changed snapshots, but module-wide build/vet/test/race
+check the working tree. Unavailable or silent reviewers are not clean results.
+The result names actual participation and missing evidence.
+
+Standalone stops after reporting and triage, without source fixes, phase
+advancement or shipping. Phase review within existing approved work retains its
+phase report, audit locations and gate. Instructions and documentation checks
+do not establish that a live model will wait, honor refusal or stop.
+
 ## Resuming
 
 State lives in `.atom/state.json`.

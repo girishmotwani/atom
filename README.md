@@ -133,6 +133,30 @@ Atom's most valuable moment is an agent reporting *"I was wrong, here's the outp
 **New to Atom?** [docs/workflow.md](docs/workflow.md) walks through what happens at
 each step, what you are expected to do at the gates, and what ends up on disk.
 
+### Review one diff without adopting the pipeline
+
+Invoke `/atom:review` directly, or ask Atom to review a local diff. No Atom
+initialization, registered phase or root `go.mod` is required. The skill first
+proposes the exact diff, models, probe/review budget and report locations, then
+waits for approval. A review-only request stays standalone even in an Atom project.
+See the [shared review-entry contract](skills/atom/references/standalone-review.md).
+
+The existing CLI can also be called directly; this example requires replacing
+MODEL_A and MODEL_B with available reviewer identifiers you have chosen:
+
+```text
+atom review --working --model MODEL_A --model MODEL_B --runs 1 --concurrency 1
+```
+
+Use `--staged` or `--branch REF` instead for those sources; `--json` selects JSON.
+The CLI emits stdout. The skill saves an explicitly approved standalone bundle
+such as `specs/reviews/<slug>/{review,findings,decisions}.md`, not phase state.
+Missing-module tooling and absent analyzers are skipped, not passed; an exit-0
+report alone does not verify code. Formatting checks selected snapshots, while
+build/vet/test/race examine the working module. Standalone review ends at its
+report and triage: fixes, setup and publication are separate approved work.
+These are workflow instructions, not a runtime guarantee of consent or stopping.
+
 ---
 
 ## Design principles
