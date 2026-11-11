@@ -23,8 +23,27 @@ Atom is the wrong tool here. Do not invent a module path.
 
 ## Step 2 — Bootstrap the command
 
+Check the **active session's** client identity against the supported minimum in
+[bootstrap.md](../atom/references/bootstrap.md), not the version of another
+executable. If it is unknown, conflicting or unsupported, ask one focused
+clarification or switch/update question and wait; do not update automatically.
+Resolve Go's availability before invoking it. If missing, explain the prerequisite
+and ask the developer to supply it before continuing; do not install Go or run
+extra version/build checks instead of the baseline.
+
 Follow [bootstrap.md](../atom/references/bootstrap.md). It establishes working forms
 for both `atom` and `atom-write-artifact` without replacing an installed package.
+Read it **before executing discovery commands**. Reuse forms already verified for
+this session/environment; otherwise check availability before help or module calls.
+Missing tools are a setup decision: explain what is absent and ask before any
+installation. Healthy tools outside PATH are reused, not reinstalled. A found but
+broken/partial/unsafe installation is preserved and reported, not silently repaired.
+
+Keep actual command statuses and relevant diagnostics; never truncate help/writer
+output with `head` or hide a failure behind a successful wrapper. A writer refusal
+or nonzero result stops the workflow, even if the wrapper reports zero. Do not probe
+an invalid writer target, continue with another write or bypass it with an editor.
+Bootstrap approval does not approve later init or module-local artifact writes.
 
 On Windows, bootstrap offers the one-time `setup-path` opt-in when entry points are
 hidden. After successful setup, use its printed absolute executable commands in this
@@ -152,9 +171,15 @@ Tell the developer:
 - For first initialization: the baseline result, including every failed gate, and
   what was created
 - For a no-op: setup was already valid, nothing changed, and no baseline was refreshed
+- The two established command forms, once, for reuse in subsequent beats
 - The recommended model setup — see [model-guidance.md](../atom/references/model-guidance.md)
 - For first initialization: next step `/atom:discover`; for a no-op: resume the
   existing workflow, using `/atom-status` if its position is unclear
+
+Use the appropriate skill available in the active client. If a documented alias is
+unknown or rejected, disclose that rather than guessing another alias or reinstalling
+the plugin. Naming the intended skill in ordinary language does not prove a slash
+alias works; invoke that skill, not a silently substituted beat.
 
 ---
 
