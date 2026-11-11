@@ -457,3 +457,509 @@ No runtime state or unrelated project artifact was changed. The actual Phase 09
 files retain its brief and Inconclusive report, findings and decisions; an
 approved expense-example design, implementation and successful live rehearsal
 are still missing.
+
+## Public Fix Is Merged; Ubuntu Instructions Still Old: 2026-11-09
+
+PR #20 merged normally as ec605a715f53db93abd54d6e88f887cf20525940.
+Its public canonical and packaged bootstrap hashes match the accepted repair.
+The later notes-head CI comparison also matched all six baseline failed-test
+sets; this remains a failing full suite, not a Phase 09 completion claim.
+
+Fresh read-only Ubuntu inspection confirms pinned Copilot 1.0.107 and a single
+enabled installed atom@atom 0.2.0. Its plugin bootstrap and the existing shared
+atom-cli 0.1.0 package asset both remain at SHA-256
+e561e9ed5e114dd889b438e5c0c37c4ea6e64561831b1c4678b03288b4d8fa56.
+The package still records source commit
+50622abf2b9f58bcfc2c9d538b7292cf0689ceee. Nothing was refreshed.
+
+Actual pinned CLI help, exit 0:
+
+```text
+Usage: copilot plugin update [OPTIONS] [name]
+
+Update a plugin to the latest version, or update all installed plugins.
+
+Fetches and installs the latest version of previously installed plugins.
+```
+
+The named form accepts plugin-name@marketplace-name. A successful update
+message or unchanged version number alone will not prove repaired content
+was delivered; verify actual source/content. No external duplicate plugin,
+manual installed-file patch, forced module init or original-trial retry is
+proposed. The remaining gap is delivery to these two existing instruction
+surfaces, followed by a separately gated user-run workflow rehearsal.
+
+## Public Ubuntu Delivery Verified: 2026-11-10
+
+The [public delivery report](public-delivery-report.md) records the approved
+named plugin update and pinned existing-venv package refresh, each once, in
+16.81284103100188 seconds. All 607 installed plugin source files
+match the merged commit; plugin and packaged bootstrap hashes match the accepted
+repair. Both entry points and module help forms passed. All 20 commands are
+accounted for: 10 exit 0 and 10 expected pip missing-key diagnostics.
+
+The updater reports v0.2.0 "already at latest" while delivering the repaired
+content; atom-cli also retains version 0.1.0. Version labels alone are not update
+evidence. Named installation/default/original-trial preservation checks match,
+and non-Atom distribution versions are unchanged. No new source defect found.
+
+The package asset is repaired, but no new module/init or generated instruction
+bundle was exercised in this maintenance run. Existing generated bundles were
+not changed. No live rehearsal occurred; the original trial remains Inconclusive.
+The remaining Phase 09 question is the user-run workflow, not more installation
+mechanics. A new prepared-environment recipe and live attempt remain gated.
+
+## Prepared Rehearsal Recipe Ready For Its Start Gate: 2026-11-10
+
+The developer accepted the delivery result. The [new recipe](prepared-rehearsal-recipe.md)
+discloses the repaired preinstalled plugin/CLI and uses separate module/evidence
+paths. Read-only inspection verified current tooling/source and absent targets.
+No new preparation defect found. No module/init or live session was launched.
+The original attempt and recipe remain unchanged. Actual model access, new-module
+bundle generation and workflow usability still need the user-run attempt.
+
+## Prepared Attempt Stopped At A Manual Permission Request: 2026-11-10
+
+The [prepared rehearsal report](prepared-rehearsal-report.md) is Inconclusive:
+the developer stopped before a useful CLI result or completed onboarding. Exact
+session events show the ownership-check permission requested at
+2026-11-10T10:42:31.621Z and cancelled at 2026-11-10T10:46:08.992Z with
+reason "Session aborted". No execution result exists for that command, and
+no atom init call is recorded. This was not an observed Python/ownership error.
+
+Read-only diagnosis from the new module confirms safe owned venv ancestors and
+exit 0 from both existing venv module help forms. No config, baseline, bundle or
+managed instructions exist yet. Earlier PATH/system-Python failures were expected
+fallback probes, not proof the prepared package was missing. No source repair or
+reinstallation is indicated. The participant subsequently selected exactly:
+"I saw the permission prompt". Prompt visibility is confirmed by their report;
+understanding and the reason approval did not complete remain unestablished.
+Do not infer a UI defect from event timing or treat this answer as retry approval.
+## Existing Rehearsal Handed Back As An Assisted Continuation: 2026-11-10
+
+The developer requested continuation after the outside diagnosis. The frozen
+recipe and pinned CLI binary remain unchanged; the saved session and original
+recording exist, the separate continuation capture is unused, and the five named
+onboarding files remain absent. No new installation defect found. Actual pinned
+CLI help supports resuming the exact existing session. No model session or init
+was launched by this observer. Further user-run work is assisted evidence, not
+an independent confirmation of the frozen recipe's no-outside-coaching question.
+The original remaining active-effort cap and all example gates remain in force.
+
+## Participant Requested Prerequisite Prompts Instead Of Expected Failures: 2026-11-10
+
+The developer said exactly: "I think we should simplify the flow by prompting
+the user to install the relevant tools instead of showing failures".
+The current bootstrap begins with bare entry-point help calls, then module help
+calls, before checking the known Linux venv. These expected absence diagnostics
+can look like broken onboarding. Step 4 already requires install consent; the
+missing UX distinction is absence versus hidden or broken existing tooling.
+
+This rehearsal's tools were already installed and healthy outside PATH. Asking
+to reinstall them would misdiagnose the observed case. A clearer prerequisite
+flow should reuse healthy installations, ask before installing actually absent
+tools, and retain real execution failures rather than hiding them. Scope remains
+to be clarified: general onboarding or only the example quickstart. No changed
+flow or new participant outcome has been proven by this feedback. The frozen
+recipe and installed rehearsal source remain unchanged by this discussion.
+
+## Assisted Continuation Has A Persisted Onboarding Receipt: 2026-11-10
+
+The participant supplied completed-init output. Read-only inspection of go.mod
+and the five named Ubuntu onboarding files confirms the module/config commands,
+local relative instruction link, generated manifest and managed ignore entries.
+The baseline is persisted with exit_code 1 and passed=false: build/fmt passed,
+vet/test failed because there are no Go packages, race skipped for the initial
+baseline. Do not turn this into a green Go implementation or rerun init to hide it.
+The prepared report retains the actual receipt and failing baseline verbatim.
+
+The transcript also shows bootstrap friction: a premature unestablished module
+command, a wrong reference-path read, repeated expected-absence probes and head
+pipelines that can mask exit codes/truncate diagnostics. It does not show the
+prescribed venv ancestor validation or all required post-init file reads. Earlier
+observer ownership checks and the new receipt reads must not be credited as
+independent participant-agent compliance. No unsafe path or broken installation
+was observed. This is an instruction-following/UX finding, not evidence that the
+installation is missing or that the whole workflow is confirmed.
+
+The developer selected "General /atom:init onboarding" for the prerequisite UX
+change. Scope is now clarified; implementation and evidence choice remain gated.
+No general onboarding changes have been applied to the frozen rehearsal source.
+
+## Namespaced Start Handoff Rejected Despite Skill Discovery: 2026-11-10
+
+The developer reported "atom:start is unknown command". This observer had
+recommended /atom:start without verifying that interactive alias. Read-only
+pinned CLI plugin/skill lists exit 0: atom@atom 0.2.0 is installed and start and
+discover are both discovered plugin skills. The canonical start command file also
+exists. Neither installation inventory nor skill discovery proves that exact
+slash invocation works in the participant's active session. Precise rejection
+cause remains unknown without the actual UI input/error or registration evidence.
+
+Do not repair this with a blind reinstall, update, guessed alternate slash name,
+or a changed frozen recipe. A plain-language request to invoke the listed start
+skill is the minimal assisted handoff; success has not yet been observed. Preserve
+this as a concrete quickstart/command-surface finding, not participant confusion
+or confirmation that the original recipe can be followed as written.
+
+## Plain-Language Start Request Substituted Discover: 2026-11-10
+
+The participant's next excerpt shows skill(discover) after requesting start in
+ordinary language. Discovery has been reached, but start invocation and the
+reported rejected slash command remain unverified. The excerpt ends with an
+atom check --no-race request and no result. The saved empty-module baseline is
+already known to fail vet/test for no packages; do not describe it as clean or
+credit an uncompleted check as passing. No new installation defect is observed.
+
+## Draft Brief And Discovery Completion Do Not Satisfy The POC Gate: 2026-11-10
+
+The supplied excerpt shows a generic Create for specs/poc-brief.md rather than
+the guarded writer, an invalid question-tool request, a subsequent multi-field
+clarification and a completion summary without an explicit brief-approval question.
+Read-only inspection confirms the draft describes the whole CLI feature checklist,
+not one risky unknown, and lacks bounded execution/evaluation details. Its manual-
+spreadsheet/shell-workflow claim differs from the stated learning example. Exact
+clarification choices remain partly unavailable; do not assume their approval.
+
+The summary adds "100% test coverage" while the actual saved criterion is only
+tests for the happy path and each failure case. The numeric target is not supported
+by the original recipe or saved artifact. Both named companion journal paths,
+specs/findings.md and specs/decisions.md, are absent alongside the brief. The draft's
+existence and prior clarification answers do not constitute approval to run a POC.
+Return to the brief gate or stop the assisted rehearsal; do not silently repair,
+run a spike, manufacture a green baseline or count this as successful adherence.
+
+## Invalid Writer Probe And Arithmetic Claims Need Clarification: 2026-11-10
+
+The participant explicitly chose float64 and standard rounding. A bounded POC
+must test that candidate against independent expected cent totals, not claim all
+cases are exact merely because output has two decimals. Preserve the original
+input precision requirements; clarify any proposed relaxation before approval.
+The offered decimal.Decimal option is not a Go standard-library package.
+
+The agent invoked the guarded writer on /dev/null through a head pipeline and
+continued after two collapsed output lines. That target is outside the writer's
+allowed artifact paths; exact refusal/error remains unobserved, and the pipeline
+can conceal its status. Obtain the actual diagnostic and honor any refusal stop.
+Subsequent temporary-file staging and a still-pending decisions.md operation do
+not establish either final artifact success or an alternate-tool bypass.
+
+## Revised Gate Is Visible But Precision Claims And Writer Evidence Remain Open: 2026-11-10
+
+The three named revised artifacts under poc/ now exist and the participant agent
+asks approval and waits. The function-only six-case experiment does not establish
+exact expense aggregation, and a literal Go 0.1 + 0.2 can be constant-folded rather
+than exercising runtime addition. The saved float64 sufficiency claim is unproven;
+no dependency or universal precision guarantee follows. Journals omit the earlier
+generic-write and invalid-target-probe issues, and the canonical specs/ brief
+needs reconciliation with the new poc/ revision before downstream use.
+
+The requested two writer-probe output lines are still absent. The previously
+identified session and four logs in the named rehearsal capture directory do
+not contain that probe; their last logged activity does not establish the current
+session. This is an evidence/identity gap, not proof the participant fabricated
+execution or changed tools. Obtain the active session ID and inspect only its
+relevant result; no broad private-history scan or invalid probe replay.
+
+## Active Session Used CLI 1.0.5; Writer Refusal Was Masked: 2026-11-10
+
+The participant identified session 1c8557f2-0e15-49fd-a35b-2c094364572f. Its start
+metadata reports copilotVersion 1.0.5 at 11:23:46.812Z in the target module. The
+original session reports 1.0.107, and the existing pinned executable still reports
+1.0.107 with updates disabled. This materially differs from the frozen client/
+one-session conditions. Earlier pinned-client skill discovery did not establish
+the active older client's command surface. Exact start-command rejection cause,
+launcher selection and any model effect remain unproven.
+
+The actual writer probe returned refused /dev/null (outside-repository), while
+the head-ended pipeline displayed exit 0. The guard held, but the agent ignored
+the required stop and continued. The next three artifact writes genuinely used
+the guarded writer and succeeded; they were not generic-editor substitutions.
+Both that positive evidence and the procedural violation must remain explicit.
+No runtime guard escape is established. Hold the POC gate and preserve the record;
+no automatic reinstall, restart, source change or new independent trial.
+
+## Rehearsal Stopped And Assessed: 2026-11-10
+
+The developer selected "Stop and assess the rehearsal findings". Overall result
+for the approved prepared attempt remains Inconclusive: the client/session changed
+and the path required outside coaching; no tested expense CLI, negative checks or
+final full Go gate were established. Concrete entry-flow and instruction-following
+failures are still useful evidence, not a passing rehearsal or general claim
+about every Atom user/model. Active-effort and usage totals remain unestablished.
+
+Positive evidence must also survive: the venv works, first-init receipts exist,
+the failing empty-module baseline is honestly recorded, the writer guard refused
+its invalid target, three subsequent guarded writes succeeded, and the last brief
+was presented at an actual wait-for-approval gate. No guard escape was observed.
+The current pending spike is not approved by stopping or accepting this assessment.
+
+Prioritize a scoped general onboarding prerequisite/client/handoff repair before
+another live attempt; preserve writer-stop and gate findings as requirements and
+validation concerns. Neither instructions alone nor fixing only a rounding helper
+proves the broader flow repaired. No repair or further run is authorized yet.
+
+## General Onboarding Repair Scoped Before Implementation: 2026-11-10
+
+The developer requested a repair with issue/approach summary first. Source review
+confirms bootstrap starts by invoking entry points and module forms before finding
+the known venv; init delegates these critical details to the reference. README
+already distinguishes plugin/Python commands and has a documented client minimum,
+but some onboarding/manual-install wording assumes discovery/installation steps
+rather than an explicit prerequisite decision. Keep historical approval ledgers
+historical. Existing tests cover asset parity, command literals, Windows setup-path
+and manifest/file namespace contracts; they do not prove active interactive alias
+acceptance or agent adherence. The prior namespace POC is explicitly limited to
+its client/setup and does not settle the observed older client's rejection.
+
+Recommend a five-minute, no-model, no-install discovery-boundary check in the two
+existing environments, reusing accepted install evidence and recorded failures.
+No shipped guidance or stopped participant environment has changed. A new named
+repair brief distinguishes this proposal from the prior approved bootstrap spec
+and still-unproven final Phase 09 expense example.
+
+## Availability-First Discovery Boundary Observed: 2026-11-10
+
+After explicit approval, two non-installing observer invocations established both
+command roles without running any known-missing Atom command/module. Windows
+entry points both returned help exit 0. Ubuntu presence queries established both
+PATH entries absent and system-Python Atom absent; six safe ancestor checks and
+a prefix/package query preceded the healthy known-venv module helps, both exit 0.
+The new prerequisite-flow-repair-report.md contains the full original receipts.
+No diagnostics were truncated, no provisioning ran and no participant files were
+written. Active-client identity, actual failure-path handling and agent adherence
+were not newly exercised. These limits prevent calling this a complete onboarding
+repair or a successful final Phase 09 rehearsal.
+
+## Repair Spec Drafted After Accepted Discovery Evidence: 2026-11-10
+
+The developer accepted the discovery report before spec drafting. The scoped spec
+retains observed versus assumed facts and makes no live-repair claim. Main init
+and shared bootstrap need consistent availability-first ordering, active-session
+identity, explicit missing-tool consent, two retained forms and real-error stops.
+README's current automatic-install wording and generic approval-count narrative
+need qualification, while historical ledgers stay unchanged. Native-platform
+manual-install redesign and new command aliases are outside scope. Failure-path
+adherence still needs observed evidence before any compliance claim.
+
+## General Onboarding Guidance Repair Implemented Locally: 2026-11-10
+
+The approved five-file repair is implemented and its validation artifact preserves
+34 passing focused tests, four passing final documentation cases, two byte-identical
+packaged pairs, 531 resolving relative links and clean whitespace/scope checks.
+All fourteen instruction behaviors were semantically reviewed; no runtime behavior,
+tests or installer changed. No claim is made that this proves agent compliance.
+The original manual platform-install recipes remain unchanged, not newly validated;
+future platform/installer work requires separate scope. Existing installed plugins
+and module bundles still contain their prior delivered content. Do not retry the
+stopped rehearsal expecting local source edits to have updated those installations.
+
+## Deferred Single-Source Skill Packaging Repair: Issue #22
+
+The developer asked why skill mirrors exist under tools and requested a repair
+issue for later rather than implementation. Verified tools\pyproject.toml bundles
+assets/**/* and tools\atom\onboarding.py loads those resources through
+importlib.resources, then copies AGENTS.md/skills into the self-contained target
+bundle. The package resources and target snapshots are required delivery copies;
+a second human-maintained source tree is the avoidable duplication.
+
+Created and read back https://github.com/girishmotwani/atom/issues/22,
+"Repair: generate packaged skill assets from one canonical source". It proposes
+canonical root authoring and build-generated package resources, with an explicit
+proof obligation for wheel, sdist, wheel-from-sdist, clean installed resources,
+editable development and additions/deletions. The tools subdirectory build context
+and existing #subdirectory=tools VCS URL are important compatibility boundaries.
+No particular build hook is proven or approved. Current mirrors remain intact.
+## Pre-PR Review Boundary And Remaining Validation Limits
+
+The approved repair is entering one independent review per developer-selected
+model: claude-opus-5.5 and gpt-6.1-terra, neither the author gpt-6.1-sol. Findings
+are pending, not a clean-review claim. The standard runner adds model ping probes,
+so the explicitly approved alternative uses exactly two read-only reviewer agents
+without probes, extra agents or retries. No runtime review-runner repair is in
+scope. Its existing behavior is an execution-boundary constraint, not a new
+onboarding defect or permission to broaden this patch.
+
+Current SHA-256 receipts retain both accepted canonical/package pair hashes;
+README is frozen as 76935B30C29D1AA1BB88A6CC1DC9136EDD8CC9246AE1C22C9A075E238906E5E7.
+Whitespace checks exit 0. Existing focused documentation/Python test evidence is
+reused, not represented as a newly run suite or root Go gate. The stopped live
+rehearsal and its unproven client/error/adherence paths remain unchanged.
+## Bounded Pre-PR Review Returned Two Findings; Triage Pending
+
+prerequisite-flow-repair-review.md preserves both original model responses and
+the merged findings. Both selected reviewers returned; exactly two reviewer
+agents were invoked, without probes, retries, extra model turns or source edits.
+
+Major: README.md:602-609 still promises automatic installation in Run It despite
+spec behavior 14. Both reviewers found the promise (2/2; severity differed);
+Opus also flagged the adjacent unqualified start handoff (1/2). Parent targeted
+reads confirm the missed paragraph. This is an incomplete directly coupled
+repair, not permission to redesign manual platform recipes. No fix is applied.
+
+Minor: canonical/bootstrap packaged copies at lines 84-90 use a generic top-level
+atom presence signal that can match a colliding package or namespace. Opus alone
+reported this (1/2). It has not been reproduced; desired collision/error routing
+needs a decision before changing the approved query or weakening safe stops.
+
+Review-completion limitation: Opus explicitly did not read the full README or
+discovery report. Terra reported full requested context. Do not mark the full-
+context-per-reviewer checklist complete, silently credit author verification as
+an independent pass, or spend beyond the approved two-invocation budget. The
+review awaits developer triage, with no fixes, publication, refresh or rehearsal.
+## README Major Finding Locally Fixed; Minor And Review Coverage Still Open
+
+Under the developer's explicit fix approval, corrected Run It tooling consent,
+healthy-tool reuse and available discovery/start handoffs. Qualified the directly
+coupled certainty/routing conclusion, preserving historical experiment numbers
+and the ledger. README SHA-256 is now
+1390ECFC411EB065CEA74FC41383EFA5DBA611B79E6AE47DBA3DE6F5C369B5D1.
+The existing README documentation case passed (1 passed in 5.40s); 535 links resolve
+and git diff --check exits 0. Exact output is in the validation artifact.
+
+The Major is locally fixed, not independently re-reviewed. The Minor collision
+finding remains open and unexecuted; no bootstrap/package detection text changed.
+Opus's full-context gap is still open, and no new model invocation was made.
+The review report proposes a separately gated, five-minute/two-command local
+Python collision check with temporary fixtures and no installs or model calls.
+No new detector design/implementation, refresh, publication or rehearsal follows
+from the README fix approval. Overall review/Phase 09 completion is not claimed.
+## Package-Name Collision Reproduced In Approved Bounded Local Check
+
+The approved five-minute/two-probe-command check used one terminal invocation,
+finishing in 0.023066100024152547 seconds. Both controlled layouts (namespace-only
+atom and a synthetic unrelated atom package) return top-level presence True but
+have no own CLI/writer modules or atom-cli distribution. The existing-install
+positive control resolves both role modules and the distribution. No package
+was imported, no missing help was executed and no installs/models/participant
+writes occurred. Fixtures were removed; the process search path was restored.
+The review report preserves the complete captured JSON receipts.
+
+This confirms only a name-discrimination gap, not live Linux fallback behavior,
+a universal metadata-based replacement or intended collision handling. The Minor
+remains open for a scoped repair/deferral decision; no bootstrap source changed.
+Retain safe import-error/partial-install stops and working editable/module forms.
+Opus's review-context gap and post-fix review remain separately open; no new model
+invocation or broad Phase 09 completion is implied by these Python observations.
+## Detection Repair Spec Drafted; Read-Only Ambiguity Policy Needs Approval
+
+Accepted collision evidence supports replacing generic-name-only detection, but
+not distribution-only identity, arbitrary importer support or automatic absence
+classification. The new package-detection-repair-spec.md records expected role
+candidates, metadata, explicit ambiguity and preserved partial/error stops.
+It proposes read-only reuse of the single known safe Linux venv from ambiguity
+only when neither role is verified. That is a deliberate narrow change to the
+old Step 3 absence prerequisite, not a measured runtime result or install waiver.
+If no healthy known venv exists, ambiguity still stops for developer resolution.
+
+Source-only/editable/mixed routing and custom-loader limits require the stated
+boundary validation before shipped edits; no such new validation ran while
+writing this draft. Main init/README already delegate the right policy and are
+outside these two planned reference edits. Prior partial review coverage, no
+post-fix independent README pass and the stopped Inconclusive rehearsal remain
+open. No model call, source edit, install or publishing action occurred.
+## Detection Guidance Repair Implemented And Locally Validated
+
+The approved canonical/bootstrap packaged references now distinguish own metadata,
+module candidates, ordinary absence and same-name ambiguity. Partial/verified
+unresolved roles stop, source-only/mixed candidates retain actual help checks,
+and ambiguity permits only read-only known-venv reuse, never installation. Query
+exceptions and actual help failures retain stop rules. Both reference files have
+SHA-256 1A2211645E8981D735C6C99E0C78D11E38437A5168B66B3367E8DBF90B06E96E.
+README and both init hashes are unchanged.
+
+Ten pre-edit candidate observations matched; the actual rendered query matched
+and executed in the second probe. The combined window was 37.654308 seconds, with
+no atom import, missing help, model call or installation. Fixtures were removed
+and process sys.path restored. Fourteen existing documentation/plugin cases pass.
+The named validation artifact preserves actual outputs and all twelve claim checks.
+
+The Minor is locally addressed, not independently re-reviewed or accepted as live
+Linux/agent proof. Custom-loader/editable variants, actual metadata/help-error
+routing and the new live ambiguity-to-venv path remain unexercised. Existing model
+context and post-fix review gaps remain open, with no reviewer budget left. No
+publication, installed-content refresh or rehearsal ran; Phase 09 is incomplete.
+## Final-Persistence Instruction Reload Order
+
+The post-compaction evidence-persistence continuation relied on the handoff before
+reloading the actual required instructions. Recorded the deviation in decisions.md
+and completed the actual instruction/spec/mapping/final-reference reads before
+the acceptance gate. No shipped edit or new experiment occurred during the lapse.
+This is a process deviation, not a passing compliance claim or a new runtime fix.
+## Local Detection Repair Accepted; Remaining Gaps Preserved
+
+The developer accepted the bounded local repair with the explicit selection
+"Accept the local detection repair; keep further work gated". The package-name
+collision finding is locally addressed/accepted. Original independent-review
+coverage gaps, post-fix review and unexercised live Linux/agent behavior remain
+open. Acceptance does not complete Phase 09 or authorize delivery/refresh/rehearsal.
+## Post-Fix Independent Review Gap Being Addressed
+
+The developer approved a fresh two-agent post-fix review, one read-only invocation
+each with claude-opus-5.5 and gpt-6.1-terra. Reviewers must cover the current five
+shipped files with complete applicable spec/evidence context. The prior review
+remains partial historical evidence; it is not retroactively made complete.
+No reviewer has returned for this new snapshot yet. Further work remains gated.
+## Post-Fix Review Returned Two Minor Findings
+
+Both approved independent reviewers returned with full required context reported;
+mirrors and frozen hashes match. No Blocker/Major was reported. Opus found the
+README blanket installation-question promise at 482-483 (related wording 25/603/
+673), which overstates the Linux-only Atom installation recipe and system-tool
+supply requirement. Parent targeted reads confirm the directly coupled mismatch.
+Terra found the optional Windows handoff at bootstrap:189-193 can replace verified
+forms with unchecked executable paths. pathsetup.py:90-108 checks file existence,
+not help. The optional paragraph is unchanged from HEAD: valid pre-existing
+adjacent risk, not a new detection regression. No experiment was run for it.
+
+Each finding has 1/2 agreement and an actionable scope proposal in
+prerequisite-flow-repair-post-fix-review.md, with original responses preserved.
+Recommend fixing README wording and explicitly deferring the Windows repair;
+both dispositions remain pending developer triage. No automatic fix, issue,
+new review turn, publication, refresh or rehearsal is authorized.
+## Windows Printed-Command Handoff Repair Explicitly Deferred
+
+The developer selected "Fix README wording and record the Windows issue for
+separate repair". Deferred Minor: bootstrap.md:189-193 and its packaged mirror
+switch a working session to printed Windows executables without help verification;
+pathsetup.py:90-108 selects existing files, not healthy commands. A stale wrapper
+can therefore break a previously verified module/mixed-form session. The paragraph
+is unchanged from HEAD and outside this README correction's scope.
+
+Separate repair direction: preserve established forms until replacements are
+verified, retain real-error stops and normal PATH consent, and establish bounded
+stale/mismatched-wrapper evidence before changing the contract. No PATH mutation,
+new experiment, runtime edit, issue publication or implementation is approved.
+The README Minor is approved for the four-passage factual correction now.
+## Reviewed README Claim Corrected; Windows Risk Remains Deferred
+
+The four approved README passages now accurately distinguish developer-supplied
+system prerequisites, Linux-only consent-gated Atom installation and other-platform
+setup decisions. Final text was read against init/bootstrap policy. The affected
+existing README case passed 1 test in 4.61s, all 545 links resolve and whitespace
+checks pass. README hash is
+64E6120B27F05EF224B56C4A8CD6D239A331E420FC09D46687E987630E07D68D;
+all four init/bootstrap hashes retain the reviewed snapshot.
+
+The in-scope Minor is locally corrected, pending local acceptance, not independent
+re-review of the new README bytes. The Windows handoff Minor remains explicitly
+deferred with no implementation or issue publication. Both fresh reviewers report
+complete context for their old README snapshot; that does not prove live agent
+behavior or carry their review over to later bytes. No additional reviewer spend,
+publication, installed refresh or rehearsal occurred.
+## Post-Fix Correction Accepted Locally
+
+The developer selected "Accept the correction; keep delivery, refresh and
+rehearsal gated". The README claim finding is locally corrected/accepted; the
+Windows printed-executable handoff risk remains the explicitly deferred Minor.
+No Blocker/Major was reported. Evidence and limits remain in the post-fix report;
+no new README independent review, publication/refresh or observed rehearsal ran.
+## Publication Scope And Remaining Risk
+
+Publication audit found no unrelated shipped change: five documentation files,
+with canonical/package parity, plus their required phase evidence. Historical
+records are retained; the PR summary should not repeat the audit chronology.
+The Windows printed-executable handoff Minor remains explicitly deferred. Latest
+README correction is locally validated, not independently re-reviewed. No live
+agent/Linux fallback or completed Phase 09 outcome is claimed. Installed refresh,
+new rehearsal and merging remain outside publication authorization.

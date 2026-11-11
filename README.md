@@ -12,15 +12,22 @@ models.
 
 ## Try Atom
 
-You need GitHub Copilot CLI and Go. Atom's local tooling uses Python 3.10 or later.
-Install the plugin from your terminal:
+You need GitHub Copilot CLI 1.0.89 or later and Go 1.21 or later. Atom's local tooling
+uses Python 3.10 or later. Install the plugin from your terminal:
 
 ```bash
 copilot plugin marketplace add girishmotwani/atom
 copilot plugin install atom@atom
 ```
 
-Then open Copilot CLI in a Go module and run:
+The plugin installs workflow instructions, **not** the Python `atom` and
+`atom-write-artifact` commands. Onboarding reuses healthy tools, including tools
+outside PATH. If system prerequisites are missing, it asks you to supply them.
+Guided installation of missing Atom commands is Linux-only and requires consent;
+other platforms need an agreed isolated setup. Broken or unsafe installations
+are preserved and reported, not silently replaced.
+
+Then open a supported Copilot CLI session in a Go module and run:
 
 ```text
 /atom:init
@@ -28,7 +35,10 @@ Then open Copilot CLI in a Go module and run:
 
 Onboarding runs the Go checks, records the baseline, and adds Atom's workflow files.
 It records a failing baseline too; onboarding success is not a clean bill of health
-for the code. To start a feature afterward, use `/atom:start` and describe your goal.
+for the code. To scope a feature afterward, use the available Atom discover skill
+(`/atom:discover` in the documented command surface). If a command is unknown,
+check the active session's client rather than guessing aliases or reinstalling;
+a skill listing alone does not prove an interactive alias works.
 
 See the [setup and review instructions](#getting-started) for prerequisites and
 options, or the [workflow walkthrough](docs/workflow.md) for what happens next.
@@ -449,14 +459,20 @@ copilot plugin marketplace add girishmotwani/atom
 copilot plugin install atom@atom
 ```
 
-Check it landed. Expect twelve `atom` entries — the nine beats plus `/atom:start`,
-`/atom-status` and `/atom-check`:
+Inspect the discovered entries in the client you actually use. The plugin declares
+twelve Atom entries — the nine beats plus `/atom:start`, `/atom-status` and
+`/atom-check`:
 
 ```bash
 copilot skill list
 ```
 
-You now have these inside Copilot CLI, alongside built-ins like `/model`:
+Discovery is not proof of interactive alias acceptance in every client version.
+If a documented alias is unknown, verify the active session's identity rather than
+the version of another executable. Name the intended available skill in ordinary
+language if necessary; do not silently substitute another beat.
+
+The documented command surface inside Copilot CLI, alongside built-ins like `/model`:
 
 | Command | Beat |
 |---|---|
@@ -485,30 +501,32 @@ Open a Copilot CLI session in the repository you want to onboard and type one co
 /atom:init
 ```
 
-That is the only thing you type. Everything else is Atom's job.
+This starts the workflow; respond to prerequisite and permission questions before
+work continues.
 
-**What you will be asked to approve.** Onboarding runs shell commands, and Copilot
-asks before each one. A captured run on a previously un-onboarded Go repository needed
-**three approvals, no denials, and no file-write prompts at all**:
+**What you will be asked to approve.** Read-only discovery can still require normal
+command approval. Atom checks availability before invoking tools. Missing system
+prerequisites receive an explanation and a request to supply them. Only confirmed
+missing Atom commands on Linux, with an absent destination and safe ancestors, can
+lead to an installation-consent question; other platforms need an agreed isolated
+setup. Healthy tools outside PATH are reused. A found but broken or unsafe
+installation stops with its actual diagnostic. The active client must meet the
+supported minimum; switching/updating it is a separate user decision, not an
+automatic fix.
 
-That count describes the captured setup, not a fixed approval budget; missing
-command prerequisites require separately approved installation.
+Installation consent does not approve `atom init`, later artifact writes or the
+optional Windows PATH change. Prompt counts depend on the environment and client
+permissions, not a fixed approval budget.
 
-| # | Approval | Why it appears |
-|---|---|---|
-| 1 | `atom init` | The single command that performs onboarding |
-| 2 | Check `atom` / `atom-write-artifact` entry points | Discovery — finds out whether Atom's commands are on your `PATH` |
-| 3 | Check `python -m atom.cli` / `python -m atom.artifact_cli` | Discovery fallback, only reached when the entry-point check finds nothing |
-
-`atom init` is the approval that matters; it is the one that does the work. The other
-two are discovery probes Copilot runs first to locate Atom's commands, and if your
-Python scripts directory is already on `PATH`, the third never appears. The ledger for
-the captured run, in the order the prompts actually arrived, is in
+A historical run needed **three approvals, no denials, and no file-write prompts**.
+That is evidence for its captured setup, not a promise about this discovery flow.
+Its original approval ledger remains in
 [specs/onboarding-workflow/interactions.md](specs/onboarding-workflow/interactions.md).
 
-**You are never asked to approve writes to Atom's own state.** `.atom/state.json`,
-`.atom/baseline.json`, `.atom/config.json` and the event log are written inside the
-`atom init` command you already approved, so they never surface as separate prompts.
+**State writes belong to the init approval.** `.atom/state.json`,
+`.atom/baseline.json`, `.atom/config.json` and the event log are written inside
+`atom init`, not through separate generic file edits. Its approval does not cover
+later guarded artifact writes or installation updates.
 
 **What one `atom init` leaves behind:**
 
@@ -609,19 +627,26 @@ copilot plugin list                     # shows the installed version
 
 ### Run it
 
-That is the whole setup. Atom's other half — the `atom` command that runs the Go gates
-and tracks phase state — installs itself the first time a beat needs it, and `/atom:start`
-scaffolds a project the first time you point it at one. Neither is yours to do by hand.
+The Python `atom` command runs the Go gates and tracks phase state. When a beat
+needs tooling, it reuses healthy working forms, including those outside PATH.
+Missing system prerequisites are yours to supply; the guided Atom installation
+recipe is Linux-only and requires consent. Other platforms need an agreed
+isolated setup. Broken or unsafe installations are reported and left unchanged;
+installation is not automatic.
 
-Start from a plain description of what you want to build:
+For a new feature, use the available Atom discover skill to scope what you want:
 
 ```
-/atom:start add topic-based routing to the event bus
+/atom:discover add topic-based routing to the event bus
 ```
 
-Atom works out where you are, picks the earliest beat whose output is missing, and
-tells you the next command to run. It opens by asking what the riskiest part is —
-because the first thing Atom builds is a spike that could prove the idea wrong.
+This is the documented alias, not proof it is registered in every client. If it is
+unknown, name the available discover skill in ordinary language and verify the
+active session's client rather than guessing aliases or reinstalling.
+
+For existing work, the available Atom start skill identifies missing pipeline
+artifacts and recommends the next beat; `/atom:start` is its documented alias.
+Discovery scopes the riskiest unknown before any spike is approved or run.
 
 A session then walks the beats, and you can check in at any point:
 
@@ -641,10 +666,10 @@ A session then walks the beats, and you can check in at any point:
 `/atom-status` and `/atom-check` are safe to run at any time — they report and never
 change your code.
 
-### Prose works, and the slash command is still the certain path
+### Prose routing and documented slash commands
 
 Atom's skills carry routing keywords, so you can describe what you want in plain
-English and Copilot will pick the right beat.
+English and ask Copilot to select the matching available skill.
 
 Measured over 25 trials from a clean directory, with prompts that never name a skill,
 a slash command, or Atom: a plain-English prompt loaded the right skill **25 times out
@@ -657,9 +682,10 @@ development-only mode that silently drops the plugin in some sessions. Two third
 those "routing failures" were sessions with no Atom plugin loaded at all. Installed
 normally, as the step above does it, the problem does not occur.
 
-So: **prose is reliable enough to use, and the slash command is exact.** Reach for the
-slash command when you want no ambiguity about which beat runs. Full numbers, the
-correction, and the method are in [the routing POC](poc/atom-routing-rules/results.md).
+These results support prose routing in that tested setup, not every client or
+prompt. A recognized slash command names a beat explicitly, but its registration
+still depends on the active client. Full numbers, the correction, and the method
+are in [the routing POC](poc/atom-routing-rules/results.md).
 
 If you are extending Atom itself rather than using it, [AGENTS.md](AGENTS.md) documents
 the same rules for agents working inside this repository.
@@ -674,8 +700,12 @@ you can point the marketplace at it directly with
 `copilot plugin marketplace add /absolute/path/to/atom`. The path must be absolute; a
 relative one is parsed as `owner/repo`.
 
-**Installing the `atom` command by hand.** The first beat that needs it installs it for
-you. To do it yourself, or to keep it off your system Python:
+**Installing the `atom` command by hand.** The first beat that needs it checks for
+working forms. Missing system prerequisites must be supplied first. Guided
+installation of missing Atom commands is consent-gated and Linux-only; other
+platforms require an agreed isolated setup. It never installs over a healthy or
+broken package as a PATH fix. To install it yourself, or to keep it off your
+system Python:
 
 ```bash
 python -m venv .venv                # optional; deleting .venv undoes everything

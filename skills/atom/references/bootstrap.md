@@ -9,8 +9,29 @@ so both need a reachable form before a beat can do anything real.
 Installing the plugin does not install these commands. Establish them here, first;
 the actual toolchain and baseline checks happen during `/atom:init`.
 
-Work down these steps and **stop as soon as both command roles work**. In the
-normal case that is step 1: two help checks, with no installation or further search.
+Treat expected absence as prerequisite information, not a failed installation:
+
+| State | Action |
+|---|---|
+| Commands/package absent | Explain what is missing; propose installation only after the checks below and explicit consent |
+| Healthy installation outside PATH | Reuse its verified forms; do not reinstall |
+| Found but broken, partial or unsafe | Preserve it, show the actual problem and stop |
+
+Use the active Copilot session's reported identity; the documented minimum is
+Copilot CLI 1.0.89. Another executable's `--version` does not identify this session.
+If identity is unavailable, conflicting or unsupported, ask one focused clarification
+or switch/update consent question and wait. Do not automatically update the client.
+
+If both forms are already verified for this session/environment, retain them; do
+not repeat discovery at every beat. Otherwise work down these steps and **stop as
+soon as both command roles work**. A context change or real failure needs explicit
+resolution, not an assumption that stale forms still work.
+
+Keep full relevant diagnostics and originating exit statuses. Do not pipe help or
+writer checks through `head` or a success-shaped fallback. A writer refusal or
+nonzero result stops the workflow even if a wrapper reports zero: no later write,
+alternate target or generic-editor bypass. Use `--help` to verify writer support,
+not an invalid target. Missing-tool consent is not permission to ignore real errors.
 
 ## Use the command interface, not the implementation
 
@@ -29,28 +50,95 @@ implementation unless the developer explicitly requests debugging Atom itself.
 
 ## Step 1 — Are the entry points there?
 
+Resolve both names through the platform's command-availability mechanism before
+executing them. If Python is already available, `shutil.which("atom")` and
+`shutil.which("atom-write-artifact")` return a path or `None`; otherwise use the
+platform's resolver without presenting expected absence as failed Atom execution.
+Do not require Python discovery when both entry points already work.
+
+Run **only a found role's** help command, one at a time:
+
 ```bash
 atom --help
 atom-write-artifact --help
 ```
 
-Use each entry point that succeeds. If both succeed, stop reading. If either is not
-found, continue to step 2 for that command only. If a found command fails for another
-reason, report its actual diagnostic and stop; do not mask it with a new install.
+Use each entry point that succeeds. If both succeed, record their forms once and
+stop. For absent roles, continue to step 2 without executing their missing names.
+If a found command fails, report its actual diagnostic and stop immediately; do not
+mask it with another form or a new install.
 
 ## Step 2 — Is the package there but its entry points hidden?
 
-On Linux, choose an existing Python >=3.10: check `python3 --version` first, then
-`python --version` only if `python3` is absent or unsupported. If neither is
-supported, report the result and stop; do not provision Python. Use the selected
-interpreter for all module checks. With `python3`, the missing-role checks are:
+Only for missing roles, resolve an existing interpreter before executing it.
+On Linux, choose Python >=3.10: check an available `python3 --version` first, then
+an available `python --version` only if `python3` is absent or unsupported.
+On Windows, retain the existing `python` fallback. If no supported interpreter is
+available, explain that prerequisite and ask the developer to supply it; stop
+without provisioning Python. Use the selected interpreter for all module checks.
+
+Query distribution and module evidence **before** module help. A top-level `atom`
+name can be an unrelated package or a repository-local namespace; it does not
+establish that Atom CLI is installed. With selected `python3` (substitute `python`
+on Windows), use:
+
+```bash
+python3 -c "
+import importlib.machinery
+import importlib.metadata
+import importlib.util
+import json
+try:
+    importlib.metadata.distribution('atom-cli')
+except importlib.metadata.PackageNotFoundError:
+    registered = False
+else:
+    registered = True
+package = importlib.util.find_spec('atom')
+candidates = None
+if not registered and package is not None:
+    locations = list(package.submodule_search_locations or [])
+    candidates = [
+        module for module in ('atom.cli', 'atom.artifact_cli')
+        if locations and importlib.machinery.PathFinder.find_spec(module, locations) is not None
+    ]
+print(json.dumps({'distribution': registered, 'package': package is not None, 'module_candidates': candidates}))
+"
+```
+
+Only `PackageNotFoundError` means missing distribution registration. Any other
+query exception/nonzero result stops with its actual diagnostic; never turn an
+unexpected error into absence. The query does not import `atom`, read source or
+print origins. Do not replace it with a dotted `find_spec('atom.cli')` lookup:
+that can execute the parent package merely to discover a child.
+
+Interpret the JSON in order, preserving any already verified entry-point role:
+
+| Evidence | Action |
+|---|---|
+| `distribution: true`, `package: false` | Inconsistent own installation: report it and stop; do not run missing modules |
+| Both flags true | Installed/editable candidate: help-check only missing roles; metadata does not prove they work |
+| No distribution; candidates cover every still-missing role | Possible source-only forms: help-check only those roles, without requiring metadata |
+| Some role already verified or some required candidates found, but remaining roles unavailable/uncertain | Partial/mixed setup: name the gap and stop; no environment switch or install |
+| Both flags false, no verified role | Explicit absence: continue to Step 3 without missing-module help |
+| No distribution, package present, empty candidates, no verified role | Ambiguous same-name package/importer: do not run presumed Atom modules; only read-only known-venv reuse in Step 3 is permitted |
+
+`module_candidates: null` means the path-based lookup was not needed, not that
+roles are missing. An empty list under a same-named package is ambiguous: custom
+importers may resolve modules that this lookup cannot. Contradictory or unsupported
+evidence stops for resolution; it is not permission to install. Never discard own
+metadata, a partial candidate, a verified role or a real error because a path-based
+lookup was negative.
+
+Only a permitted successful help establishes a working form. With `python3`, the
+missing-role help forms are:
 
 ```bash
 python3 -m atom.cli --help
 python3 -m atom.artifact_cli --help
 ```
 
-On Windows, retain the existing `python` fallback:
+With the selected Windows `python`, the missing-role help forms are:
 
 ```bash
 python -m atom.cli --help
@@ -76,10 +164,12 @@ PATH.
 developer's own editable checkout of Atom — with a fetched copy, and would not
 fix the PATH anyway.
 
-Continue only if neither role works and the diagnostics explicitly establish
-that Atom is absent. A partly working package, a non-absence import failure or
-another damaged command is a stop: report the unavailable role and exact error.
-Do not treat every nonzero help result as permission to install.
+Once both roles work, record their exact forms and retain them for subsequent
+beats; no repeated bootstrap. Continue to Step 3 only for explicit absence or the
+read-only ambiguity case above, with neither role verified. A partly working
+package, a non-absence import failure or another damaged command is a stop: report
+the unavailable role and actual evidence. Do not invent error output for an
+unexecuted command or treat any failed help result as permission to install.
 
 ### Optional one-time Windows user-PATH setup
 
@@ -108,13 +198,23 @@ developer declines this optional step, retain the module forms above.
 
 ## Step 3 — Reuse the known Linux environment
 
-Only after explicit package absence, check the single known user-owned location
+After explicit package absence, or the Step 2 ambiguity case with neither role
+verified, check the single known user-owned location
 `$HOME/.local/share/atom-cli/venv`, outside repositories and their `.atom/` trees.
-Do not search arbitrary environments or inspect package implementation.
+Ambiguity permits only read-only reuse of an existing healthy venv, not installation.
+Keep that distinction even if the known environment is absent. Do not search
+arbitrary environments or inspect package implementation.
 
 Before executing through this path, check that its directory and ancestors within
-HOME are owned by the user and are not symlinked. If a healthy environment exists,
-verify both module forms and retain the successful absolute commands:
+HOME are owned by the user and are not symlinked, including the interpreter's
+parent directory. Check that the interpreter exists before invoking it. Query it
+for supported Python, `sys.prefix` and `sys.base_prefix`: the prefix must be this
+venv, distinct from the base prefix. Only then apply Step 2's distribution/module
+evidence through this interpreter. Missing metadata alone does not disqualify
+source-only forms whose candidates permit both successful helps. Missing, partial
+or ambiguous roles in an occupied venv are preserved partial setup, not permission
+to install over it. If permitted, verify both module forms and retain the successful
+absolute commands:
 
 ```bash
 "$HOME/.local/share/atom-cli/venv/bin/python" -m atom.cli --help
@@ -126,15 +226,24 @@ unowned or a directory symlink, preserve it and report the exact path/problem;
 never delete, recreate, force or upgrade it. Do not execute through unsafe ancestors.
 Concurrent installers are unsupported; reuse assumes a stable installation.
 
-If the environment is absent, continue below. The new-install recipe is Linux-only;
-on another platform, stop and agree on an isolated setup rather than extrapolating
-this recipe or installing into system Python.
+If the environment is absent and Step 2 established explicit absence, continue
+below. If Step 2 was ambiguous, stop and ask for resolution or known working forms;
+do not enter Step 4. Successful venv reuse does not repair or identify the original
+interpreter's same-named package. The new-install recipe is Linux-only; on another
+platform, stop and agree on an isolated setup rather than extrapolating this recipe
+or installing into system Python.
 
 ## Step 4 — Install once into an isolated Linux environment
 
 Only explicit package absence and an absent safe destination permit this step.
-Explain the shared user-owned location and public source, and obtain consent
-before provisioning. Recheck writable, owned, non-symlink ancestors within HOME.
+Resolve Git and query the selected Python for `venv` and `ensurepip` availability
+before creation. If missing, explain the prerequisite and ask the developer to
+supply it; do not install system tools. Presence does not guarantee creation works:
+real errors still stop.
+
+With prerequisites available, explain the missing Atom commands, shared user-owned
+location and public source. Ask one explicit installation-consent question and
+**wait** before provisioning. Recheck writable, owned, non-symlink ancestors within HOME.
 Create only absent parents and the venv destination exclusively; a collision or
 permission failure stops without overwrite. Do not use a repository-local venv
 or create `.atom/` before onboarding.
