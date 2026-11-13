@@ -27,6 +27,13 @@ not repeat discovery at every beat. Otherwise work down these steps and **stop a
 soon as both command roles work**. A context change or real failure needs explicit
 resolution, not an assumption that stale forms still work.
 
+Group compatible read-only checks into as few terminal invocations as safely
+possible, rather than issuing a separate call for every probe. Within a group,
+preserve the order and decisions below, each originating status and full relevant
+output. Stop on a real failure before running later checks. If a group cannot
+preserve a prerequisite, diagnostic, ownership check or required user decision,
+run those checks separately. Never combine discovery with installation consent.
+
 Keep full relevant diagnostics and originating exit statuses. Do not pipe help or
 writer checks through `head` or a success-shaped fallback. A writer refusal or
 nonzero result stops the workflow even if a wrapper reports zero: no later write,
@@ -173,10 +180,11 @@ unexecuted command or treat any failed help result as permission to install.
 
 ### Optional one-time Windows user-PATH setup
 
-When the package works but its entry points are hidden, offer this opt-in once.
-Explain that it adds the installed command directory to the current user's PATH,
-preserves existing entries, and leaves system PATH unchanged. Obtain consent once;
-an explicit request to update PATH already supplies that consent.
+When the package works but its entry points are hidden, keep the verified module
+forms without asking to change PATH. If the developer requests PATH setup, explain
+that this opt-in adds the installed command directory to the current user's PATH,
+preserves existing entries, and leaves system PATH unchanged. An explicit request
+to update PATH supplies consent; otherwise do not run it.
 
 ```bash
 python -m atom.cli setup-path
