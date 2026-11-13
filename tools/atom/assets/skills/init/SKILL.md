@@ -39,16 +39,21 @@ Missing tools are a setup decision: explain what is absent and ask before any
 installation. Healthy tools outside PATH are reused, not reinstalled. A found but
 broken/partial/unsafe installation is preserved and reported, not silently repaired.
 
+Group compatible read-only prerequisite checks into as few terminal invocations
+as safely possible, while following bootstrap's order and stop conditions. If a
+group cannot preserve a check's result or required decision, run it separately.
+
 Keep actual command statuses and relevant diagnostics; never truncate help/writer
 output with `head` or hide a failure behind a successful wrapper. A writer refusal
 or nonzero result stops the workflow, even if the wrapper reports zero. Do not probe
 an invalid writer target, continue with another write or bypass it with an editor.
 Bootstrap approval does not approve later init or module-local artifact writes.
 
-On Windows, bootstrap offers the one-time `setup-path` opt-in when entry points are
-hidden. After successful setup, use its printed absolute executable commands in this
-session. Do not re-probe command names or ask again to locate the same executables.
-If the developer declines, keep the working module forms instead.
+On Windows, keep working module forms when entry points are hidden; do not ask about
+changing PATH during normal init. If the developer requests PATH setup, bootstrap
+provides the one-time `setup-path` opt-in. After successful setup, use its printed
+absolute executable commands in this session. Do not re-probe command names or ask
+again to locate the same executables.
 
 Do not locate or read Atom's Python source while onboarding another repository.
 Use the command forms established by bootstrap from the target module directory;
