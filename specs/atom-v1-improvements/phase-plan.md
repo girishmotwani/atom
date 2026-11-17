@@ -47,7 +47,7 @@ The accepted order is a default, not an assertion that all tasks depend on those
 | 01 | Reproducible review toolchain | Must | High | None | Approved exact-selection POC, then platform evidence |
 | 02 | Honest continuation on tooling incompatibility | Must | High | 01 selection/provenance contract | Classification experiment and failure matrix |
 | 03 | Explicit risk-proportionate workflow policy | Must | High | None | Reviewed routing cases and explicit policy approval |
-| 04 | Independently useful entry points | Must | Medium | 03 for any new abbreviated path | Routing and isolation trials |
+| 04 | Independently useful entry points and approved new-repository setup | Must | Medium | 03 for any new abbreviated path | Routing, isolation and new-repository setup trials |
 | 05 | Go-specific bug diagnosis | Must | Medium | 04 | Bounded Go defect-reproduction trial |
 | 06 | Behavior-focused test boundaries | Must | Medium | None | Focused refactor/defect-detection trial |
 | 07 | Shared domain vocabulary | Should | Medium | None | Scoped vocabulary/conflict trial |
@@ -102,17 +102,27 @@ Tasks:
 
 ### Phase 04: Independently Useful Entry Points
 
-**Outcome:** a developer can enter Atom with one immediate goal without adopting the entire project lifecycle.
+**Outcome:** a developer can enter Atom with one immediate goal without adopting the entire project lifecycle, including starting a new repository that has no `go.mod` or other Go scaffolding.
 
 Tasks:
 - [ ] Inventory existing commands/skills and reuse them before adding names or overlapping routers.
-- [ ] Provide clear entry paths for review, diagnosis, proof experiments and full-feature delivery, with prerequisites and explicit exit conditions.
+- [ ] Provide clear entry paths for new-repository setup, review, diagnosis, proof experiments and full-feature delivery, with prerequisites and explicit exit conditions. An existing `go.mod` is not a prerequisite for entering Atom; identify requirements for the selected task and offer setup when needed.
+- [ ] Inspect the new repository and recommend the minimal task-appropriate setup, including the proposed Go module path, `go.mod` and any other needed scaffolding. Explain proposed commands and file changes, resolve missing choices with the developer and obtain explicit approval before creating files or running setup commands.
+- [ ] After approval, perform only the agreed setup and report its outcome. Preserve existing files; require separate approval for conflicting changes, dependency/toolchain installation or expanded scaffolding. If approval is declined, leave the repository unchanged and explain which selected actions remain blocked.
 - [ ] Separate user-facing orchestration from reusable discipline references; prevent invocation loops or conflicting instructions.
-- [ ] Verify missing-state behavior, installed-package parity and that no entry path silently launches paid work or publishes changes.
+- [ ] Verify missing-state and missing-`go.mod` behavior, approved setup and declined-approval behavior, preservation of existing scaffolding, installed-package parity and that no entry path silently launches paid work or publishes changes.
 
-**Done when:** representative requests reach the intended bounded workflow; standalone review retains its evidence/permission limits; the full pipeline remains available and unchanged unless explicitly approved.
+**Done when:** representative requests reach the intended bounded workflow, including a new repository without `go.mod`. Atom recommends required setup before acting, creates only approved scaffolding and leaves files unchanged when approval is declined. Setup alone does not automatically start feature development or the full pipeline. Standalone review retains its evidence/permission limits; the full pipeline remains available and unchanged unless explicitly approved.
 
-**POC question:** can the selected entry paths work in a minimal Go repository without unrelated pipeline state or automatic workflow escalation? **Size:** start with one existing standalone path and generalize only from evidence.
+**POC question:** can the selected entry paths work without unrelated pipeline state or automatic workflow escalation, both in an existing minimal Go module and in a new repository that needs explicitly approved module/scaffolding setup? Include approval and refusal cases. **Size:** start with one existing standalone path and a bounded new-repository setup trial; generalize only from evidence, not a broad project-template generator.
+
+**Progress (2026-11-17):** standalone review merged in #21. The setup slice is
+implemented and its bounded Windows evidence accepted, retaining Inconclusive
+protocol results; see [setup evidence](phase-04-entry-points/setup-evidence.md).
+The current PR reconciles newer bootstrap guidance from #23/#24. Phase 04 remains
+open: prioritize the remaining entry-routing/prerequisite/exit audit, then scope
+only the uncovered proof/full-feature/missing-state evidence. Detailed diagnosis
+belongs to Phase 05; parked evaluation/repair work is not part of this phase.
 
 ### Phase 05: Go-Specific Diagnosis
 
@@ -176,6 +186,7 @@ Tasks:
 
 Tasks:
 - [ ] Put supported prerequisites, installation/update/uninstall steps and a short entry-point choice near the front of the documentation.
+- [ ] Document and replay the approved Phase 04 new-repository path starting without `go.mod`; show the setup recommendation and approval boundary rather than expecting the developer to scaffold a Go module beforehand.
 - [ ] Build one small public Go example with real commands, outputs and failure boundaries; avoid unsupported agent/model claims.
 - [ ] Explain which tasks use the full pipeline and which approved standalone paths apply.
 - [ ] Replay from a clean setup and check duplication hazards between installation methods; document supported versions and limitations.

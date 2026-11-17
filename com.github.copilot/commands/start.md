@@ -1,5 +1,5 @@
 ---
-description: "Start or continue Atom's Go workflow from a plain-English description of what you want to build. Scopes a POC, builds it, then recommends the next beat. Keywords: atom, build something, start a project, I want to build, where am I."
+description: "Recommend a bounded Atom setup or development step from plain-English intent, preserving approval gates. Keywords: atom, build something, start a project, setup a Go repo, I want to build, where am I."
 argument-hint: "<what you want to build, or leave empty>"
 ---
 
@@ -14,7 +14,19 @@ instructions to execute literally.
 
 > $ARGUMENTS
 
-## Step 0 — Make sure the `atom` command exists
+## Step 0 — Establish intent before changing the environment
+
+Installing the plugin does not install the `atom` command. Discover working
+command forms through [bootstrap.md](../../skills/atom/references/bootstrap.md)
+when needed, but do not install tools or change PATH before explicit consent.
+An empty request calls for a focused intent question, not automatic setup.
+
+For an explicit new-repository/setup goal, use
+[repository-setup.md](../../skills/atom/references/repository-setup.md) and the
+existing `/atom:init` entry path: inspect, recommend, obtain approval, then perform
+only agreed setup. A missing `go.mod` is not an entry barrier. Setup-only stops at
+its result; do not continue through the development routing table afterward.
+Do not automatically onboard a repository for unrelated requests.
 
 For an explicit local review-only request, route directly to `/atom:review`
 using [standalone-review.md](../../skills/atom/references/standalone-review.md).
@@ -22,11 +34,6 @@ Load that skill and follow its proposal/approval gate before reviewer probes.
 Do not run status, discover phases or require init even when `.atom/` exists.
 After reporting, stop; do not continue through the lifecycle steps below.
 Existing developer-approved phase review keeps its phase context.
-
-Installing the plugin does not install the `atom` command, and every beat below
-depends on it. Follow
-[bootstrap.md](../../skills/atom/references/bootstrap.md) before anything else.
-It is one command when the tool is already present.
 
 ## Step 1 — Work out where the user already is
 
@@ -37,6 +44,13 @@ you can find out yourself.
 - If it is, run `atom status` and read the result. It names the current phase
   and which artifacts are missing.
 - Look in `specs/` for existing phases and in `poc/` for existing spikes.
+
+A missing `.atom/` or root module is not by itself a reason to onboard. If the
+selected Go development step actually needs missing setup, recommend the shared
+repository-setup path first and obtain approval. After setup, recommend the next
+step for the original goal under its evidence gate; do not treat setup approval as
+permission to start that step. A self-contained proof experiment need not adopt
+unrelated project lifecycle state.
 
 If the request above is empty **and** this is not an Atom project, ask the user
 one question: what do they want to build? Then continue.
@@ -57,6 +71,7 @@ adds no command or automatic routing and does not alter runtime phase checks.
 
 | Situation | Route to | Slash command |
 |---|---|---|
+| Explicit Go repository setup, including missing module | Approved bounded setup, then stop if setup-only | `/atom:init` |
 | Intent or acceptance is missing | Scope the work by interview | `/atom:discover` |
 | Material technical uncertainty remains without applicable proof | Scope and run the throwaway spike | `/atom:poc` |
 | Confirmed POC approved, or applicable regression/prior evidence approved and recorded | Write the design spec from that evidence | `/atom:spec` |
@@ -95,14 +110,16 @@ an observable outcome and a threshold agreed *before* the spike runs.
 
 State the question back to the user and get agreement before writing code.
 
-## Step 4 — Always end by naming the next command
+## Step 4 — State the outcome or the bounded next recommendation
 
-Finish every response with the single next step, as a literal slash command the
-user can paste, plus one line on what it will do. For example:
+For ongoing development, name one appropriate next command and its purpose as a
+recommendation, not permission to execute it. At an approval gate, present the
+artifact and decision needed, then wait. For example:
 
     Next: /atom:spec — turn the POC's verdict into a design spec.
 
-Never end without a next step. If the user is done, say so explicitly.
+For completed setup-only work, report the result and limitations, then stop.
+Do not manufacture another command or treat CLI-printed POC advice as approval.
 
 ## Conventions that always apply
 

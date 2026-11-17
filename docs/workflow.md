@@ -77,11 +77,36 @@ sentence at the start.
 
 ### 0. Setup
 
-`/atom:init` onboards the repository: detects your Go toolchain, creates `.atom/`, and
+Normal users install Atom from its GitHub-backed marketplace; no separate Atom
+source checkout is required. Before onboarding, skills read references from the
+plugin installation. After onboarding, instructions live in the target's
+`.atom/atom/` bundle. For acceptance trials, distinguish this installed path from
+a live local marketplace or editable Python CLI; see the
+[installation modes](../README.md#installing-and-updating-as-atom-evolves).
+
+`/atom:init` accepts a new Go repository without `go.mod`. It first follows the
+[shared setup guidance](../skills/atom/references/repository-setup.md): inspect,
+recommend the module/files/commands and onboarding effects, then wait for approval.
+It creates only approved scaffolding before running existing onboarding. Refusal
+leaves the target unchanged; changed proposals need renewed approval.
+When onboarding is requested, inspection first verifies working forms for both
+Atom command roles before the final proposal or any setup writes. Missing tools
+need separate consent. Go-only setup skips Atom prerequisites, onboarding and its
+file-verification/completion requirements.
+
+Onboarding detects your Go toolchain, creates `.atom/`, and
 records the baseline before changing anything. It runs `atom check --no-race` on the
 **untouched** tree, skipping race detection only for this initial baseline; this keeps
 a pre-existing failure from being mistaken for one the pipeline caused. Final
 verification still uses full `atom check` with race detection.
+
+For new setup, that tree is the approved module/scaffold immediately before Atom
+writes its own files, not the original empty directory. Module-only setup can finish
+with failed no-package checks; this is not a verified application or permission to
+add source. Baseline commands can generate build outputs, which belong in the
+recommendation. Setup-only ends after the result; a CLI-printed POC suggestion does
+not authorize the rest of the workflow. Actual agent approval/refusal requires
+separate observation; written guidance does not enforce it.
 
 Work happens on a branch, not on `main`.
 

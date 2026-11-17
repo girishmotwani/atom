@@ -1,11 +1,12 @@
 ---
 name: init
-description: 'Onboard a Go repository to Atom: capture its initial baseline or confirm existing setup without changes. Keywords: init, onboard, setup, install atom, bootstrap, add atom to this repo.'
+description: 'Recommend and perform approved Go repository setup, including a missing module, then onboard Atom or confirm matching setup without changes. Keywords: init, onboard, setup, install atom, bootstrap, add atom to this repo.'
 ---
 
 # /atom:init
 
-Set up a Go repository, or confirm an existing matching setup without changes.
+Recommend and perform approved Go repository setup, or confirm an existing matching
+setup without changes. An existing `go.mod` is not required to enter this skill.
 
 ## When to use
 
@@ -14,22 +15,23 @@ Set up a Go repository, or confirm an existing matching setup without changes.
 - Diagnosing missing or corrupt onboarding without silently repairing it
 - Verifying the toolchain before starting a pipeline
 
-## Step 1 — Confirm this is a Go repository
+## Step 1 — Inspect and establish requested prerequisites
 
-Atom is Go-scoped. It needs a `go.mod`.
+Resolve Go's availability before invoking it. If missing, explain the prerequisite
+and ask the developer to supply it; do not install Go or substitute extra checks
+for the onboarding baseline.
 
-If there isn't one, stop and ask the developer whether to create a module or whether
-Atom is the wrong tool here. Do not invent a module path.
+Follow [repository-setup.md](../atom/references/repository-setup.md) first.
+Confirm Go intent, inspect the target, resolve the real module identity and
+establish whether Atom onboarding is requested. For module/scaffold-only setup
+without onboarding, skip Atom bootstrap and continue to step 2; working Atom
+commands are not a prerequisite for Go-only setup.
 
-## Step 2 — Bootstrap the command
-
-Check the **active session's** client identity against the supported minimum in
+When onboarding is requested, check the **active session's** client identity against
+the supported minimum in
 [bootstrap.md](../atom/references/bootstrap.md), not the version of another
 executable. If it is unknown, conflicting or unsupported, ask one focused
 clarification or switch/update question and wait; do not update automatically.
-Resolve Go's availability before invoking it. If missing, explain the prerequisite
-and ask the developer to supply it before continuing; do not install Go or run
-extra version/build checks instead of the baseline.
 
 Follow [bootstrap.md](../atom/references/bootstrap.md). It establishes working forms
 for both `atom` and `atom-write-artifact` without replacing an installed package.
@@ -38,6 +40,12 @@ this session/environment; otherwise check availability before help or module cal
 Missing tools are a setup decision: explain what is absent and ask before any
 installation. Healthy tools outside PATH are reused, not reinstalled. A found but
 broken/partial/unsafe installation is preserved and reported, not silently repaired.
+
+Verify working forms for both roles through their permitted supported `--help`
+interfaces before the final setup proposal or any module/scaffold writes.
+If either role is unavailable, stop without setup changes and propose the missing
+prerequisite separately. Installation needs explicit consent; after any approved
+installation, verify both roles before proposing setup.
 
 Group compatible read-only prerequisite checks into as few terminal invocations
 as safely possible, while following bootstrap's order and stop conditions. If a
@@ -61,12 +69,34 @@ use `--help` when an option is unclear, not the implementation in an external
 checkout or installed package.
 
 Existing `.atom/` files do not require an implementation audit. Read the named local
-files in steps 4 and 5 and report any discrepancy. If `atom init` refuses because
+files in steps 4 and 5 when onboarding is approved and report any discrepancy.
+If `atom init` refuses because
 existing setup is conflicting, incomplete, or corrupt, preserve it and report the
 named problem; do not add `--force`
 without the developer's explicit approval to discard that state.
 
+## Step 2 — Recommend setup and obtain approval
+
+Recommend only necessary files/commands, checks and generated build outputs.
+When onboarding is requested, include its effects and baseline checks using the
+command forms established in step 1. Wait for explicit approval before setup changes.
+
+If `go.mod` is missing, create the approved module and optional minimal scaffolding
+through the shared reference's sequence before any approved onboarding. Do not
+invent a module path or use `atom init --module` as a module-creation shortcut.
+Declined setup leaves the target unchanged. Existing modules and matching Atom
+state are reused.
+
 ## Step 3 — Run deterministic onboarding
+
+If onboarding was not included in the approved setup, skip steps 3 through 5 and report
+the agreed Go-only result in step 6. Do not run Atom commands or require onboarding
+files to complete that setup.
+
+For approved onboarding with a newly created
+minimal module, retain the child-only local/offline settings from the shared setup
+reference; do not change user defaults. Stop on a setup command failure and report
+partial changes instead of proceeding or silently repairing them.
 
 ```bash
 atom init
@@ -89,6 +119,10 @@ On first initialization, this one command performs the operations that must agre
 - prefers the repository's own `make build` / `make test` when a Makefile defines them;
 - creates the project scaffold and installs the local instruction bundle.
 
+For a new module, "untouched" means the approved module/source scaffold before
+Atom writes its own files, not the original empty directory. `go build` may create
+an executable; disclose this in the setup recommendation.
+
 On first initialization it creates:
 
 ```
@@ -105,6 +139,9 @@ poc/                # throwaway spikes
 If the printed baseline is failing, tell the developer immediately. Do not repair the
 repository during onboarding unless asked. A pre-existing failure discovered three
 phases later looks like something Atom caused.
+Module-only targets may fail vet/test because they contain no packages. Report
+module/Atom setup separately from application readiness; do not add unapproved
+source merely to get a green baseline.
 
 Maintains a marked block in `.gitignore` for machine-local runtime data:
 `.atom/baseline.json`, `.atom/events.jsonl`, and `.atom/events.lock`. Existing ignore
@@ -122,6 +159,8 @@ came to look the way it does.
 
 ## Step 4 — Confirm the recorded commands
 
+Only perform this step for approved Atom onboarding.
+
 For first initialization, read `.atom/config.json` and confirm the module, build
 command, and test command match the baseline that `atom init` printed. Do not rewrite
 the file through a generic edit tool; a mismatch is an onboarding defect to report.
@@ -138,6 +177,8 @@ installed, Atom says so and stays on the Go defaults rather than running a comma
 cannot work.
 
 ## Step 5 — Confirm the local instructions
+
+Only perform this step for approved Atom onboarding.
 
 On first initialization, `atom init` copies instructions, references, templates and
 skills into `.atom/atom/`. It also creates or updates
@@ -173,13 +214,20 @@ output or one of these files exposes a specific discrepancy.
 
 Tell the developer:
 
-- For first initialization: the baseline result, including every failed gate, and
-  what was created
-- For a no-op: setup was already valid, nothing changed, and no baseline was refreshed
-- The two established command forms, once, for reuse in subsequent beats
-- The recommended model setup — see [model-guidance.md](../atom/references/model-guidance.md)
-- For first initialization: next step `/atom:discover`; for a no-op: resume the
-  existing workflow, using `/atom-status` if its position is unclear
+- Without onboarding: the agreed module/scaffold result and only the checks actually
+  run; Atom onboarding was not run and no new Atom baseline or bundle was verified
+- For approved first initialization: the baseline result, including every failed
+  gate, and what was created
+- For an approved matching repeat: setup was already valid, nothing changed, and
+  no baseline was refreshed
+- With onboarding: the two established command forms, once, for reuse in later beats
+- With onboarding: the recommended model setup — see
+  [model-guidance.md](../atom/references/model-guidance.md)
+- For setup-only requests: stop after the result. CLI suggestions do not authorize
+  a POC, feature work, review or publication.
+- For an explicitly requested full feature: recommend the next evidence step under
+  the shared POC discipline and stop at its approval gate. For an explicitly requested
+  resume, use `/atom-status` if the position is unclear.
 
 Use the appropriate skill available in the active client. If a documented alias is
 unknown or rejected, disclose that rather than guessing another alias or reinstalling
@@ -190,16 +238,20 @@ alias works; invoke that skill, not a silently substituted beat.
 
 ## Done when
 
-- [ ] `go.mod` confirmed
-- [ ] `atom init` completed
-- [ ] First init: no-race baseline captured before any Atom file was written
-- [ ] First init: `.atom/`, `specs/`, `poc/` created; `.gitignore` updated
-- [ ] First init: config commands match the commands exercised by the baseline
-- [ ] Repeat: valid matching setup confirmed without changes or a new baseline
-- [ ] Local Atom bundle present under `.atom/atom/`
-- [ ] Repository agent instructions reference the local bundle
-- [ ] Developer briefed, including model guidance
+- [ ] Go intent and target confirmed; module reused or created only after approval
+- [ ] Proposed files, commands, checks and generated outputs explicitly approved
+- [ ] If onboarding requested: both command roles verified before final proposal or setup writes
+- [ ] Without onboarding: Atom bootstrap, execution and onboarding-only file checks skipped
+- [ ] With onboarding: `atom init` completed, including a valid read-only repeat
+- [ ] Approved first init: no-race baseline captured before any Atom file was written
+- [ ] Approved first init: `.atom/`, `specs/`, `poc/` created; `.gitignore` updated
+- [ ] Approved first init: config commands match the commands exercised by the baseline
+- [ ] Approved repeat: valid matching setup confirmed without changes or a new baseline
+- [ ] With onboarding: local Atom bundle present under `.atom/atom/`
+- [ ] With onboarding: repository agent instructions reference the local bundle
+- [ ] Developer briefed on actual setup/checks and, with onboarding, model guidance
 
 ## Next
 
-First initialization: `/atom:discover`. Successful no-op: resume the existing workflow.
+Setup-only: complete, no automatic next command. Full-feature/resume requests:
+recommend the appropriate next evidence step without treating setup as gate approval.
