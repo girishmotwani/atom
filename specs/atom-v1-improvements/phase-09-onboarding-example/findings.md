@@ -963,3 +963,89 @@ The Windows printed-executable handoff Minor remains explicitly deferred. Latest
 README correction is locally validated, not independently re-reviewed. No live
 agent/Linux fallback or completed Phase 09 outcome is claimed. Installed refresh,
 new rehearsal and merging remain outside publication authorization.
+
+## Standalone Quickstart Accepted; Final-Page Replay Remains Open
+
+The accepted [quickstart review](quickstart-review.md) records two independent
+reviews: Claude raised a Major shell-isolation issue and Minor permission ambiguity;
+Gemini reported no findings. Both were fixed, boundedly validated and explicitly
+accepted. The original model passes cover the pre-fix snapshot, not an independent
+re-review of the corrections. No quickstart finding is deferred.
+
+The [accepted replay](standalone-quickstart-report.md) confirms the supplied
+expense totals and visible negative exits, but independent recipe navigation is
+Inconclusive because the run was assisted. The final public page has not been
+replayed end to end. Shared CLI cache, existing prerequisites/OS and potentially
+moving marketplace content remain disclosed limits; Phase 09 is not complete.
+The earlier deferred Windows printed-command handoff risk is unchanged and
+outside this documentation PR. No new finding is introduced by preserving main's
+newer standalone-review sections while transplanting only approved hunks.
+
+## Quickstart Reader-Experience Correction Requested: 2026-11-17
+
+The developer identified that docs/quickstart.md reads partly as a record of steps
+performed rather than a new-user walkthrough. Inspection confirms that tested
+version inventories, replay provenance, implementation explanations and repeated
+non-coverage statements interrupt the first-run instructions. The published page
+is 188 lines. Correct its presentation without deleting the underlying evidence
+or weakening the setup isolation, permission boundaries or result checks.
+Final-page independent usability remains unproven; reducing text does not prove it.
+
+The requested presentation issue is locally addressed: 1,249 to 766 whitespace-
+separated words, four reader actions and no inline rehearsal narrative. Setup
+commands and the earlier review fixes are unchanged. Link/syntax/whitespace and
+all six synthetic shell cases in both modes pass. This does not establish a new
+usability result or extend independent model-review coverage. Local acceptance
+and explicit publication of the revision remain outstanding; PR #26 is unchanged.
+
+## Landing Paused At Existing CI Failure: 2026-11-17
+
+PR #26's existing head has six failed Python matrix jobs; document links and all
+three POC jobs passed. Inspected Ubuntu/Python 3.10 failure from run 44092904765:
+
+```text
+FAILED tests/test_review_continuation.py::test_review_runs_candidate_gates_in_order_and_strict_mode_stays_all_gates[False-expected_gate_calls0] - atom.review.ControlToolchainError: PATH Go 1.23.12 is below module minimum 1.27.0
+================= 1 failed, 1672 passed, 52 skipped in 38.30s ==================
+```
+
+The exact base main commit 5bb33cbe2c835382b5ccda840c5268321b24ac0b, run
+43391913211, contains the same inspected test/error:
+
+```text
+FAILED tests/test_review_continuation.py::test_review_runs_candidate_gates_in_order_and_strict_mode_stays_all_gates[False-expected_gate_calls0] - atom.review.ControlToolchainError: PATH Go 1.23.12 is below module minimum 1.27.0
+================= 1 failed, 1672 passed, 52 skipped in 43.50s ==================
+```
+
+These are the test-summary payloads from gh run view --log-failed for each run's
+Ubuntu/Python 3.10 job, with only the Actions job/step/timestamp envelope omitted.
+This verifies inheritance for that inspected failure, not every other red job.
+The docs checks remain valid, but overall CI is not green. Do not repair unrelated
+continuation code or silently merge despite red CI. The first-cut text is accepted;
+publication/landing is paused for an explicit disposition of this newly surfaced
+risk. Setup-script reduction remains follow-up work after landing.
+
+## PR 26 Merged Without The Accepted Editorial Cleanup: 2026-11-17
+
+The developer reported merging PR #26. gh pr view confirms MERGED at
+2026-11-17T15:24:36Z, merge commit ca853a15ef51e6cfd03af39659731b470ab31fcc,
+head 567705a64e917ec44f60fc7be3e0ed9747024b63. After fetching main, direct comparison
+printed:
+
+```text
+Main quickstart: 188 lines; # Try Atom with one Go POC
+Accepted local quickstart: 149 lines; # Try Atom: build a Go expense summary
+Accepted cleanup present on main: False
+```
+
+The approved reader-first correction remains local; it needs a follow-up PR,
+not an update to the already merged PR. Phase 09 still requires an exact-path
+fresh supported-environment replay; earlier assisted evidence does not close it.
+
+## Cleanup Delivery Gap Being Closed By Follow-Up PR: 2026-11-17
+
+The developer explicitly authorized publication of the accepted 149-line page
+after confirming it was absent from #26. The follow-up contains one reader-facing
+change, with the original safe setup and rerun blocks unchanged; spec/log changes
+retain its acceptance and evidence. No new in-scope finding. The earlier inherited
+continuation-test CI failure and independent final-page replay gap remain open.
+This publication does not simplify the setup script or complete Phase 09.

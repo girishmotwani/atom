@@ -74,3 +74,17 @@ unstaged diff and the tracked build skill rather than force-adding ignored files
 or changing ignore rules. Git repository-internal pathspecs use Git's path syntax;
 Windows filesystem paths remain native. No source or artifact-writer refusal was
 bypassed.
+
+## PR 25 Conflict Resolution - 2026-11-17
+
+The developer explicitly requested fixing PR #25's merge conflicts. Merge current
+main `8cf34fa` into the PR branch without rewriting history or merging the PR itself.
+Keep #26/#27's reader-first Try Atom/quickstart exactly, and relocate this slice's
+readiness/Go-only explanation into detailed onboarding rather than restoring the
+removed framework-first introduction. Preserve both documentation goals.
+
+This is factual documentation reconciliation of existing behavior, not a new
+runtime design. Reuse accepted setup evidence with its unchanged limitations;
+run existing targeted documentation/plugin tests and link checks, not a fabricated
+root Go gate, new spike or paid review batch. The user's separate approval to open
+the review-reliability issue does not implement that repair or broaden this PR.

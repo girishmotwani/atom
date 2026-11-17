@@ -38,3 +38,12 @@ This focused PR includes source, the mechanical spike/transcript, approved core
 specs, historical implementation evidence and concise current review/evidence/
 decision records. It does not publish private permission files or parked drafts.
 The original checkout and continuation worktree are preserved.
+
+## PR 25 Conflict Resolution - 2026-11-17
+
+Main advanced to `8cf34fa` through merged #26/#27. The only textual conflict was
+README's Try Atom section: upstream replaced onboarding-first instructions with a
+reader-first standalone quickstart. Preserve that new introduction exactly and
+retain approved missing-module/readiness/Go-only guidance in the onboarding section.
+The workflow introduction merges cleanly; upstream quickstart and artifacts remain
+unchanged. No runtime source, instruction contract or live evidence verdict changes.

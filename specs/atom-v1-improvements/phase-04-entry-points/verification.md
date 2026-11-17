@@ -101,3 +101,36 @@ Accepted installed-user observations cover their original frozen instructions,
 not the combined #23/#24 treatment. No fresh model-review call or live setup replay
 was authorized or run. Root atom-check is inapplicable to this Python tooling repo;
 no fabricated Go gate, application readiness, race result or phase closure is claimed.
+
+## Conflict Resolution Checks - 2026-11-17
+
+Merged main `8cf34fa` into PR #25's branch. Only README required manual resolution;
+the new quickstart, its reader-first introduction and workflow link are preserved.
+No runtime code, canonical/package skill or dependency changed in this merge.
+Fresh command from tools:
+
+```text
+python -m pytest tests\test_plugin.py tests\test_standalone_review_guidance.py -q --tb=short
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\Users\gimotwan\.copilot\session-state\1ec68bb0-53ec-4735-a4de-c5186a9d376f\files\phase04-setup-shipping\tools
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 35 items
+
+tests\test_plugin.py ...........                                         [ 31%]
+tests\test_standalone_review_guidance.py ........................        [100%]
+
+============================= 35 passed in 1.65s ==============================
+```
+
+Fresh command from repository root: `python tools\check_links.py`.
+
+```text
+checked 646 relative links across markdown files
+all relative links resolve
+```
+
+Direct comparisons confirm Try Atom matches current main and docs/quickstart.md
+has identical bytes after native newline normalization. The index has no unresolved
+entries. These are documentation checks, not a new live replay or model review.

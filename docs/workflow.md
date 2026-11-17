@@ -4,7 +4,9 @@ A walkthrough of what actually happens when you hand Atom a piece of work, what 
 are expected to do at each point, and what ends up on disk.
 
 For the skill reference table and installation, see the [README](../README.md). This
-document is the narrative version — read it once before your first run.
+document is the full-project narrative — read it before starting that workflow.
+To try one disposable Go POC without project onboarding, use the
+[standalone quickstart](quickstart.md) instead.
 
 ---
 

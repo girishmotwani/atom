@@ -495,3 +495,14 @@ Re-run the approved 34 focused checks and document/link/integrity checks now.
 Use gh pr create with explicit main base rather than a state-driven phase ship
 that would imply the example is complete. Self-review the source and artifact
 changes; no additional model-review batch or runtime-code change is involved.
+
+## Standalone Quickstart Documentation PR Authorized
+
+The developer requested "lets ship it" after accepting the documentation and both
+review fixes, following a proposal for a docs-only commit/push/PR. Ship the three
+approved public-document edits and their standalone evidence on an independent
+branch from current main; preserve newer main documentation and exclude unrelated
+dirty helper work. Append scoped logs instead of copying mixed local journals.
+The [phase decision](phase-09-onboarding-example/decisions.md#standalone-quickstart-publication-authorized)
+records the exact boundary, documentation-check adaptation and reload-order lapse.
+No merge, fresh model batch, installation, final live replay or phase completion.

@@ -1405,3 +1405,244 @@ Staged validation caught four Markdown hard-break spaces in the then-untracked
 Terra quotation and a new receipt EOF blank line, not covered by the earlier
 unstaged whitespace check. Normalize whitespace only and recheck all staged
 files; preserve every reviewer word, finding and immutable rehearsal recipe.
+
+## Standalone Quickstart Publication Authorized
+
+After accepting the documentation implementation and then "Accept both verified
+documentation fixes", the developer requested "lets ship it" following the scoped
+proposal to commit, push and open a documentation-only PR with its evidence.
+This authorizes publication, not merging, new model spend or a final live replay.
+
+Create independent docs/standalone-expense-quickstart from public main
+5bb33cbe2c835382b5ccda840c5268321b24ac0b in a separate worktree. The older working
+branch lacks main's standalone-review additions: transplant only the approved
+README Try Atom and workflow introduction hunks, preserving all other main text.
+Keep the accepted quickstart content and six standalone brief/preparation/recipe/
+report/spec/review artifacts. Append only scoped records to main's logs rather
+than publish mixed local logs. Preserve and exclude the dirty discovery-helper
+implementation, unrelated experiments, private captures and runtime state.
+
+Use the accepted documentation-validation adaptation: fresh link, LF-byte Bash
+syntax, scoped whitespace/content checks and the existing synthetic shell checks.
+No runtime code, dependency or Go module changes; root atom check and Python/Go
+suites are inapplicable to this slice, not passed. Explicit git/gh publication
+avoids falsely advancing phase state. Phase 09 remains open.
+
+After compaction, isolated-worktree creation and session todo setup preceded the
+required actual instruction-file reload. Reloaded AGENTS, ship and all seven
+references before document/evidence edits; no commit/push or model work preceded
+that reload. Record the ordering lapse rather than treat the summary as a reload.
+
+## Standalone Quickstart Publication Verification
+
+Validation ran in the isolated shipping worktree against the actual selected
+snapshot. The existing relative-link checker exited 0; inline Python checked
+both actual Bash blocks via wsl.exe --distribution Ubuntu --exec bash -n with
+UTF-8 LF input, content identity, all-main-text preservation outside the two
+approved navigation hunks, whitespace/EOF and the exact staged allowlist.
+Captured stdout (the link checker flushed before Python's buffered messages):
+
+```text
+checked 600 relative links across markdown files
+all relative links resolve
+Only approved navigation hunk changed; all other main content preserved: README.md
+Only approved navigation hunk changed; all other main content preserved: docs\workflow.md
+Accepted quickstart and all six evidence artifacts match original content (LF-normalized)
+Quickstart LF-normalized SHA-256: 3d8cff694946a6f05c5551311a7aa66e0271d1c682d5f2c3714eb5b5c053dfb9
+quickstart bash block 1: LF-byte syntax check exit=0
+quickstart bash block 2: LF-byte syntax check exit=0
+All 13 selected files pass trailing-whitespace/EOF checks
+Staged whitespace check exit=0; exact documentation/evidence allowlist: 13 files
+```
+
+Git also warned that quickstart working-copy CRLF will normalize to LF. The digest
+above hashes canonical LF text; the earlier review's raw-byte 57ec287e... digest
+includes working-copy line endings. Normalized text equality was asserted, not
+inferred from mismatched hashes. README/workflow full hashes necessarily differ
+from the older reviewed snapshot because main's unrelated additions are retained.
+
+Ran the existing session-local check_quickstart_shell.py from the shipping root
+with --save quickstart-shell-shipping.json, then --interactive --save
+quickstart-shell-shipping-interactive.json (all paths are inside session files).
+Both invocations exited 0 and each printed exactly:
+
+```text
+PASS existing-destination: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS dangling-symlink: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS missing-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS unresolvable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS nonexecutable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS prerequisite-failure: shell_exit=0; parent survives, diagnostic visible, state unchanged
+6 passed; 0 failed
+```
+
+The harness and raw JSON stay session-local. These synthetic failures do not run
+installed Copilot/Go/Atom or installers, and do not replay successful setup, model
+behavior or final-page usability. No new model review or Go/Python suite ran.
+The earlier accepted evidence and final-page replay limits remain unchanged.
+
+## Reader-First Editorial Cleanup Requested: 2026-11-17
+
+Developer requested: "docs/quickstart.md has a lot of info that is not needed. it
+is not written with a new user experience approach - has info on steps performed.
+we should clean it up". Treat this as a documentation-only editorial correction:
+reuse the accepted installation/fixture evidence, preserve both Bash command
+blocks and review fixes, and check links, syntax, wording and bounded shell cases.
+No new technical behavior, installation, model call or Go experiment is proposed.
+
+Keep one self-contained first-run path rather than make readers assemble setup
+from the long general README. Move audit narration out of the reader path into
+its existing linked evidence; retain concrete prerequisites, requested behavior,
+approval/continuation/report-stop instructions and visible result checks. Rephrase
+the prompt for readability without changing its inputs, outcomes or bounded scope.
+Reconcile only the spec's inline presentation requirements, not its technical
+contract. No runtime, other public document or historical evidence edit is needed.
+The current request does not explicitly authorize another push or PR update;
+leave the cleanup local for acceptance. No merge is authorized.
+
+## Reader-First Cleanup Locally Validated: 2026-11-17
+
+Rewrote the page around the user's outcome and four actions: install/open,
+request the POC, approve/continue, and inspect results. Removed replay narration,
+version inventories, repeated policy lists and Go-wrapper analysis from the reader
+path; the existing accepted report retains that evidence. Defined POC plainly and
+shortened the request while retaining the exact CSV, refund totals, final-row oops,
+missing-file/no-totals checks, process streams/exits and bounded brief/report scope.
+Both Bash blocks and the explicit scoped-permission fix are preserved.
+
+Fresh local validation exited 0. Captured stdout:
+
+```text
+checked 600 relative links across markdown files
+all relative links resolve
+Both Bash blocks match the accepted PR commit exactly (LF-normalized)
+quickstart bash block 1: LF-byte syntax check exit=0
+quickstart bash block 2: LF-byte syntax check exit=0
+Quickstart lines: 188 -> 149
+Quickstart whitespace-separated words: 1249 -> 766
+Exact local cleanup scope: quickstart, presentation clarification and phase findings/decisions
+```
+
+The existing session-only harness ran with --save quickstart-shell-reader-cleanup.json,
+then --interactive --save quickstart-shell-reader-cleanup-interactive.json. Both
+invocations exited 0 and each printed exactly:
+
+```text
+PASS existing-destination: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS dangling-symlink: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS missing-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS unresolvable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS nonexecutable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS prerequisite-failure: shell_exit=0; parent survives, diagnostic visible, state unchanged
+6 passed; 0 failed
+```
+
+Read the full revised page against the presentation clarification and retained
+technical contract. git diff --check exited 0; Git's CRLF-normalization warnings
+are not whitespace failures. Text reduction is not measured usability improvement.
+No live model/install/final-page replay, new independent review or runtime suite
+ran. Changes remain local in the isolated PR worktree for acceptance; no new
+commit/push/PR edit or merge occurred, and the original mixed worktree is untouched.
+
+## First-Cut Acceptance And Explicit Landing Request: 2026-11-17
+
+After reading the full revised page, the developer said: "looks good for a first
+cut. lets push and merge this. then we should look into reducing the size of the
+script needed for setup, looks too verbose for now". Accept the reader-first
+editorial correction and its reconciled presentation scope. This explicitly
+requests pushing this correction and merging PR #26, a task-specific landing
+authorization rather than a general change to the human-controlled merge policy.
+Keep the existing account selection process-local; do not change global login.
+
+Read-only preflight confirms PR #26 is open, nondraft, directly targets main,
+and has no native stack membership. Its remote head remains 567705a64e917ec44f60fc7be3e0ed9747024b63;
+the four-file editorial correction is still local and uncommitted. No new source
+wording, setup command, model batch or installation is required for this cut.
+Shorter setup is explicitly subsequent work, not permission to redesign it here.
+
+CI preflight changed the landing plan: six Python matrix jobs on the existing PR
+head are failing. The inspected Ubuntu/Python 3.10 failure also occurs on the exact
+main base. Preserve this negative evidence and pause before committing/pushing/
+merging for a decision on the known-red landing risk or a separately scoped CI
+repair. No check bypass, admin merge, automatic merge, test weakening or unrelated
+repair is authorized by the earlier request made before this failure was surfaced.
+No merge or setup-simplification investigation has run at this stop.
+
+## Next Phase 09 Priority After Human Merge: 2026-11-17
+
+User reported "merged PR 26" and asked for the next P0 task. Verify rather than
+assume which bytes landed: the original 188-line page merged, while the accepted
+149-line correction is still local. Recommend delivering that accepted correction
+first, then simplifying first-run setup and replaying the exact final documented
+path. This follows the phase plan's useful-first-result outcome and replay-based
+done criterion; the plan labels Phase 09 Must, not each subtask P0. The proposed
+P0 ordering is a recommendation, not an already recorded task priority or approval
+to implement a new setup helper. No code change, publication or experiment follows
+from this status question. atom status selected the unrelated artifact-writer
+project by fallback, so use the named phase plan and merged evidence instead.
+
+## Accepted Cleanup Follow-Up Publication Authorized: 2026-11-17
+
+The developer requested "lets push the 149 line rewrite as well as the accepted
+quickstart cleaup." These describe the same accepted reader-first revision,
+not two separate rewrites. Authorize its local commit, branch push and follow-up
+human-review PR against main. The earlier conditional merge request was scoped
+to the now human-merged PR #26; do not extend it to this new PR.
+
+Create independent docs/reader-first-quickstart at main
+ca853a15ef51e6cfd03af39659731b470ab31fcc in the existing owned shipping worktree.
+Main's tree equals the old local HEAD tree, verified before switching; the accepted
+149-line page was preserved byte-for-byte, raw SHA-256
+b9161cd0e8d76d266179e23f5419ab073a95c287df1b482954d36a7b2eb8444e.
+Publish only that page, its presentation clarification and phase findings/decisions.
+Do not change README, workflow, setup Bash blocks, runtime, unrelated helper work
+or other open PRs. Keep global authentication unchanged; use the existing scoped
+publication identity only in child processes. Apply the established documentation
+checks afresh, not fictional root Go gates. Inherited CI and final-page replay
+limits remain disclosed; setup-script reduction stays a separate follow-up.
+
+## Follow-Up Publication Checks: 2026-11-17
+
+Ran the existing link checker, extracted both actual Bash blocks as LF UTF-8 bytes
+for Ubuntu `bash -n`, compared them against merged main, checked the exact four-file
+scope and all selected-file whitespace/EOFs, and reran the existing synthetic
+shell harness with `--save` and again with `--interactive --save`. Fresh output:
+
+```text
+Accepted quickstart: 149 lines, 766 words; byte-for-byte unchanged
+Both Bash blocks match merged main exactly (LF-normalized)
+quickstart bash block 1: LF-byte syntax check exit=0
+quickstart bash block 2: LF-byte syntax check exit=0
+Exact four-file documentation/evidence scope; whitespace/EOF checks pass
+checked 600 relative links across markdown files
+all relative links resolve
+```
+
+Ordinary Bash:
+
+```text
+PASS existing-destination: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS dangling-symlink: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS missing-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS unresolvable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS nonexecutable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS prerequisite-failure: shell_exit=0; parent survives, diagnostic visible, state unchanged
+6 passed; 0 failed
+```
+
+Forced-interactive Bash:
+
+```text
+PASS existing-destination: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS dangling-symlink: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS missing-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS unresolvable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS nonexecutable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS prerequisite-failure: shell_exit=0; parent survives, diagnostic visible, state unchanged
+6 passed; 0 failed
+```
+
+The raw accepted-page hash was also asserted. Git reports expected CRLF-to-LF
+normalization for the page; no content change. Keep session-only JSON captures
+outside the PR. These checks do not claim a new installation, live Go/model replay,
+independent review of the rewrite, production suite or newcomer usability result.
