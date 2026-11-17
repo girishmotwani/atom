@@ -1,36 +1,22 @@
-# Try Atom with one Go POC
+# Try Atom: build a Go expense summary
 
-Ask Atom for a disposable expense-summary command, inspect real totals and input
-failures, then stop. No repository onboarding or full-project pipeline is needed.
+Ask Atom to write and run a small Go program that totals expenses by category.
+You'll try one proof of concept (POC): a throwaway program to test an idea, not a
+production application. You don't need to onboard a repository or start a project.
 
 ## Before you start
 
-These are **Ubuntu/Linux Bash terminal commands**, not PowerShell commands.
-The observed run used existing Ubuntu WSL, Copilot CLI 1.0.107, Go 1.22.2,
-Python 3.12.3 with venv, and git 2.43.0. Have those tools and ordinary Copilot
-authentication available already; this page does not install prerequisites.
-Other setups should use the [general setup guidance](../README.md#getting-started);
-documented minima are not a tested compatibility matrix.
+Use **Ubuntu/Linux Bash**, including Ubuntu on WSL, with Git, Go, Python with
+`venv`, and an authenticated GitHub Copilot CLI already available. For prerequisites
+and other platforms, see [Getting started](../README.md#getting-started).
 
-The plugin supplies instructions; the separate Python package supplies `atom`
-and `atom-write-artifact`. Below is a deliberately separate trial installation,
-not a repair or replacement of healthy tools. It uses a fresh profile and venv,
-but **shares the existing CLI cache**. No shell profile, default Copilot profile,
-global PATH, HOME, or credentials should be changed or copied.
+## 1. Install Atom and open Copilot
 
-The replay used atom-cli 0.1.0 and plugin 0.2.0, matching public source
-`5bb33cbe2c835382b5ccda840c5268321b24ac0b`. Python is pinned below; the marketplace
-can advance, so a plugin version alone does not guarantee those same bytes.
-The no-auto-update controls prevent CLI updates; do not infer that the observed
-older client also prevents plugin updates.
-
-## Set up in a dedicated terminal
-
-Use a new terminal solely for this trial. Paste the complete block, including
-the parentheses: setup and Copilot run in a subshell, so failure returns to your
-terminal without closing its shell or changing its settings. The directory name
-is reader-owned: choose an unused name, and never run two trials against the same
-directory. The checks refuse existing destinations, including dangling symlinks.
+The block below installs the Atom command tools and plugin in a separate
+`~/atom-quickstart` directory, then opens Copilot in an empty workspace.
+Choose an unused directory; setup will not overwrite an existing one.
+Paste the whole block, including the parentheses, to keep your shell settings
+unchanged when it finishes.
 
 ```bash
 (
@@ -72,83 +58,73 @@ directory. The checks refuse existing destinations, including dangling symlinks.
 )
 ```
 
-Both Atom help commands must succeed before starting the task. If any command
-fails, authentication is unavailable, or installation needs more permissions,
-keep the actual diagnostic and **stop**. Do not retry automatically, use sudo,
-override system pip, install another interpreter, log in, or copy credentials.
-The existing supported client must accept the flags shown.
+Both Atom help commands must succeed. If setup fails or asks for unexpected
+permissions, stop and resolve the displayed error rather than retrying with sudo
+or changing your existing tools.
 
-## Ask for the experiment
+## 2. Ask for the POC
 
-In the interactive Copilot session just opened, send:
+Send this request in the Copilot session:
 
 ```text
-/atom:poc I want one standalone disposable expense-summary Go POC, not a production feature or the full Atom pipeline. Prepare its brief and stop for my approval before coding. The question is: Can a Go command read the supplied expense CSV, print exact category totals including the negative refund, and reject invalid amounts and missing files with a nonzero exit and no success totals?
+/atom:poc Create a standalone, disposable Go POC that reads this UTF-8 expense
+CSV and prints totals by category. Prepare a brief and wait for my approval
+before coding.
 
-Read a UTF-8 CSV with header category,amount and these rows:
+category,amount
 food,12.50
 travel,5.00
 food,7.50
 travel,-1.25
 
-Expected totals: food 20.00; travel 3.75. Replace the final row's amount with oops for the invalid-input fixture. That input and a missing file must each visibly fail with a nonzero Go process exit and no success totals. Capture exact stdout, stderr and exits, including atom poc run vet/build/run evidence and direct Go-command negative checks.
+Expected totals: food 20.00 and travel 3.75, including the negative refund.
+Also test the final amount replaced with oops, and a missing file. Each must
+fail with a visible error, a nonzero process exit, and no success totals.
+Capture stdout, stderr and exits, including atom poc run vet/build/run evidence
+and direct executable checks.
 
-Keep this to one disposable POC under poc/expense-summary and its brief/report/findings/decisions. Use the existing Atom tools on PATH and existing Go/Python. Preserve the brief/report approval pauses. No init/start/build, phase registration, phase plan, design spec, TDD cycle, extra agents, tool installation, model review, commit, push or publication. Stop at the POC report gate.
+Keep the POC under poc/expense-summary and its brief, report, findings and
+decisions under specs/expense-summary. Use the existing tools. No project
+onboarding, full pipeline, extra agents, installations, reviews, commits or
+publication. After execution, stop for my approval of the report.
 ```
 
-The POC skill may first use discovery solely to prepare its missing brief. That
-is not project onboarding. If the command is unknown, stop and check the active
-client; do not guess aliases, reinstall, or edit installed skills.
+Atom may ask a clarifying question before preparing the brief. You don't need
+`/atom:init` or a root Go module for this example.
 
-An empty workspace has no root `go.mod`; a root baseline probe may fail for that
-reason. Record it honestly, not as a green baseline. Do not initialize a project
-or phase state to silence it: the POC gets its own separate Go module.
+## 3. Approve the brief and continue
 
-## Approve, continue, then stop
-
-**Tool permissions are not artifact approvals.** Approve only displayed commands
-and paths you understand. No all-tools, unrestricted-path, or persistent grant
-is required. Expected scoped actions include `atom poc new expense-summary` and
-`atom poc run expense-summary`, with their displayed question/capture options;
-inspect the full commands before approving them. This is not blanket approval
-for every `atom` action. Limit artifact-writing permission to
-`atom-write-artifact` and the intended artifact paths; source edits retain normal
-permissions.
-Unexpected setup, broad access, or unrelated lifecycle work is a stop condition,
-not a reason to bypass a gate.
-
-Read `specs/expense-summary/poc-brief.md`. It must match the question, fixture,
-exact totals, both failure cases, evidence requirements, and disposable scope.
-Reject or request correction if it does not. Approve only that brief if it does.
-Then send this explicit continuation **in the same session**:
+Read `specs/expense-summary/poc-brief.md`. Check that it includes the CSV, expected
+totals and both failure cases above. Request corrections if needed. If it matches,
+approve the brief, then send this in the same session:
 
 ```text
 Proceed with specs/expense-summary/poc-brief.md as approved. Scaffold, write and execute the disposable POC, capture all required evidence, and write the report. Stop at the report approval gate.
 ```
 
-At that gate, read `specs/expense-summary/poc-report.md` and the captured evidence.
-Accept or reject the report explicitly; acceptance does **not** authorize planning,
-design, TDD, review, shipping, or production code. End this standalone task there.
-If the agent continues outside that scope, stop it rather than treating written
-instructions as a technical guarantee that a model always waits.
+Approve only tool commands and paths you understand, including the full displayed
+`atom poc new expense-summary` and `atom poc run expense-summary` commands.
+Allow `atom-write-artifact` only for the intended artifact paths, not broad access.
+You don't need blanket or persistent permissions. Tool prompts are separate from
+approving the brief or report.
 
-## Inspect the result
+When Atom stops, read `specs/expense-summary/poc-report.md`. Accept or reject it
+explicitly, then end the task; accepting a POC does not start the full pipeline.
 
-Under your trial's `workspace`, inspect `poc/expense-summary/main.go`, its `go.mod`,
-`expenses.csv`, `invalid.csv`, and rerun `README.md`. The brief, report,
-`findings.md`, and `decisions.md` live under `specs/expense-summary`.
-The observed Atom vet/build/execute stages all exited 0. Success stdout was:
+## 4. Check the result
+
+The report should show successful vet/build/run checks and this output with
+exit 0 and no stderr:
 
 ```text
 food 20.00
 travel 3.75
 ```
 
-The direct executable exited 0 with empty stderr. To rerun after the report gate,
-leave Copilot and change into your trial's `workspace/poc/expense-summary` in
-your original terminal. The subshell has not enabled `set -e` there. Run these
-observed commands individually; immediately after each, use
-`printf 'exit=%s\n' "$?"` to see its exit:
+Inspect the generated source and fixtures in
+`~/atom-quickstart/workspace/poc/expense-summary`. To try the command yourself,
+exit Copilot, open that directory in your terminal, and run these commands
+individually. After each, run `printf 'exit=%s\n' "$?"` to check its exit status:
 
 ```bash
 go build -o expense-summary .
@@ -157,32 +133,17 @@ go build -o expense-summary .
 ./expense-summary missing.csv
 ```
 
-The last two are **expected to exit 1**, with empty stdout, not setup failures.
-The report contains separate captured exits and streams. Observed
-direct-executable stderr examples, one per failing command:
+The valid CSV should print the totals above. The last two commands should
+**exit 1 without printing totals**. Expect errors like:
 
 ```text
 reading invalid.csv row 5: invalid amount "oops"
-```
-
-```text
 reading missing.csv: open missing.csv: no such file or directory
 ```
 
-`go run . invalid.csv` and `go run . missing.csv` additionally printed
-`exit status 1`; that line belongs to the Go wrapper, not the executable's own
-diagnostic. Verify direct process exits separately. Generated source and exact
-platform-dependent error wording can vary; the fixture, exact totals, visible
-errors, nonzero failure exits, and absence of success totals are the contract.
-Missing evidence or unexpected totals must not be reported as success.
+Error wording can vary, but incorrect totals or missing failure evidence mean the
+POC is not complete. Your files remain available after you close the terminal.
 
-## What this example establishes
-
-The [accepted replay report](../specs/atom-v1-improvements/phase-09-onboarding-example/standalone-quickstart-report.md)
-records an **assisted, bounded experienced-user run**, not independent newcomer
-navigation. The directory names, executable resolution, and final wording here
-are documentation translations, not an independently replayed final page.
-No setup-time, prompt-count, clean-OS, universal-version/model-adherence, or
-production-readiness promise follows. No spike source is packaged as production.
-Close the dedicated terminal when finished; the trial files remain inspectable.
-For later full-project work, use the [workflow walkthrough](workflow.md).
+For a larger project, see the [full workflow](workflow.md).
+[Validation notes and limitations](../specs/atom-v1-improvements/phase-09-onboarding-example/standalone-quickstart-report.md)
+are kept separately from this walkthrough.

@@ -180,3 +180,22 @@ all relative links resolve
 Scoped git diff --check exited 0. File reads verified this spec; README/workflow
 had no diff and docs\quickstart.md did not exist at the gate. These are document
 checks, not a fresh Go run or independent replay of the proposed page.
+
+## Reader-First Presentation Correction: 2026-11-17
+
+The developer requested removal of unnecessary steps-performed information from
+the quickstart in favor of a new-user experience. Keep the existing technical
+contract, setup commands, fixture, negative exits, isolation and real approval
+boundaries. Present the page as an outcome followed by setup, request, approval
+and verification, using direct instructions instead of a replay narrative.
+
+For requirements 2, 10 and 11, detailed tested-version/source inventories,
+go-run wrapper analysis and replay methodology/limitations remain in the linked
+accepted report and its evidence rather than being repeated inline. Keep the
+Linux/Bash prerequisite boundary, executable negative checks and no production
+claim in the tutorial. Requirement 6 allows clearer prompt wording with the same
+question, exact fixture, expected results, separate process evidence and scope.
+No compatibility or independently validated usability claim is added. This is
+presentation reconciliation for the requested editorial correction, not approval
+of a new installation path or experiment. The existing final-page replay limit
+and implementation acceptance/publication boundaries remain unchanged.
