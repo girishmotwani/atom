@@ -1405,3 +1405,78 @@ Staged validation caught four Markdown hard-break spaces in the then-untracked
 Terra quotation and a new receipt EOF blank line, not covered by the earlier
 unstaged whitespace check. Normalize whitespace only and recheck all staged
 files; preserve every reviewer word, finding and immutable rehearsal recipe.
+
+## Standalone Quickstart Publication Authorized
+
+After accepting the documentation implementation and then "Accept both verified
+documentation fixes", the developer requested "lets ship it" following the scoped
+proposal to commit, push and open a documentation-only PR with its evidence.
+This authorizes publication, not merging, new model spend or a final live replay.
+
+Create independent docs/standalone-expense-quickstart from public main
+5bb33cbe2c835382b5ccda840c5268321b24ac0b in a separate worktree. The older working
+branch lacks main's standalone-review additions: transplant only the approved
+README Try Atom and workflow introduction hunks, preserving all other main text.
+Keep the accepted quickstart content and six standalone brief/preparation/recipe/
+report/spec/review artifacts. Append only scoped records to main's logs rather
+than publish mixed local logs. Preserve and exclude the dirty discovery-helper
+implementation, unrelated experiments, private captures and runtime state.
+
+Use the accepted documentation-validation adaptation: fresh link, LF-byte Bash
+syntax, scoped whitespace/content checks and the existing synthetic shell checks.
+No runtime code, dependency or Go module changes; root atom check and Python/Go
+suites are inapplicable to this slice, not passed. Explicit git/gh publication
+avoids falsely advancing phase state. Phase 09 remains open.
+
+After compaction, isolated-worktree creation and session todo setup preceded the
+required actual instruction-file reload. Reloaded AGENTS, ship and all seven
+references before document/evidence edits; no commit/push or model work preceded
+that reload. Record the ordering lapse rather than treat the summary as a reload.
+
+## Standalone Quickstart Publication Verification
+
+Validation ran in the isolated shipping worktree against the actual selected
+snapshot. The existing relative-link checker exited 0; inline Python checked
+both actual Bash blocks via wsl.exe --distribution Ubuntu --exec bash -n with
+UTF-8 LF input, content identity, all-main-text preservation outside the two
+approved navigation hunks, whitespace/EOF and the exact staged allowlist.
+Captured stdout (the link checker flushed before Python's buffered messages):
+
+```text
+checked 600 relative links across markdown files
+all relative links resolve
+Only approved navigation hunk changed; all other main content preserved: README.md
+Only approved navigation hunk changed; all other main content preserved: docs\workflow.md
+Accepted quickstart and all six evidence artifacts match original content (LF-normalized)
+Quickstart LF-normalized SHA-256: 3d8cff694946a6f05c5551311a7aa66e0271d1c682d5f2c3714eb5b5c053dfb9
+quickstart bash block 1: LF-byte syntax check exit=0
+quickstart bash block 2: LF-byte syntax check exit=0
+All 13 selected files pass trailing-whitespace/EOF checks
+Staged whitespace check exit=0; exact documentation/evidence allowlist: 13 files
+```
+
+Git also warned that quickstart working-copy CRLF will normalize to LF. The digest
+above hashes canonical LF text; the earlier review's raw-byte 57ec287e... digest
+includes working-copy line endings. Normalized text equality was asserted, not
+inferred from mismatched hashes. README/workflow full hashes necessarily differ
+from the older reviewed snapshot because main's unrelated additions are retained.
+
+Ran the existing session-local check_quickstart_shell.py from the shipping root
+with --save quickstart-shell-shipping.json, then --interactive --save
+quickstart-shell-shipping-interactive.json (all paths are inside session files).
+Both invocations exited 0 and each printed exactly:
+
+```text
+PASS existing-destination: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS dangling-symlink: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS missing-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS unresolvable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS nonexecutable-copilot: shell_exit=0; parent survives, diagnostic visible, state unchanged
+PASS prerequisite-failure: shell_exit=0; parent survives, diagnostic visible, state unchanged
+6 passed; 0 failed
+```
+
+The harness and raw JSON stay session-local. These synthetic failures do not run
+installed Copilot/Go/Atom or installers, and do not replay successful setup, model
+behavior or final-page usability. No new model review or Go/Python suite ran.
+The earlier accepted evidence and final-page replay limits remain unchanged.

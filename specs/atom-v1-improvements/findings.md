@@ -334,3 +334,13 @@ installed plugin inventory and named working-installation/default/original-evide
 checks match. Retain the partial candidate; do not retry or patch the installation.
 The accepted bootstrap repair still stands. Recommend scoping its normal publication
 rather than further isolation work; acceptance/shipping/rehearsal remain gated.
+
+## Standalone Quickstart Documentation Accepted For Publication
+
+The [review](phase-09-onboarding-example/quickstart-review.md) retains both original
+model findings and accepted corrections. Synthetic shell failure checks and
+factual/link/syntax/whitespace checks are not independent end-to-end replay or a
+second review of the fixed bytes. The accepted observed technical result remains
+bounded and assisted; final-page navigation and Phase 09 completion remain open.
+Unrelated discovery-helper work and the earlier deferred Windows command-handoff
+risk are not resolved or published by this documentation slice.

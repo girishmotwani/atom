@@ -12,36 +12,15 @@ models.
 
 ## Try Atom
 
-You need GitHub Copilot CLI 1.0.89 or later and Go 1.21 or later. Atom's local tooling
-uses Python 3.10 or later. Install the plugin from your terminal:
+Start with the [standalone Go quickstart](docs/quickstart.md): install isolated
+Atom tools on Ubuntu/Linux, ask for a disposable expense-summary POC, and inspect
+its totals and input failures. No project onboarding or full pipeline is needed.
+The page includes the brief-approval, continue, and report-stop instructions.
 
-```bash
-copilot plugin marketplace add girishmotwani/atom
-copilot plugin install atom@atom
-```
-
-The plugin installs workflow instructions, **not** the Python `atom` and
-`atom-write-artifact` commands. Onboarding reuses healthy tools, including tools
-outside PATH. If system prerequisites are missing, it asks you to supply them.
-Guided installation of missing Atom commands is Linux-only and requires consent;
-other platforms need an agreed isolated setup. Broken or unsafe installations
-are preserved and reported, not silently replaced.
-
-Then open a supported Copilot CLI session in a Go module and run:
-
-```text
-/atom:init
-```
-
-Onboarding runs the Go checks, records the baseline, and adds Atom's workflow files.
-It records a failing baseline too; onboarding success is not a clean bill of health
-for the code. To scope a feature afterward, use the available Atom discover skill
-(`/atom:discover` in the documented command surface). If a command is unknown,
-check the active session's client rather than guessing aliases or reinstalling;
-a skill listing alone does not prove an interactive alias works.
-
-See the [setup and review instructions](#getting-started) for prerequisites and
-options, or the [workflow walkthrough](docs/workflow.md) for what happens next.
+For general prerequisites, installation, and repository onboarding, see
+[Getting started](#getting-started). For a full project, use the
+[workflow walkthrough](docs/workflow.md). The quickstart's observed environment
+and usability limits are stated explicitly; it is not a clean-machine guarantee.
 
 If Atom is useful to you, consider
 [starring the repository](https://github.com/girishmotwani/atom).
