@@ -963,3 +963,20 @@ The Windows printed-executable handoff Minor remains explicitly deferred. Latest
 README correction is locally validated, not independently re-reviewed. No live
 agent/Linux fallback or completed Phase 09 outcome is claimed. Installed refresh,
 new rehearsal and merging remain outside publication authorization.
+
+## Standalone Quickstart Accepted; Final-Page Replay Remains Open
+
+The accepted [quickstart review](quickstart-review.md) records two independent
+reviews: Claude raised a Major shell-isolation issue and Minor permission ambiguity;
+Gemini reported no findings. Both were fixed, boundedly validated and explicitly
+accepted. The original model passes cover the pre-fix snapshot, not an independent
+re-review of the corrections. No quickstart finding is deferred.
+
+The [accepted replay](standalone-quickstart-report.md) confirms the supplied
+expense totals and visible negative exits, but independent recipe navigation is
+Inconclusive because the run was assisted. The final public page has not been
+replayed end to end. Shared CLI cache, existing prerequisites/OS and potentially
+moving marketplace content remain disclosed limits; Phase 09 is not complete.
+The earlier deferred Windows printed-command handoff risk is unchanged and
+outside this documentation PR. No new finding is introduced by preserving main's
+newer standalone-review sections while transplanting only approved hunks.
