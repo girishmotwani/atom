@@ -483,22 +483,16 @@ Open a Copilot CLI session in the repository you want to onboard and type one co
 This starts the workflow; respond to prerequisite and permission questions before
 work continues.
 
-**Starting without `go.mod` is supported by the setup entry guidance.** Atom first
-inspects the repository and recommends the exact module path, necessary files,
-commands, onboarding updates and generated build outputs. You approve that proposal
-before it acts. Missing tools or a PATH change need separate consent.
-Declining leaves the repository unchanged; changing the proposal requires approval
-of the revised setup. Existing modules are preserved.
+`/atom:init` can start without `go.mod`. It proposes the module, files, commands,
+onboarding effects and generated outputs, then waits for approval. Refusal leaves
+the target unchanged; revised proposals need renewed approval.
+For onboarding, both Atom command roles must work before the final proposal or
+setup writes. Go-only setup skips Atom bootstrap, commands and verification.
+Missing tools or PATH changes need separate consent; existing files are preserved.
 
-When onboarding is requested, both existing Atom command roles are verified before
-the final proposal or any setup writes. Go-only setup without onboarding skips
-Atom bootstrap, commands and onboarding-only verification.
-
-Module-only setup is valid, but its checks may fail because there are no packages.
-Atom must report "setup created" separately from "application verified", not add
-unapproved source to make checks green. A setup-only request does not automatically
-start discovery, feature development or shipping.
-See the [bounded Windows setup evidence and its limits](specs/atom-v1-improvements/phase-04-entry-points/setup-evidence.md).
+Module-only setup may finish with failing no-package checks. Atom reports setup
+separately from application readiness, adds no unapproved source, and stops after
+setup-only requests. See the [setup contract and evidence limits](specs/atom-v1-improvements/phase-04-entry-points/design-spec.md).
 
 **What you will be asked to approve.** Read-only discovery can still require normal
 command approval. Atom checks availability before invoking tools. Missing system
@@ -571,58 +565,45 @@ or upgraded the local bundle.
 
 ### Installing and updating as Atom evolves
 
-For normal use, install from the GitHub-backed marketplace shown above. Copilot
-manages the downloaded plugin files; you do not need a separate Atom checkout.
-Skills resolve their references within that plugin installation. After onboarding,
-the target repository has its own instruction bundle under `.atom/atom/`.
-
-**Do not assume every installation is a snapshot.** A local-directory marketplace
-can load directly from its source checkout. The current CLI labels this mode
-`Live Plugins (loaded from a local marketplace directory, never copied)`.
-Inspect both the installation and its source:
-
-```bash
-copilot plugin list
-copilot plugin marketplace list
-```
-
-For a GitHub-backed marketplace installation, update explicitly:
+Installing copies Atom into `~/.copilot/installed-plugins/atom/atom`. That copy is a
+**snapshot, not a live link** — it has no `.git` inside it and does not track the source.
+New bits never arrive on their own, so this is the command that matters:
 
 ```bash
 copilot plugin update atom@atom         # one plugin
 copilot plugin update --all             # everything installed
 ```
 
-The source determines what you are testing:
+**Know what you are updating *from* before you run it.** A plugin updates from the
+marketplace it was installed from, which is not necessarily the copy you are editing:
 
-| Purpose | Installation source | Evidence boundary |
-|---|---|---|
-| **Using** Atom | `girishmotwani/atom` on GitHub | Published plugin, no separate source checkout required |
-| **Developing** Atom | Local-directory marketplace | Can be live; does not prove installed-user behavior |
-| **Testing an unpublished installed preview** | Cached plugin copy and non-editable CLI wheel | Tests installed files without runtime checkout dependence, not GitHub download behavior |
-
-To develop against your own clone, register its **absolute** path (a relative path
-is parsed as `owner/repo`). For example, on Windows:
-
-```powershell
-copilot plugin marketplace add "C:\path\to\atom"
-copilot plugin install atom@atom
+```bash
+copilot plugin marketplace list
 ```
 
-For an unpublished installed preview, the current CLI supports copying a local
-plugin through `copilot plugin install "C:\path\to\atom"`. Direct installs are
-deprecated, so this is a bounded preview-testing route, not the normal-user
-installation recommendation. Remove the duplicate live registration before trials
-and verify that `copilot plugin list` shows only the installed Atom plugin.
-Also install the CLI from a non-editable wheel: an editable Python install still
-depends on the checkout even when the plugin is cached. Reinstall preview packages
-after changing their source; do not expect cached files to update automatically.
+That distinction gives two different workflows:
 
-Use fresh sessions for installed-user trials and record the actual loaded skill
-root and reference reads. A development installation is not a substitute for that
-evidence. Earlier `--plugin-dir` trials also exposed missing-plugin sessions;
-see [the routing POC](poc/atom-routing-rules/results.md). Do not generalize its
-results to a different CLI version or loading mode.
+| You are | Marketplace points at | To get new bits |
+|---|---|---|
+| **Using** Atom | `girishmotwani/atom` on GitHub | `copilot plugin update atom@atom` |
+| **Developing** Atom | your local clone | same command — no push required |
+
+To develop against your own clone, point the marketplace at it with an **absolute** path
+(a relative path is parsed as `owner/repo`) and reinstall:
+
+```bash
+copilot plugin marketplace add /absolute/path/to/atom
+copilot plugin update atom@atom
+```
+
+Because the marketplace is a local directory, this picks up committed changes without
+pushing anything.
+
+> **Do not develop with `--plugin-dir`.** Live-loading from a directory silently fails to
+> load the plugin in some sessions, which is exactly how this README once reported a
+> bogus 33% routing figure — two thirds of those "failures" were sessions with no Atom
+> loaded at all. Installed properly the problem disappears. The evidence is in
+> [the routing POC](poc/atom-routing-rules/results.md).
 
 When publishing a change for other people, bump the version in **both** `plugin.json` and
 `.github/plugin/marketplace.json` — they must agree — and push before asking anyone to
