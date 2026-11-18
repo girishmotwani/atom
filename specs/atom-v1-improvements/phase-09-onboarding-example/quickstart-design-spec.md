@@ -84,9 +84,12 @@ the quickstart; that is an editorial bound, not a measured usability threshold.
    separate process-exit evidence, one disposable POC and the report stop boundary.
    It does not prewrite Go source/tests or ask for init/start/build or project state.
 7. Explain that a POC invocation may first use discovery solely to prepare its brief.
-   Read that brief and approve only if it matches; then give the explicit observed
-   continuation request in the same session: proceed with the approved brief,
-   scaffold/write/execute the POC, capture evidence and stop at its report gate.
+   Read that brief and explicitly approve only if it matches. If execution starts
+   after approval, let it proceed without another message. Only when the brief is
+   approved, execution has not started, and Copilot has stopped awaiting the next
+   instruction with no running work or unresolved permission/error/scope prompt,
+   send the existing continuation request once in the same session. Preserve the
+   request unchanged and the report approval gate; it is not error recovery.
 8. Distinguish tool-permission prompts from artifact gates. Approve only understood
    displayed actions; no all-tools, unrestricted-path or persistent approval is
    required. Read/accept or reject the report explicitly; acceptance does not start
@@ -103,9 +106,13 @@ the quickstart; that is an editorial bound, not a measured usability threshold.
     four-minute setup, fewer prompts, newcomer usability, production readiness,
     clean-machine installation, universal model adherence or all-version support.
     Link the accepted report for provenance rather than copy private recordings.
-12. Ship only the three documentation edits and existing artifact logs. A worked
-    example means the observed request, fixture, commands, outputs and failure
-    boundaries; no spike source is promoted to production or newly packaged here.
+12. The original delivery covers only the three documentation edits and existing
+    artifact logs. The separately approved approval-flow correction changes only
+    quickstart step 3 and its evidence link, publishes the accepted validation
+    report and reconciles the named phase artifacts; README/workflow stay unchanged.
+    A worked example means the observed request, fixture, commands, outputs and
+    failure boundaries; no spike source is promoted to production or newly packaged
+    here. Implementation approval is not commit, push or publication approval.
 
 ## Failure And Stop Handling
 
@@ -138,7 +145,7 @@ for later production work; this spec adds no new route or workflow-policy change
 | Separate compact page plus small navigation edits | Avoid another onboarding manual or conflicting repeated setup recipes |
 | Keep fresh profile/venv semantics; remove private harness paths and recording machinery | Reuse the proven install boundary without shipping a research harness as the tutorial |
 | Keep the existing POC entry and both artifact gates | The observed path already works without phases; no Phase 04 router implementation is needed |
-| Include explicit continuation wording | Addresses the observed gate-navigation assistance without claiming it was already independently proven |
+| Keep explicit continuation wording only for an approved, not-started session awaiting instruction | The accepted recovered run started on approval; a conditional fallback avoids duplicate input without assuming every client automatically continues |
 | Preserve limitations rather than run another experiment now | The developer approved bounded evidence reuse for documentation, not another model/install attempt |
 
 ## Validation And Gate
@@ -199,3 +206,20 @@ No compatibility or independently validated usability claim is added. This is
 presentation reconciliation for the requested editorial correction, not approval
 of a new installation path or experiment. The existing final-page replay limit
 and implementation acceptance/publication boundaries remain unchanged.
+
+## Approved Approval-Flow Reconciliation: 2026-11-18
+
+The separately [approved correction](quickstart-approval-flow-spec.md) supersedes
+requirement 7's mandatory second instruction and the affected continuation and
+artifact-delivery statements above. Historical approval records and the original
+three-document delivery remain unchanged. The current quickstart links the
+[accepted recovered technical validation](quickstart-final-validation.md), not
+only the older assisted replay. No other reader requirement or command changes.
+
+The observed run obtained actual brief/report approval and succeeded technically
+after a requested terminal restart; uninterrupted navigation remains Inconclusive.
+Conditional wording is factual documentation guidance, not proof of improved
+clarity, universal automatic continuation, newcomer usability or phase completion.
+The original evidence remains within its recorded limits. This correction uses
+named reader-state review, exact published command/request-block preservation,
+existing link checks and scoped whitespace validation, not fresh runtime tests.

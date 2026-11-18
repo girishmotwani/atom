@@ -1049,3 +1049,165 @@ change, with the original safe setup and rerun blocks unchanged; spec/log change
 retain its acceptance and evidence. No new in-scope finding. The earlier inherited
 continuation-test CI failure and independent final-page replay gap remain open.
 This publication does not simplify the setup script or complete Phase 09.
+
+## Published-Page Validation Blocked At Host Prerequisite: 2026-11-17
+
+The developer authorized validation after #27 merged. Read-only preflight of the
+published 149-line page found Ubuntu PATH selects Copilot CLI 0.0.403, below the
+README's >= 1.0.89 requirement. The documented trial destination is absent; Go
+1.22.2, Python 3.12.3/venv and Git 2.43.0 are available. An existing alternate
+client was verified as 1.0.107, but selecting it needs the operator's decision.
+No installation, model session or full replay has run. This is an environment
+blocker, not a proved quickstart defect or justification for script shortening.
+Exact commands, outputs, frozen page identity and remaining criteria are in
+quickstart-final-validation.md. Independent human navigation remains unproven.
+
+The operator subsequently approved reuse of existing Copilot 1.0.107 in the trial
+process only. The prerequisite-selection decision is resolved; replay remains
+unexecuted. No unsupported-client product failure or Phase 09 completion is claimed.
+
+## Published Replay Terminal Interrupted Before POC: 2026-11-17
+
+The developer reported that the terminal crashed and explicitly requested restart.
+The recorder exited 0, installation is present, and the workspace is still empty.
+No Go result or generated artifact approval occurred. The reason for the terminal
+closing is not established; do not label it an Atom failure or a successful replay.
+Retain the first recording and distinguish an explicitly requested continuation
+from the original uninterrupted path. Reopen only the installed trial, without
+reinstallation, and keep the replacement console visible if Copilot exits.
+
+## Recovered Published Example Succeeds; Navigation Limits Remain: 2026-11-17
+
+Independent saved-evidence audit confirms the exact fixture, Atom vet/build/run,
+direct exits 0/1/1, visible errors/no failure totals and genuinely recorded human
+brief/report approvals. Public plugin files match main 8cf34fa; Python tooling
+matches the documented 5bb33cbe pin. No project initialization or production
+lifecycle was needed. No new installation or Go/model execution was done to audit.
+
+The literal step-3 continuation was not used: the installed skill continued on the
+in-tool brief approval. That preserves the human decision but differs from the
+page's wording. The baseline-no-module and unsupported atom --version probes add
+noise without blocking the result. Neither establishes urgent setup-shortening
+work. Preserve the unexplained first terminal interruption; recovered success
+is not an uninterrupted or unaided-newcomer confirmation. Active time and the
+operator-observed cap cannot be inferred from displayed wall-clock durations.
+
+The client is still open; final recorder exit/after-state verification is pending.
+At audit, plugin and selected existing-file fingerprints match their before-state.
+Full evidence and limits are in quickstart-final-validation.md; do not auto-close
+Phase 09 or publish the trial's raw recordings/session data.
+
+## Final Recorder Closure Verified: 2026-11-17
+
+The remaining close check passed: restarted client/recorder exit 0, all 665 plugin
+hashes unchanged, selected existing fingerprints unchanged, and saved workspace
+hashes identical to the accepted audit. The approved report and both recordings
+persist; no root initialization or extra execution was introduced. The pending
+final-process-check item is resolved. Keep the unexplained initial interruption,
+unused literal continuation, unmeasured active time and newcomer/clean-OS limits
+explicit; none is silently converted into a phase-complete or urgent-installer claim.
+
+## Approval-Flow Documentation Correction Spec Drafted: 2026-11-17
+
+The accepted replay exposes one concrete wording mismatch: quickstart step 3
+requires a separate continuation after approval, but this run began execution on
+actual in-tool approval. It did not bypass the gate. The revised wording's reader
+clarity and other clients' behavior are unproven; preserve the existing message
+as a conditional fallback, not an automatic-continuation guarantee. No new finding
+or technical defect beyond the already recorded mismatch. The current report
+can be linked without moving audit narration back into the reader path.
+
+quickstart-approval-flow-spec.md drafts that bounded change and factual checks.
+Original phase poc-report.md and uninterrupted-run verdicts remain Inconclusive.
+The public page, original approved spec and trial evidence are unchanged at this
+design gate. Setup redesign, runtime work and Phase 09 closure remain out of scope.
+
+## Approval-Flow Documentation Correction Implemented: 2026-11-18
+
+The approved quickstart wording now requires explicit brief approval, lets an
+already-started execution proceed without a duplicate message, and offers the
+unchanged fallback once only before execution when the approved session is
+stopped awaiting instruction. Thinking/running tools and unresolved permission,
+writer-refusal, error or scope-change requests are not fallback triggers. The
+existing evidence link now targets quickstart-final-validation.md. Original-spec
+reconciliation preserves the historical approvals and other reader requirements.
+
+No new unresolved in-scope finding from factual review. The accepted technical
+result remains recovered-after-restart, not uninterrupted/newcomer proof; revised
+wording clarity and universal client/model behavior are unmeasured. Phase 09 stays
+open. Implementation verification/acceptance is not a new reviewer-model batch,
+publication approval or permission to change setup/runtime/reviewer defaults.
+An extra final newline introduced in decisions.md was caught by validation and
+corrected through the artifact writer; retain the exact check and failure record.
+
+## Approval-Flow Documentation Checks Passed; Acceptance Pending: 2026-11-18
+
+All 606 relative links resolve, all six published fenced blocks are unchanged,
+the page differs only in the approved conditional instruction and evidence link,
+and the six-file whitespace/EOF plus scoped diff checks pass. Original navigation
+files are unchanged. Exact output and the corrected initial artifact-newline
+failure are in decisions.md. No unresolved in-scope finding; recovered-run,
+unmeasured clarity/newcomer and still-open Phase 09 limits remain. Developer
+implementation acceptance is pending; no fresh review batch or replay occurred.
+
+## Approval-Flow Documentation Implementation Accepted: 2026-11-18
+
+The developer accepted the bounded documentation implementation only. This
+supersedes its pending-acceptance status above. No unresolved in-scope finding.
+Conditional-wording clarity and universal client/model behavior remain unmeasured;
+the accepted recovered result is not uninterrupted/newcomer proof. Phase 09 stays
+open; no publication, new reviewer batch or replay follows from this acceptance.
+
+## Approval-Flow Documentation Review Approved, Not Launched: 2026-11-18
+
+Exactly one Claude Opus 5.5 and one GPT-5.3 Codex independent read-only pass are
+approved for the accepted correction and named spec/report context. No reviewer
+has launched; there is no new review finding or clean-review result. Preserve
+recovered-after-restart, uninterrupted/newcomer and unmeasured wording-clarity
+limits. Exact scope, source hashes and spend/side-effect bounds are in decisions.md.
+No default-model change, source fix, phase completion or publication is authorized.
+
+## Approval-Flow Independent Reviews Running: 2026-11-18
+
+Both approved independent reviewers have launched against the unchanged approved
+four-file snapshot after fresh documentation preflight passed. Results remain
+pending; no review finding, complete multi-model result or clean-review verdict
+exists yet. Exact agent IDs and actual check output are recorded in decisions.md.
+No reviewer default, source/skill/runtime, trial environment or phase state changed.
+
+## Approval-Flow Two-Model Review Complete: No Findings: 2026-11-18
+
+No findings. Claude Opus 5.5 and GPT-5.3 Codex each completed their approved
+independent pass of the four scoped documents and reported no actionable issue.
+All reviewed source identities remain unchanged. No issue was deferred, rejected
+or fixed; no partial/unavailable reviewer was represented as a clean result.
+See quickstart-approval-flow-review.md for actual responses and participation.
+
+Review acceptance is pending. Recovered-after-restart technical success remains
+bounded; uninterrupted/newcomer/clarity and universal-client behavior are not
+proved. Phase 09 remains open. No additional review spend, replay, default-model
+change, source fix or publication is authorized by this completed review alone.
+
+## Completed Approval-Flow Review Accepted: 2026-11-18
+
+Developer accepted the completed two-model review only, superseding pending-review
+acceptance above. No findings. Recovered-after-restart, uninterrupted/newcomer
+and unmeasured wording/client-behavior limits remain; Phase 09 stays open. No
+publication, new experiment, source fix or additional reviewer work is authorized.
+
+## Accepted Documentation Slice Authorized For PR: 2026-11-18
+
+The developer explicitly authorized commit, push and a PR against main, without
+merge. No unresolved finding in this seven-file documentation slice. Main's
+intervening setup changes have no overlapping paths; no unrelated onboarding
+work is included. Preserve all earlier recovery/uninterrupted/newcomer and
+runtime-validation limits. This ships a bounded correction and accepted evidence,
+not Phase 09 completion, default-model replacement or a production/runtime fix.
+
+## Pre-Existing CI Is Not Green: 2026-11-18
+
+Current main run 44303341919 and frozen-base run 44118536323 both failed existing
+CLI Test jobs before this documentation commit. Causes are not established here;
+no runtime fix or fresh runtime-suite success is claimed. Disclose the baseline
+in the PR and preserve later branch CI independently. The approved scope stays
+seven Markdown files with documentation-only validation; Phase 09 remains open.
