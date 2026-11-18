@@ -483,6 +483,17 @@ Open a Copilot CLI session in the repository you want to onboard and type one co
 This starts the workflow; respond to prerequisite and permission questions before
 work continues.
 
+`/atom:init` can start without `go.mod`. It proposes the module, files, commands,
+onboarding effects and generated outputs, then waits for approval. Refusal leaves
+the target unchanged; revised proposals need renewed approval.
+For onboarding, both Atom command roles must work before the final proposal or
+setup writes. Go-only setup skips Atom bootstrap, commands and verification.
+Missing tools or PATH changes need separate consent; existing files are preserved.
+
+Module-only setup may finish with failing no-package checks. Atom reports setup
+separately from application readiness, adds no unapproved source, and stops after
+setup-only requests. See the [setup contract and evidence limits](specs/atom-v1-improvements/phase-04-entry-points/design-spec.md).
+
 **What you will be asked to approve.** Read-only discovery can still require normal
 command approval. Atom checks availability before invoking tools. Missing system
 prerequisites receive an explanation and a request to supply them. Only confirmed
@@ -612,6 +623,9 @@ Missing system prerequisites are yours to supply; the guided Atom installation
 recipe is Linux-only and requires consent. Other platforms need an agreed
 isolated setup. Broken or unsafe installations are reported and left unchanged;
 installation is not automatic.
+
+`/atom:start` can recommend approved repository setup when that is your goal; it
+does not silently scaffold every repository it encounters.
 
 For a new feature, use the available Atom discover skill to scope what you want:
 

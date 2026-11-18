@@ -72,7 +72,10 @@ routinely changes phase N+1's design — running them in parallel discards that.
 
 ## Step 0 — Set up
 
-1. Run `/atom:init` if `.atom/` is absent.
+1. If setup is needed, follow [repository-setup.md](../atom/references/repository-setup.md)
+   and `/atom:init`: recommend required module/scaffold/onboarding changes and obtain
+   approval before executing them. An existing `go.mod` is not an entry prerequisite.
+   Setup approval never authorizes the next proof/design step; retain its gate.
 2. Work on a branch, not on `main`.
 3. Create `specs/{project}/` with `findings.md` and `decisions.md`, both from their
    templates, both populated with their explicit empty statement.

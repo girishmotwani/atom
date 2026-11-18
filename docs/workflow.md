@@ -79,11 +79,27 @@ sentence at the start.
 
 ### 0. Setup
 
-`/atom:init` onboards the repository: detects your Go toolchain, creates `.atom/`, and
+`/atom:init` accepts a new Go repository without `go.mod`. It first follows the
+[shared setup guidance](../skills/atom/references/repository-setup.md): inspect,
+recommend the module/files/commands and onboarding effects, then wait for approval.
+It creates only approved scaffolding before running existing onboarding. Refusal
+leaves the target unchanged; changed proposals need renewed approval.
+When onboarding is requested, inspection first verifies working forms for both
+Atom command roles before the final proposal or any setup writes. Missing tools
+need separate consent. Go-only setup skips Atom prerequisites, onboarding and its
+file-verification/completion requirements.
+
+Onboarding detects your Go toolchain, creates `.atom/`, and
 records the baseline before changing anything. It runs `atom check --no-race` on the
 **untouched** tree, skipping race detection only for this initial baseline; this keeps
 a pre-existing failure from being mistaken for one the pipeline caused. Final
 verification still uses full `atom check` with race detection.
+
+For new setup, "untouched" means the approved module/scaffold before Atom writes
+its own files. Disclose generated build outputs in the proposal. Module-only
+no-package failures are not permission to add source or claim application readiness.
+Setup-only ends after the result, regardless of CLI-printed suggestions. These are
+agent instructions, not runtime approval enforcement.
 
 Work happens on a branch, not on `main`.
 

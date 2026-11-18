@@ -174,7 +174,9 @@ def test_init_skill_delegates_baseline_and_scaffold_to_one_cli_command() -> None
 @pytest.mark.parametrize(
     "reference",
     (
+        Path("skills") / "atom" / "references" / "repository-setup.md",
         Path("skills") / "atom" / "references" / "standalone-review.md",
+        Path("skills") / "init" / "SKILL.md",
         Path("skills") / "review" / "SKILL.md",
     ),
 )
