@@ -1646,3 +1646,451 @@ The raw accepted-page hash was also asserted. Git reports expected CRLF-to-LF
 normalization for the page; no content change. Keep session-only JSON captures
 outside the PR. These checks do not claim a new installation, live Go/model replay,
 independent review of the rewrite, production suite or newcomer usability result.
+
+## Exact Published-Path Validation Approved; Prerequisite Gate: 2026-11-17
+
+Developer said "agree, lets run the validation" after the distinction between
+unproven setup-friction urgency and missing final-path replay evidence. Validate
+the published page, not a shortened installer or another parser-only spike.
+Reuse the independent expected fixture/results and existing approved boundaries;
+do not reuse old execution output as a new replay. No production spec/TDD change,
+extra review batch, prerequisite update, authentication change or publication is
+authorized. An agent-operated run cannot prove unaided newcomer usability.
+
+Freeze main 8cf34fa3d75c97c3688b0966efea87d7457e58c0 on the independent local
+docs/quickstart-final-replay evidence branch; leave the mixed root worktree alone.
+The exact accepted page is preserved. Read-only prerequisite checks found ordinary
+Ubuntu PATH resolves the older Copilot 0.0.403, below documented >= 1.0.89.
+Stop before the first installation or model launch. Actual environment-topic help
+for the existing alternate 1.0.107 documents the needed profile/CLI-update controls;
+the top-level-help omission is not a control-support verdict.
+
+Recommend selecting that existing supported executable only in the trial process's
+PATH, without changing the guide, installing/updating tools or changing global
+settings. The alternative is to stop until a supported client is supplied. Ask
+for that choice and end this gate turn; no automatic client switch or replay.
+The current outcome is preflight-blocked/Inconclusive, not a product failure.
+
+## Trial-Only Existing Client Selection Approved: 2026-11-17
+
+Developer selected exactly use-existing-supported-client in response to the
+prerequisite gate. Reuse existing Copilot 1.0.107 only through the trial process's
+PATH. No prerequisite installation/update, global PATH change or authentication
+change is authorized. The published commands remain unchanged. Record the choice
+and end this gate turn without switching clients, installing Atom or launching a
+model session. The scoped validation can resume under this approved prerequisite.
+
+## Resume Approved Published-Page Replay: 2026-11-17
+
+Developer said "lets start then" after the prerequisite-selection approval. The
+frozen page and client hashes are unchanged; both proposed new Linux directories
+remain absent. Use the approved trial-only client PATH and exact setup block in a
+separate recorded Ubuntu terminal. The operator, not this assistant or automation,
+submits the published request and makes each real artifact/permission decision.
+Keep the recipe unchanged and record installed public identities and actual results.
+
+The Python-only launcher/recorder is session-local observation infrastructure,
+not an Atom installer, public setup rewrite or production change. It creates a
+separate private evidence directory before executing the unmodified setup; it does
+not precreate the trial destination or workspace. Its outer shell does not read
+shell profiles. Preserve existing CLI/cache/global settings and disclose shared
+cache and selected-file-only fingerprint limits. No automatic gate responses,
+model override, retry, unrelated fix, commit, push or publication is authorized.
+
+## Recorded Published Setup Actually Started: 2026-11-17
+
+Launched one recorded Ubuntu console with the existing approved client in child-only
+PATH and verified its live process plus nonempty recording. The exact frozen setup
+created the new trial/profile; installation was in progress at the initial check.
+No automatic model prompt or approval was sent. Leave the observation process
+available across turns for the operator's real interactive session, then inspect
+its exit and retained evidence. No successful replay verdict is claimed yet.
+
+## Explicit Terminal Restart, Not Automatic Experiment Retry: 2026-11-17
+
+Developer said "that terminal crashed.. need to restasrt". Read-only evidence shows
+first setup/session exit 0, installed Atom and an empty workspace, not a proved
+crash cause. Honor this explicit recovery request by reopening the same client,
+profile and workspace under the already approved trial-only environment. Do not
+rerun the setup block against its now-existing guarded destination or delete any
+trial/evidence. Preserve the interrupted run and record a separate restart.
+
+The session-local Python observer now keeps the console open after exit and records
+plugin hashes around this restart. This changes observation/recovery transport,
+not the public guide, installed skill, model or permission/approval requirements.
+Do not treat a recovered technical result as an uninterrupted independent replay.
+No additional model agent, source repair, prerequisite update or publication.
+
+## Grade Saved Replay Evidence Without Repair Or Rerun: 2026-11-17
+
+Operator supplied the final approved POC transcript. Audit actual fixtures, raw
+stage/direct captures, report accuracy, installed public identities and human-
+response events, without rerunning the POC or editing its saved evidence. The
+three-case technical result is Confirmed after explicit recovery; uninterrupted
+published-path navigation stays Inconclusive. Do not promote the child report's
+approval into approval of this outer validation, Phase 09 completion or publication.
+
+The first event-order audit attempted regex matching over serialized arguments
+and failed its scaffold/edit-presence assertion. Inspection confirmed the actual
+structured command and patch arguments; the corrected audit matches those fields
+directly and preserves the same strict approval-before-code/report-after-code
+assertion. It passes. No POC code, test, expected output or gate was changed to
+repair this observation parser. A private audit receipt preserves the result.
+
+Record the absent literal continuation, actual in-tool brief approval, harmless
+baseline/version probes, 18 permission events and limited hash comparisons rather
+than claim exact interaction, fewer clicks, timing, global-permission guarantees
+or a defect-free uninterrupted experience. The client remains open; final exit
+and after-state verification are pending. Keep the report/result acceptance gate
+and propose no automatic installer change, retry, public edit or next phase.
+
+## Outer Validation Result Accepted With Limits: 2026-11-17
+
+Developer selected exactly accept-bounded-technical-result at the outer evidence
+gate. Accept the recovered technical result and documented limitations while
+keeping Phase 09 open. This is separate from the trial POC report approval.
+No automatic retry, setup simplification, guide edit, phase advancement or
+publication follows. Normal client/held-console closure and final after-state
+verification are the remaining observation task, not a new experiment.
+
+## Complete The Accepted Validation After Final Closure: 2026-11-17
+
+After normal client/console exit, verify the final recorder receipt and after-state
+hashes without new model/Go work. The check passed and a private final-close audit
+receipt was saved. The developer's prior accept-bounded-technical-result decision
+now has its outstanding close-check condition satisfied. Mark only this bounded
+validation task complete. Preserve the accepted limitations and keep Phase 09 open;
+there is no new approval to edit documentation, shorten setup, rerun, commit or push.
+
+## Specify Only The Observed Approval-Flow Documentation Correction: 2026-11-17
+
+The developer explicitly invoked /atom:spec with the bounded documentation-change
+argument using accepted replay evidence. Use the already accepted technical result
+and genuine approval observations, with their restart/newcomer limitations, plus
+normal factual documentation checks. This is not a new experiment or a regrading
+of the original Inconclusive phase report. No unapproved production work is implied.
+
+Use quickstart-approval-flow-spec.md rather than a new generic phase design-spec.md:
+this phase already has several scoped repair/documentation specs, and a generic
+final design would misrepresent the still-open whole-phase evidence boundary.
+Keep the original quickstart-design-spec.md unchanged at this gate; approval of
+the new correction will authorize reconciling its requirement 7, continuation
+trade-off and affected delivery scope, without rewriting historical approvals.
+
+Choose conditional use of the existing continuation message, not mandatory duplicate
+input or universal automatic continuation. Point the existing evidence link to the
+current accepted validation report. Preserve all code/command/request blocks and
+all permission/approval/stop requirements. Record improved readability as an
+assumption, not a measured result. No API/types, runtime errors or concurrency are
+introduced, so Go-specific declarations/tests are inapplicable. Review named
+reader states, link resolution, exact block preservation and the scoped diff.
+
+Publish no raw terminal/session data or trial code. The eventual correction stays
+within the quickstart and phase Markdown artifacts; README/workflow, tooling,
+skills, setup behavior, tests, dependencies and runtime files are unchanged.
+Drafting is not implementation approval: present the artifact and stop at one
+specific design-approval question. No quickstart edit, new model, replay or push.
+
+## Approval-Flow Spec Preparation Checks: 2026-11-17
+
+The new spec was read end to end. Seven requirements separately cover actual
+approval, running versus not-yet-started/waiting, error/tool prompts, report stop,
+evidence linkage/privacy and unchanged blocks. Tighten fallback eligibility to
+execution not yet started so completed work cannot trigger duplicate execution.
+No code signature is introduced, and no diagram is needed for this prose branch.
+
+Fresh existing link-checker output:
+
+```text
+checked 604 relative links across markdown files
+all relative links resolve
+```
+
+Scoped git diff --check and all four local artifacts' whitespace/EOF checks passed.
+The public quickstart still has its frozen accepted content; the original approved
+spec is unchanged. No production/source, skill, test or dependency edit occurred.
+These are spec/document checks, not a new replay or implementation. Present this
+exact draft for approval and stop before spending implementation/review work.
+
+## Approval-Flow Documentation Spec Approved: 2026-11-17
+
+Developer selected exactly approve-bounded-documentation-spec. Accept the seven
+reader requirements, conditional pre-execution fallback, evidence-link update,
+original-spec reconciliation and documentation-only validation. This authorizes
+implementation of this exact bounded correction, not another experiment, installer
+change, runtime/test edit, phase closure or publication. Record approval and stop
+this design-gate turn before editing the public quickstart or original spec.
+
+## Resuming Approved Approval-Flow Documentation Implementation: 2026-11-18
+
+The developer requested continuation after the terminal closed. Recovered the
+prior conversation's explicit approve-bounded-documentation-spec selection and
+its seven-requirement spec in the separate docs/quickstart-final-replay worktree.
+The original checkout has unrelated uncommitted onboarding work; leave it intact.
+Use the already approved recovered technical evidence and documentation-only
+BUILD adaptation: factual checks, exact published-block comparison, existing
+link validation and scoped whitespace checks. No new Go spike, RED/GREEN claim,
+installation, runtime/test change, model batch, commit, push or phase closure.
+The review-model replacement discussion is parked, not implemented.
+
+### Requirement-To-Validation Plan
+
+| Requirement | Check before the implementation gate |
+|---|---|
+| 1 | Unapproved brief requires inspection/correction and explicit approval; continuation and tool permission cannot replace it. |
+| 2 | Approved/running reader state explicitly needs no second message. |
+| 3 | Only approved, not-started, stopped/awaiting-next-instruction state offers the existing fallback once, in the same session. |
+| 4 | Thinking, tools, permission/error prompts, writer refusal and scope changes are not fallback triggers; existing stop behavior remains. |
+| 5 | Report inspection and explicit acceptance/rejection still end the standalone task, not start production work. |
+| 6 | Existing evidence link targets accepted quickstart-final-validation.md; restart/Inconclusive/newcomer limits persist with no raw evidence publication. |
+| 7 | Compare both Bash blocks and initial request/continuation blocks exactly with published 8cf34fa; verify unrelated public text and files remain unchanged. |
+
+Reconcile only original-spec requirement 7, continuation trade-off and affected
+delivery/evidence statements under the approved correction. Preserve historical
+approvals and report chronology. No Go API, concurrency, error-value or unit-test
+cases apply to this prose change; no existing test is removed or weakened.
+
+## Approval-Flow Correction Implemented; Validation In Progress: 2026-11-18
+
+Implemented only the approved step-3 branch and evidence-link change in the
+quickstart. Reconciled original-spec requirement 7, continuation trade-off and
+affected artifact/evidence scope while preserving historical approvals. The
+accepted recovered report was already present and is retained unchanged for
+publication review. All six fenced blocks match frozen published main exactly;
+README/workflow are unchanged. No new model/replay/Go work or review batch ran.
+
+Factual review against all seven requirements: (1) brief inspection/correction and
+explicit approval precede execution; tool permission remains distinct; (2) running
+after approval needs no message; (3) fallback is once, same-session, only approved,
+not-started and stopped awaiting instruction; (4) thinking, tools, permission,
+writer-refusal, error and scope requests explicitly exclude fallback; (5) existing
+report acceptance/rejection and task-end boundaries are unchanged; (6) the existing
+link now reaches the accepted recovered report, preserving restart/Inconclusive
+and open-phase limitations without raw recordings; (7) all published blocks are
+identical and the remaining public page is unchanged. This is a factual text
+review, not proof that future models obey it or readers find it clearer.
+
+The first validation run reported 606 resolving links and passed block, public
+scope, README/workflow and report-limit assertions, then correctly failed its
+single-final-newline assertion for decisions.md. My initial appended record had
+included two terminal newlines. Remove that duplicate framing newline through
+the same artifact writer; keep the assertion and rerun validation. No test was
+weakened, expected value altered or content failure hidden. The original six-file
+check includes untracked report/spec files that git diff --check alone omits.
+
+## Approval-Flow Documentation Validation Passed: 2026-11-18
+
+Command: python tools\check_links.py, followed by the inline Python exact-block,
+scoped-page-delta, evidence-target, unchanged-navigation, six-file whitespace/EOF
+and scoped git diff --check validation described above. Actual stdout:
+
+```text
+checked 606 relative links across markdown files
+all relative links resolve
+PASS: all 6 published fenced blocks preserved exactly (2 Bash, initial request, continuation, outputs)
+PASS: public-page delta is only conditional step-3 instructions and validation-notes target
+PASS: README and workflow unchanged
+PASS: linked report retains accepted recovered verdict, final-close audit and open-phase limits
+PASS: whitespace and single final newline for 6 documentation/artifact files
+PASS: scoped git diff --check (exit 0)
+Quickstart LF-normalized SHA-256: fb1819f51636d9044ebf29e668af7bf8099b1702f97fe471b5e1d8ab1759f887
+No setup, Go, model or example commands executed.
+```
+
+Exit 0. Git additionally warned that working-copy docs/quickstart.md CRLF will
+normalize to LF; all text/block comparisons deliberately normalize native line
+endings, preserving the published command content. Read the actual public-page
+and original-spec diff after the checks. No shell command block was edited or
+executed; no fresh Bash/runtime/model/usability validation is claimed.
+
+The approved seven-requirement contract is implemented without a scope change.
+The only spec reconciliation is the separately approved conditional continuation
+and affected delivery/evidence statements. No new unresolved in-scope finding.
+Present implementation and evidence for developer acceptance, then stop; no
+new model batch, publication, phase closure, commit, push or merge is authorized.
+
+## Approval-Flow Documentation Implementation Accepted: 2026-11-18
+
+The developer selected exactly "Accept documentation implementation only" after
+reviewing the conditional continuation correction, current evidence link,
+original-spec reconciliation, 606 resolving links, six preserved fenced blocks,
+scoped/whitespace checks and retained replay/reviewer limits. Accept only this
+bounded documentation implementation. No additional review/model batch, replay,
+phase closure, commit, push, PR or merge is authorized. End this gate turn without
+starting the next step. The review-model replacement remains parked.
+
+## Bounded Approval-Flow Documentation Review Approved: 2026-11-18
+
+The developer requested "lets proceed" after accepting the documentation
+implementation, then selected exactly "Approve two reviews with Claude Opus 5.5 +
+GPT-5.3 Codex" at the explicit review-spend gate. Authorize exactly two independent
+read-only task-agent passes, one claude-opus-5.5 and one gpt-5.3-codex, concurrency
+two, roughly several minutes of model work. Both differ from GPT-6.1 Sol, the
+author. No availability probes, retries, nested agents or automatic substitutions.
+This batch selection does not change Atom's defaults; model replacement is parked.
+
+Target is this docs/quickstart-final-replay worktree: docs/quickstart.md working
+diff against published 8cf34fa with its full context, reconciled
+quickstart-design-spec.md, added quickstart-approval-flow-spec.md and accepted
+quickstart-final-validation.md. Supply identical evidence independently without
+sharing either reviewer's output. Review approval/stop boundaries, contract and
+factual consistency, scope preservation and honest recovery/evidence claims.
+Use the approved documentation-only review adaptation, not a fictional Go gate or
+CLI diff that silently omits the untracked spec/report. Existing 606-link,
+block-preservation and whitespace checks prove text properties only; runtime,
+installation, uninterrupted/newcomer behavior and fresh model adherence are not
+validated or excluded. No Go version/pin or toolchain bypass is selected.
+
+Produce quickstart-approval-flow-review.md in this phase; update existing
+findings.md and decisions.md only via the artifact writer. Preserve review.md and
+quickstart-review.md. Report path is absent before launch. Findings return for
+triage; no source fix, experiment, install, new batch, commit, push, PR, merge or
+Phase 09 closure is authorized. End this approval-gate turn before launching.
+No reviewer has been called and no clean-review result is claimed.
+
+### Approved UTF-8 LF-Normalized Review Snapshot
+
+- `docs/quickstart.md`: `fb1819f51636d9044ebf29e668af7bf8099b1702f97fe471b5e1d8ab1759f887`
+- `specs/atom-v1-improvements/phase-09-onboarding-example/quickstart-design-spec.md`: `bd4127fc686dc6732743d7e115d94047e008f18bde9c2eb715cb530739b52e8a`
+- `specs/atom-v1-improvements/phase-09-onboarding-example/quickstart-approval-flow-spec.md`: `42d7a18793fc7226c017c912781c5b8800ba08f8354f0245bf31b81d37252d40`
+- `specs/atom-v1-improvements/phase-09-onboarding-example/quickstart-final-validation.md`: `e0296ad9f6992680adcccd5412a34f42bdd491b6546d9bb0da93403dd3977a54`
+
+## Approved Approval-Flow Reviews Launched: 2026-11-18
+
+The developer said "lets proceed with reviews" after the explicit two-model
+approval. Launched exactly the two approved independent read-only code-review
+tasks, with identical bounded prompts, complete four-file context, published
+baseline identity and no access to each other's findings:
+
+| Model | Agent ID | Launch status |
+|---|---|---|
+| claude-opus-5.5 | 1537473b-571e-454c-8b97-01a49ccd6d17 | Started; result pending |
+| gpt-5.3-codex | c63fd01a-5b74-4f61-828c-795b4bd6ff7b | Started; result pending |
+
+Author is GPT-6.1 Sol. Exactly one pass per reviewer, concurrency two, no
+availability probes, nested agents, model substitutions, automatic retries,
+live recipe execution, installations or fixes. No persistent reviewer selection
+or Atom default was changed. The four approved source hashes matched before
+launch; untracked spec/report reads were explicitly included rather than claiming
+that Git's working diff contains them. Both reviewers were instructed not to read
+private trial evidence or unrelated helper work. Earlier review reports remain
+untouched. No completed participation or clean-review result is claimed yet.
+
+Fresh pre-review commands: inline Python checking the four approved LF-normalized
+hashes, six exact published fenced blocks, four-file whitespace/EOF and git diff
+--check; then python tools\check_links.py. Actual stdout:
+
+```text
+PASS: all four approved review-source hashes match
+PASS: six published fenced blocks preserved exactly
+PASS: four-file whitespace and EOF checks
+PASS: git diff --check (exit 0)
+checked 606 relative links across markdown files
+all relative links resolve
+```
+
+Exit 0. Git warned that docs/quickstart.md working-copy CRLF will normalize to LF.
+Reviewers receive the actual documentation-check limits, not invented Go/runtime
+or usability evidence. Await completion notifications, then collect each named
+result and merge at quickstart-approval-flow-review.md, retaining single-reviewer
+findings for human triage. No further batch, phase closure or shipping authority.
+
+## Approval-Flow Independent Reviews Completed And Merged: 2026-11-18
+
+Both approved independent reviewers completed their one pass and reported exactly
+"No findings." Claude explicitly reviewed all reader states and scope/evidence
+limits; Codex confirmed complete four-file and baseline-diff coverage. Both read
+the untracked spec/report explicitly. Neither reviewer is the GPT-6.1 Sol author.
+No reviewer was retried, replaced, relaunched or shown the other's findings.
+
+Persisted quickstart-approval-flow-review.md with both actual responses, model
+and agent identities, coverage, unchanged reviewed hashes, preflight output and
+limits. All four approved LF-normalized source hashes still match after review.
+No Blocker/Major/Minor/Nit to merge, defer, reject or fix. Existing review reports
+are preserved. This review covers the four named documents, not these audit logs.
+No fresh Go/runtime/install/usability pass or universal-model guarantee is claimed.
+
+Developer acceptance of the completed review is pending. No new model batch,
+source edit, experiment, phase closure, commit, push, PR or merge is authorized.
+The review-model default replacement remains parked, not implemented.
+
+## Merged Review Artifact Validation: 2026-11-18
+
+After persisting the review/report logs, python tools\check_links.py returned 0:
+
+```text
+checked 610 relative links across markdown files
+all relative links resolve
+```
+
+The new report and audit logs were read back byte-for-byte through UTF-8 text
+and checked for trailing whitespace and a single final newline. No reviewed
+source was edited. These remain documentation checks, not fresh runtime proof.
+
+## Completed Approval-Flow Review Accepted: 2026-11-18
+
+The developer selected exactly "Accept completed review only" after both approved
+independent reviewers reported No findings, all four reviewed hashes remained
+unchanged, 610 links resolved and whitespace checks passed. Record the review as
+accepted in quickstart-approval-flow-review.md. No findings need triage or fixes.
+Acceptance is review-only, not permission for new model work, replay, phase closure,
+commit, push, PR or merge. End this gate turn; model-default replacement stays parked.
+
+## Explicit Shipping Permission: 2026-11-18
+
+After requesting "lets proceed to ship", the developer selected exactly
+"Commit, push and open the PR; do not merge" for these seven Markdown files on
+docs/quickstart-final-replay: docs/quickstart.md; phase quickstart-design-spec.md,
+quickstart-approval-flow-spec.md, quickstart-final-validation.md,
+quickstart-approval-flow-review.md, findings.md and decisions.md. This supersedes
+prior no-publication authority only for this accepted slice. No merge, Phase 09
+closure, unrelated onboarding work, private recordings, raw session events,
+trial source or default-model change is included or authorized.
+
+Read the complete four-file tracked diff and all three added artifacts before
+staging; no credential/debug/unrelated payload was found. Remote main is now
+f3f36005046152a1f5540b095a50e4d65a4d2cd3, ahead of the frozen reviewed baseline
+8cf34fa. Its thirteen changed paths do not overlap this seven-file slice. Keep
+the independent branch and target main; do not rewrite reviewed history or
+pull unrelated setup changes into this commit. No dependent PR/stack is created.
+
+Use the explicitly accepted documentation-only shipping adaptation: fresh link,
+unchanged-block/source-hash, scope and whitespace checks immediately before
+commit. Root atom check is inapplicable to this Python-tooling repository and
+would not verify Markdown; no Go/Python runtime suite or new replay is claimed.
+The two completed approved reviewers both reported No findings; their accepted
+report remains bounded. A PR is for human review, never automatic merge.
+
+## Existing CI Baseline Disclosed Before Shipping: 2026-11-18
+
+Read-only GitHub CI inspection found the current main run 44303341919 at
+f3f36005046152a1f5540b095a50e4d65a4d2cd3 already failed its Test step in all six
+CLI jobs (Python 3.10/3.12 across Ubuntu, macOS and Windows). The frozen baseline
+8cf34fa run 44118536323 also failed Test in five CLI jobs (all except Python 3.12
+macOS). This establishes pre-existing failures, not their cause or this branch's
+future CI result. No test log diagnosis, runtime fix, rerun or waiver of a runtime
+failure is claimed. Disclose both runs in the PR; the approved local gate for this
+Markdown-only slice remains fresh documentation validation. Do not mark CI green.
+
+## Fresh Documentation Shipping Gate: 2026-11-18
+
+Immediately before staging/commit, ran python tools\check_links.py and inline
+Python checks of reviewed hashes, exact published fenced blocks, the seven-file
+manifest, whitespace/EOF and obvious credential markers, then git diff --check.
+Actual output:
+
+```text
+checked 610 relative links across markdown files
+all relative links resolve
+PASS: all four approved review-source hashes unchanged
+PASS: all six published fenced blocks preserved exactly
+PASS: seven-file scope, whitespace/EOF and obvious-secret-marker checks
+PASS: git diff --check (exit 0)
+```
+
+All commands exited 0. No Go/Python runtime suite, installation or replay ran.
+The seven-file Markdown-only adaptation and explicit publication permission are
+recorded above. Stage exactly that manifest, recheck index content/whitespace and
+commit once with the approved spec/evidence/review links and required trailers.
+No merge or phase closure follows. The PR will disclose pre-existing main/base CI
+failures and the recovered-after-restart limit rather than claim green runtime CI.

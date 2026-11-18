@@ -96,7 +96,13 @@ Atom may ask a clarifying question before preparing the brief. You don't need
 
 Read `specs/expense-summary/poc-brief.md`. Check that it includes the CSV, expected
 totals and both failure cases above. Request corrections if needed. If it matches,
-approve the brief, then send this in the same session:
+explicitly approve the brief before execution. If execution starts after approval,
+let it proceed; you don't need to send another message.
+
+Only if the brief is already approved, execution has not started, and Copilot has
+stopped awaiting your next instruction, send this once in the same session. Do not
+send it while Copilot is thinking or running tools, or while a permission question,
+writer refusal, error or scope-change request remains unresolved:
 
 ```text
 Proceed with specs/expense-summary/poc-brief.md as approved. Scaffold, write and execute the disposable POC, capture all required evidence, and write the report. Stop at the report approval gate.
@@ -145,5 +151,5 @@ Error wording can vary, but incorrect totals or missing failure evidence mean th
 POC is not complete. Your files remain available after you close the terminal.
 
 For a larger project, see the [full workflow](workflow.md).
-[Validation notes and limitations](../specs/atom-v1-improvements/phase-09-onboarding-example/standalone-quickstart-report.md)
+[Validation notes and limitations](../specs/atom-v1-improvements/phase-09-onboarding-example/quickstart-final-validation.md)
 are kept separately from this walkthrough.
