@@ -84,7 +84,7 @@ class LocalTransportRunner:
             command = (*command[:2], "--no-local", *command[2:-2], str(self.server), command[-1])
         if command[0] == "copilot":
             assert self.checkout.exists()
-            assert working_directory == self.checkout / "src" / "module"
+            assert working_directory == (self.checkout / "src" / "module").resolve()
             return self.models.run(command, working_directory, timeout_seconds, stdin_text)
         return self.real.run(command, working_directory, timeout_seconds, stdin_text)
 
