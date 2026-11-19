@@ -18,6 +18,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 
 from atom.runner import CommandOutcome, SubprocessRunner
+from tests.conftest import python_child_environment
 
 import pytest
 
@@ -226,9 +227,9 @@ def test_windows_parent_exits_before_timeout(tmp_path, with_environment):
     with _tree_fixture(tmp_path, hold_output=True) as (command, directory, identities):
         options = {}
         if with_environment:
-            options["environment"] = {
-                "ATOM_CHILD": "owned \u03bb", "PYTHONIOENCODING": "utf-8",
-            }
+            options["environment"] = python_child_environment(
+                ATOM_CHILD="owned \u03bb", PYTHONIOENCODING="utf-8",
+            )
             command = [
                 *command[:-1],
                 "import os; print(os.environ.get('ATOM_CHILD'), flush=True); " + command[-1],

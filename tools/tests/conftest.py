@@ -3,12 +3,23 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
 from atom.runner import CommandOutcome, CommandResult
+
+
+def python_child_environment(**settings: str) -> dict[str, str]:
+    """Keep Python startup prerequisites explicit without inheriting parent settings."""
+
+    environment = dict(settings)
+    if os.name == "nt":
+        # Python 3.10 needs SystemRoot to initialize hash randomness on Windows.
+        environment["SystemRoot"] = os.environ["SystemRoot"]
+    return environment
 
 
 def cli_review_events(content: str) -> list[dict]:

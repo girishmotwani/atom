@@ -17,6 +17,7 @@ import pytest
 
 from atom import runner as runner_module
 from atom.runner import CommandOutcome, CommandResult, SubprocessRunner
+from tests.conftest import python_child_environment
 
 
 def test_child_environment_is_complete_unicode_and_preserves_stdin_and_parent(
@@ -24,7 +25,9 @@ def test_child_environment_is_complete_unicode_and_preserves_stdin_and_parent(
 ):
     monkeypatch.setenv("ATOM_PARENT_ONLY", "must not leak")
     parent = dict(os.environ)
-    environment = {"ATOM_CHILD": "selected \u03bb \U0001f680", "PYTHONIOENCODING": "utf-8"}
+    environment = python_child_environment(
+        ATOM_CHILD="selected \u03bb \U0001f680", PYTHONIOENCODING="utf-8",
+    )
     original = dict(environment)
     script = (
         "import json, os, sys; "
@@ -143,7 +146,7 @@ def test_windows_child_path_diagnostic_names_shadowed_copy(tmp_path, monkeypatch
 def test_absolute_executable_does_not_depend_on_child_pathext(tmp_path):
     result = SubprocessRunner().run(
         [sys.executable, "-c", "print('absolute')"], tmp_path, timeout_seconds=5,
-        environment={"PATHEXT": ".NOTEXE", "PYTHONIOENCODING": "utf-8"},
+        environment=python_child_environment(PATHEXT=".NOTEXE", PYTHONIOENCODING="utf-8"),
     )
 
     assert result.succeeded, result.stderr
@@ -151,7 +154,7 @@ def test_absolute_executable_does_not_depend_on_child_pathext(tmp_path):
 
 
 def test_environment_is_copied_before_launch(tmp_path, monkeypatch):
-    environment = {"ATOM_CHILD": "before", "PYTHONIOENCODING": "utf-8"}
+    environment = python_child_environment(ATOM_CHILD="before", PYTHONIOENCODING="utf-8")
     launch_name = "_run_windows" if os.name == "nt" else "_launch"
     original_launch = getattr(runner_module, launch_name)
 
@@ -204,10 +207,19 @@ def test_concurrent_child_environments_do_not_leak_into_base_calls(tmp_path, mon
 
 def test_empty_environment_does_not_inherit_parent_settings(tmp_path, monkeypatch):
     monkeypatch.setenv("ATOM_PARENT_ONLY", "must not leak")
+    if os.name == "nt":
+        # This test must keep {}, which cannot start Python 3.10 on Windows.
+        command = [
+            str(Path(os.environ["SystemRoot"]) / "System32" / "cmd.exe"),
+            "/d", "/c", "if defined ATOM_PARENT_ONLY (echo leaked) else (echo None)",
+        ]
+    else:
+        command = [
+            sys.executable, "-c", "import os; print(repr(os.environ.get('ATOM_PARENT_ONLY')))",
+        ]
 
     result = SubprocessRunner().run(
-        [sys.executable, "-c", "import os; print(repr(os.environ.get('ATOM_PARENT_ONLY')))"],
-        tmp_path, timeout_seconds=5, environment={},
+        command, tmp_path, timeout_seconds=5, environment={},
     )
 
     assert result.succeeded, result.stderr
@@ -468,7 +480,9 @@ class TestTimeoutIsBoundedEvenWhenChildrenSurvive:
         options = {}
         script = self.SPAWNS_A_SURVIVOR
         if with_environment:
-            options["environment"] = {"ATOM_CHILD": "timeout", "PYTHONIOENCODING": "utf-8"}
+            options["environment"] = python_child_environment(
+                ATOM_CHILD="timeout", PYTHONIOENCODING="utf-8",
+            )
             script = "import os; print(os.environ.get('ATOM_CHILD'), flush=True); " + script
 
         result = SubprocessRunner().run(

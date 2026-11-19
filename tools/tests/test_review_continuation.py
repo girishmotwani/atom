@@ -292,10 +292,23 @@ def test_continuation_candidate_requires_module_and_explicit_selection(
 def test_review_runs_candidate_gates_in_order_and_strict_mode_stays_all_gates(
     tmp_path: Path, monkeypatch, strict, expected_gate_calls,
 ):
+    control_calls = []
+
+    def reject_fixture_control(*args, **kwargs):
+        control_calls.append((args, kwargs))
+        raise GoToolchainSelectionError(
+            GoToolchainRequest("1.27.3", "cli"),
+            "fixture control unavailable", "gate-order test does not run control gates",
+        )
+
     if strict:
         monkeypatch.setattr(
             review_module, "_resolve_control_toolchain",
             lambda *args, **kwargs: pytest.fail("strict mode attempted a control toolchain"),
+        )
+    else:
+        monkeypatch.setattr(
+            review_module, "_resolve_control_toolchain", reject_fixture_control,
         )
     binary, runner, request, model_calls = pinned_review_fixture(tmp_path, monkeypatch)
     (tmp_path / "go.mod").write_text(
@@ -326,6 +339,7 @@ def test_review_runs_candidate_gates_in_order_and_strict_mode_stays_all_gates(
         }:
             selected_gates.append(command[1:])
     assert selected_gates == expected_gate_calls
+    assert len(control_calls) == (0 if strict else 1)
     assert model_calls == []
 
 

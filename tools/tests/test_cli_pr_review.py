@@ -109,7 +109,7 @@ def prepared_cli(tmp_path, monkeypatch):
     class LiveCheckoutModels(ScriptedRunner):
         def run(self, command, working_directory, timeout_seconds=300.0, stdin_text=None):
             assert checkout_runner.checkout.exists()
-            assert working_directory == checkout_runner.checkout
+            assert working_directory == checkout_runner.checkout.resolve()
             return super().run(command, working_directory, timeout_seconds, stdin_text)
 
     models = LiveCheckoutModels()

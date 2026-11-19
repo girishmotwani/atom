@@ -228,7 +228,7 @@ def test_independent_clone_and_pinned_checkout(tmp_path):
     runner = CheckoutRunner(tmp_path)
     with prepare_pull_request_review(PR_URL, tmp_path, runner) as prepared:
         assert prepared is not None, "preparation must yield a pinned checkout"
-        assert prepared.working_directory == runner.checkout
+        assert prepared.working_directory == runner.checkout.resolve()
         assert prepared.working_directory != tmp_path
         assert (prepared.working_directory / "go.mod").is_file()
         assert prepared.request.base_ref == TARGET
