@@ -223,3 +223,27 @@ clarity, universal automatic continuation, newcomer usability or phase completio
 The original evidence remains within its recorded limits. This correction uses
 named reader-state review, exact published command/request-block preservation,
 existing link checks and scoped whitespace validation, not fresh runtime tests.
+
+## Accepted Replay And Lifecycle Completion: 2026-11-23
+
+The developer accepted the [later replay](uninterrupted-quickstart-report.md) as
+successful experienced-user workflow evidence and explicitly requested no further
+replay for missing recorder bookkeeping. It contains actual brief-before-code
+and report approvals, successful Atom vet/build/execute, direct exits 0/1/1 and
+normal exit confirmed by the participant. Original observer-closure, post-session
+inventory and active-time measurements remain incomplete. This does not establish
+newcomer usability, clean-OS/cold-authentication setup, numerical timing, universal
+client behavior or broader Go correctness. Earlier trial verdicts stay unchanged.
+
+The separately [approved completion spec](phase-completion-spec.md) adds only
+README uninstall guidance beside its existing lifecycle instructions, changes the
+quickstart's validation-notes link to the accepted later replay, and appends this
+reconciliation. It supersedes prior slice-only file limits for these named edits,
+not the original technical contract. Preserve every quickstart code block and
+both real approval gates. Plugin removal is distinguished from separate Python
+tooling and repository-local artifacts; no uninstall or automatic cleanup runs.
+
+These are factual documentation changes, not a new Go API, installer, TDD cycle,
+experiment or compatibility claim. Use command-help review, source-diff/block
+preservation, link and whitespace checks. Whole-phase acceptance and publication
+remain separate decisions; completion-spec approval alone does not close Phase 09.

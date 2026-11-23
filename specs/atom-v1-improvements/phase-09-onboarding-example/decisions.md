@@ -2094,3 +2094,276 @@ recorded above. Stage exactly that manifest, recheck index content/whitespace an
 commit once with the approved spec/evidence/review links and required trailers.
 No merge or phase closure follows. The PR will disclose pre-existing main/base CI
 failures and the recovered-after-restart limit rather than claim green runtime CI.
+
+## New Replay Scoped, Not Yet Approved: 2026-11-19
+
+The developer said "lets do it" after the recommendation to close Phase 09's
+uninterrupted published-path evidence gap. Begin discovery and draft the bounded
+brief, not a new live session or inference of prior installation/spend approval.
+
+Reused the developer's previously selected Ubuntu/WSL expense-summary outcome
+and experienced-user-operated trial as proposed conditions rather than asking
+the repository-answerable questions again. The new brief gate is the explicit
+scope/acceptance decision; newcomer usability remains a separate alternative.
+
+Evidence recommendation: one observed integration replay of the final published
+page, not another Go parser spike or relabelled recovered result. Preserve the
+full real inner brief/report gates and the outer replay approval/report gates.
+No claims about an unrun uninterrupted path or hidden enforcement.
+
+Original checkout is dirty and stale relative to public main. Fetched main and
+created docs/phase09-uninterrupted-replay in a separate session worktree at
+d976666b1b6b5d89bbe64f21315d036d0ca76101, the human's merged #30. Do not push this
+branch implicitly: its initial origin/main tracking is not publication authority.
+
+Untouched root atom check --no-race actually exited 2:
+"atom check: No go.mod found in C:\Users\gimotwan\.copilot\session-state\4902d3aa-e485-4331-a054-4c8c83754b72\files\phase09-uninterrupted-replay".
+This known Python-tooling applicability limit is recorded, not silently fixed.
+Git diff --exit-code e3ca4907c341cb2854009bb13e79946a1b95478e HEAD -- tools
+exited 0. Reuse the unchanged tooling snapshot's actual local/hosted baseline;
+do not spend another full runtime suite for a draft documentation-only brief.
+
+Fresh baseline output:
+~~~text
+PASS: tools tree matches the locally verified and ten-job CI-green repair snapshot
+checked 632 relative links across markdown files
+all relative links resolve
+Published quickstart UTF-8 bytes: 6136
+Published quickstart LF SHA-256: fb1819f51636d9044ebf29e668af7bf8099b1702f97fe471b5e1d8ab1759f887
+PASS: published quickstart still matches the accepted approval-flow correction
+~~~
+
+The only new artifact is uninterrupted-quickstart-brief.md; append audit notes to
+this phase's existing findings/decisions rather than overwrite historical results.
+All repository artifact writes use atom-write-artifact. Existing user-worktree
+changes and prior private trials remain untouched.
+
+Proposed scope includes only the explicitly declared unused-directory choice and,
+if a read-only prerequisite check requires it, the existing supported client through
+trial-only PATH. No silent recipe rewrite, prerequisite upgrade or auth change.
+These choices, one session and 30-active-minute stop cap require approval at the
+brief gate. No installation/model/replay launch, Go code, commit, push or PR.
+
+## Draft Replay Brief Validation
+
+Read the complete persisted uninterrupted-quickstart-brief.md. Actual checks:
+~~~text
+checked 635 relative links across markdown files
+all relative links resolve
+PASS: new brief is UTF-8/LF with clean whitespace/EOF
+PASS: both historical audit-log prefixes preserved byte-for-byte
+PASS: exactly the draft brief and two appended audit logs; no code or public guide change
+~~~
+git diff --check exited 0. No new runtime or replay result is claimed.
+Present the explicit one-attempt scope at the brief gate and stop; approval
+authorizes later preparation, not automatic same-turn execution or Phase 09 closure.
+
+## Primary Checkout Handoff Approved And Verified: 2026-11-19
+
+Developer selected exactly: "Preserve the old work and use work\atom for the
+current replay branch". This is workspace-location approval, not approval of
+the new replay brief, unfinished discovery helper, installation or model spend.
+
+The original feat/phase09-public-rehearsal branch had no unique commits and was
+17 commits behind current main. Its mixed tracked/untracked local work was
+preserved in the named local stash:
+"preserve phase09 rehearsal WIP before primary checkout handoff 2026-11-19".
+Stable stash object: 5d61d62ab7e191be040087d74078a1f33a097702.
+Verified all 55 affected paths against the stash's tracked/untracked Git blobs,
+using repository filters. The old branch ref/HEAD remains unchanged. This work
+has not been merged or published; the unfinished helper remains separate.
+
+Transferred exactly the new draft brief and its two appended audit logs from
+the isolated replay worktree into C:\Users\gimotwan\work\atom on
+docs/phase09-uninterrupted-replay at d976666. Verified all three Git blob
+identities before subsequent handoff audit notes. Retained the transfer stash
+4a7ec4bf037bcaca8886d84d6c25f5699f8e53f3 as an additional local safety copy.
+A private primary-checkout-handoff.json contains the complete content manifest.
+
+Detached and removed only the now-clean session-local replay worktree, without
+force; the branch and draft now live in the normal primary checkout. No other
+worktree, earlier trial or stash was removed. Use the normal specs directory for
+developer review. Do not silently restore the old helper stash into this branch.
+
+This supersedes earlier workspace-location notes, not historical test evidence.
+No code/guide change, merge, commit, push, installation, recorder or live replay
+was performed by the handoff. The brief approval gate remains pending.
+
+## Uninterrupted Replay Brief Approved; Preparation Captured: 2026-11-19
+
+After reviewing the normal-checkout brief in VS Code, the developer said exactly
+"approved, lets proceed". This supersedes the earlier pending-approval status,
+not the historical recovered-after-restart result. Record status-only approval
+metadata without rewriting the approved question, acceptance or side-effect bounds.
+
+The private frozen approval-input hash is recorded in
+uninterrupted-quickstart-preparation.md alongside the page/setup/request hashes.
+Fresh read-only prerequisite/version/help checks pass. The ordinary Ubuntu client
+remains 0.0.403; use only the verified existing 1.0.107 through child-process PATH,
+as approved. No installation, model session, client update, authentication/global
+configuration change or Go scaffold has begun at this checkpoint.
+
+The installed-content snapshot is taken at the freshly opened client startup
+prompt before the participant sends the first task; independently verify its
+timestamp precedes the request. This read-only preparation pause supplies no
+navigation advice, does not answer any prompt and does not change the setup text.
+Missing ordering evidence yields Inconclusive, not a reconstructed manifest.
+User readiness and active-time recording must be coordinated before launch.
+
+Only scoped preparation and one developer-operated attempt are authorized. Do
+not infer authorization for retries, repairs, reviewer/model batches, publication
+or Phase 09 closure. All historical trial records and preserved stashes remain.
+## Recovering Actual Replay Progress After Power Loss: 2026-11-23
+
+The developer requested continuation after machine power loss. Recovered the
+previous conversation, approved brief, preparation receipts and session-local
+launcher before considering execution. Repository notes stopped before launch,
+but the retained private before-task/launcher receipts and interactive event
+stream show the approved attempt did run and reached genuine brief/report
+approvals. Prefer that observed evidence over the stale current-status inference.
+
+Continue only read-only recovery of this existing attempt. Do not restart the
+client, reuse the destination for a fresh attempt, rerun missing checks, or
+silently mark the attempt successful. Preserve the inner approved technical
+report separately from the outer replay's still-ungraded continuity contract.
+The incomplete supervisor receipt, missing post-session inventory and unmeasured
+active/pause intervals require disclosure, not a success-shaped reconstruction.
+Clarify normal participant exit versus interruption before grading the outer run.
+No new experiment, implementation, publication or additional paid review is
+implied by continuation. Existing findings/decisions are appended, not replaced.
+## Participant Exit Confirmation And Recovered Result Gate: 2026-11-23
+
+Developer response: "I exited normally after approving the report". Record this
+as participant evidence, distinct from the retained session.shutdown event and
+the missing supervisor closing receipt. Independently inspected original tool
+captures and saved fixtures read-only, without another model session or Go run.
+
+Write uninterrupted-quickstart-report.md under the already approved brief's
+reporting scope. Keep its outer verdict Inconclusive under the brief's incomplete-
+evidence condition while preserving the separately Confirmed, approved technical
+POC. Do not narrow acceptance, fabricate a post-exit snapshot, claim timing-cap
+compliance, restart the trial or silently close Phase 09. Present the recovered
+result at its acceptance gate. No implementation or publication is authorized.
+## Recovered Result Accepted With Limits: 2026-11-23
+
+Developer selected exactly: "Accept recovered result; keep Phase 09 open".
+The recovered report is accepted without changing its Inconclusive outer verdict
+or the approved three-case technical success. No retry, publication or closure
+is approved. Final documentation checks before this status-only acceptance
+receipt: 640 relative links resolve; git diff --check exited 0.
+
+## Accepting User-Flow Success Without Another Replay: 2026-11-23
+
+Developer said exactly: "agree. no replay needed. lets continue with next steps".
+This accepts the assistant's corrected recommendation: use the actual successful
+session and human normal-exit confirmation as bounded user-flow evidence; retain
+missing observer receipts/inventory/timing as limitations rather than require
+another participant run. Record the current accepted scope explicitly while
+preserving the original strict-audit assessment and all earlier trial verdicts.
+No missing evidence is fabricated, and no new replay is authorized or needed.
+
+Re-read the roadmap, existing approved documentation specs/reviews and current
+public entry points. No new phase architecture or Go implementation is required.
+The loaded spec workflow is adapted to the remaining documentation slice rather
+than inventing a replacement design for an already shipped quickstart. Prepare
+phase-completion-spec.md for the missing uninstall guidance, one current evidence
+link and append-only spec reconciliation. Verify the syntax with help only; do
+not mutate working installations to prove a documentation command.
+
+Preserve the completion-spec implementation gate and later phase-acceptance and
+publication gates. No paid reviewers, runtime-suite rerun, commit, push, PR,
+merge, tag or release follows from generic continuation. Phase 13 remains a
+subsequent release-readiness activity after in-scope roadmap reconciliation;
+website/distribution work stays deferred. No runtime fallback state is changed.
+
+## Approved Completion Documentation Implemented: 2026-11-23
+
+Developer selected exactly: "Approve the documentation-only completion spec".
+Implemented only its named three-document slice and normal artifact updates.
+Used factual/help review, exact source/code-block preservation, the existing
+link checker and whitespace checks as the approved documentation-only adaptation.
+No artificial Go spike/TDD cycle, unchanged runtime-suite rerun, additional model
+reviewers, uninstall or participant replay was warranted or performed.
+
+Verification: six quickstart code blocks unchanged; only the approved evidence
+link changed; README contains only the uninstall addition; historical spec prefix,
+workflow/runtime/skills/plugin files preserved; 646 relative links resolve;
+git diff --check exited 0. The complete source diff satisfies all four numbered
+requirements without adding a compatibility, timing or newcomer claim.
+
+Present the task-to-evidence checklist in phase-completion-spec.md for explicit
+Phase 09 completion acceptance. Its accepted user-flow evidence resolves the
+previous product-progress blocker, not the missing observer measurements. Do not
+mark the roadmap or runtime phase done until that completion gate is accepted.
+No commit, push, PR, merge, tag or release is authorized by implementation approval.
+
+## Phase 09 Completion Accepted And Recorded: 2026-11-23
+
+Developer selected exactly: "Accept Phase 09 completion with the stated limits".
+Record accepted completion in phase-completion-spec.md and mark only Phase 09's
+four roadmap tasks complete. Preserve the accepted Ubuntu/WSL experienced-user
+boundary, older trial verdicts and all missing observation measurements. This
+supersedes earlier keep-Phase-09-open instructions for the now accepted scope.
+
+Do not infer readiness of other Must phases or of the release. Roadmap release
+reconciliation and fresh release checks remain subsequent scoped work; deferred
+website/distribution work is not reactivated. No runtime phase registration,
+replay, uninstall, commit, push, PR, merge, version/tag or release occurred.
+
+## Phase 09 Commit, Push And PR Authorized: 2026-11-23
+
+Developer requested exactly: "let proceed with the steps to create PR" after
+accepting Phase 09 completion. Use the existing docs/phase09-uninterrupted-replay
+branch for one documentation-only commit, push it to origin and open a PR against
+main. This explicitly scoped publication is not merge, auto-merge, tag/release,
+installation, another replay or a broader review-model batch approval. Merging
+remains a human-only gate.
+
+Fetched origin/main; it remains d976666b1b6b5d89bbe64f21315d036d0ca76101,
+identical to this branch's pre-commit HEAD (zero commits ahead/behind). No rebase,
+merge or stack is needed. No PR exists for this head. Read the complete six tracked
+file diffs and all four new Markdown artifacts before preparing the commit.
+The publication manifest is README, the one quickstart-link change, roadmap,
+append-only quickstart-spec reconciliation, phase findings/decisions, and the
+four new brief/preparation/replay-report/completion-spec artifacts. Private raw
+recordings, session events, generated Go source, helpers and old stashed work
+are not included. No unresolved issue was found in the publication diff.
+
+Adapt the ship skill to the already approved documentation-only validation
+contract: this repository's tooling is Python and this slice changes no runtime
+code, skills, tests, dependencies or plugin versions. Fresh root atom check
+actually exited 2 with the following diagnostic:
+
+~~~text
+atom check: No go.mod found in C:\Users\gimotwan\work\atom
+~~~
+
+Do not invent a root Go module or claim that check passed. Run the existing link
+checker, exact source/code-block/history-preservation and whitespace checks for
+the final publication content. The accepted replay's actual module check and
+skipped test/race stages remain historical evidence, not a new local runtime
+check. Prior Python-suite/hosted results are not fresh release evidence. No
+state-driven atom ship command is used: this multi-project checkout resolves an
+unrelated project by fallback. Use explicit Git paths and gh PR base/head instead.
+
+## Final Pre-Commit Documentation Checks: 2026-11-23
+
+The approved fresh shipping checks completed with exit 0:
+
+~~~text
+checked 647 relative links across markdown files
+all relative links resolve
+PASS: exact 10-file Markdown-only publication manifest; no pre-staged changes
+PASS: all six quickstart blocks unchanged; only its approved evidence link changed
+PASS: README uninstall-only addition, historical artifact prefixes and unrelated roadmap sections preserved
+PASS: UTF-8/EOF/whitespace and publication credential-pattern checks
+~~~
+
+git diff --check exited 0. Review of the current documentation changes and the
+four new artifacts found no unresolved issue. Existing accepted quickstart model
+reviews are historical source evidence; no fresh multi-model pass or runtime
+suite is represented as having run for this documentation-only PR. The root
+Go-gate exit-2 applicability diagnostic remains explicitly disclosed above.
+Stage the exact ten-file manifest and check index scope/whitespace before one
+new commit with both required Copilot trailers. Push only the named branch and
+create a standalone PR against main; do not merge or enable auto-merge.

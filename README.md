@@ -615,6 +615,21 @@ Confirm the update actually landed, rather than assuming:
 copilot plugin list                     # shows the installed version
 ```
 
+### Uninstall the plugin
+
+Use the same Copilot executable and profile you used to install Atom. If you used
+an isolated `COPILOT_HOME`, select that profile before running this command so you
+do not target your default installation:
+
+```bash
+copilot plugin uninstall atom@atom
+```
+
+This removes the plugin and its associated skills, not the separately installed
+Python `atom` and `atom-write-artifact` tools. It is not a repository rollback:
+keep your `specs/`, `poc/`, project work and repository-local instruction bundle.
+Managing those files or the separate Python environment is a separate decision.
+
 ### Run it
 
 The Python `atom` command runs the Go gates and tracks phase state. When a beat

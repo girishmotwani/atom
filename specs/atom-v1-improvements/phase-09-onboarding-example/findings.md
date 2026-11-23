@@ -1211,3 +1211,160 @@ CLI Test jobs before this documentation commit. Causes are not established here;
 no runtime fix or fresh runtime-suite success is claimed. Disclose the baseline
 in the PR and preserve later branch CI independently. The approved scope stays
 seven Markdown files with documentation-only validation; Phase 09 remains open.
+
+## New Uninterrupted-Replay Discovery: 2026-11-19
+
+The developer requested the next task and accepted scoping the remaining final
+quickstart replay. CI repair #30 has since been human-merged at main d976666.
+Fresh work is isolated on docs/phase09-uninterrupted-replay; the original dirty
+Phase 09 work and completed CI-repair branch are not edited.
+
+The final guide still matches accepted LF hash
+fb1819f51636d9044ebf29e668af7bf8099b1702f97fe471b5e1d8ab1759f887.
+The accepted old result is technical success after restart, not an uninterrupted
+result or newcomer study. No new product defect or setup-shortening priority is
+established by that evidence gap.
+
+The previous default trial directory must not be overwritten. The published page
+permits choosing an unused directory; propose a named fresh sibling and disclose
+that single text substitution. Existing WSL/client/cache/authentication boundaries
+remain explicit. Current Ubuntu prerequisite versions have not yet been rechecked;
+earlier client selection is not assumed to be current or silently repeated.
+
+Atom status in the original multi-project checkout selected artifact-writer by
+fallback, not this phase. Do not treat that fallback as the authoritative next
+task. The accepted roadmap and current shipped phase evidence establish this scope.
+
+See uninterrupted-quickstart-brief.md for the draft one-attempt contract. No live
+session, installation, replay, source change or additional paid review occurred.
+
+## Normal Primary Checkout Restored For Review
+
+At the developer's explicit request, current work now uses
+C:\Users\gimotwan\work\atom on docs/phase09-uninterrupted-replay. All 55 original
+rehearsal WIP paths were preserved and verified in a named local stash; no
+unfinished helper or stale documentation was merged. The separate session
+replay worktree was cleanly removed after transfer. See decisions.md for
+stable stash identities and the preservation receipt.
+
+The draft remains uninterrupted-quickstart-brief.md in this normal phase specs
+directory. Workspace approval is not replay approval; preparation/installation
+and the live session remain unstarted.
+
+## Approved Replay Read-Only Preflight: 2026-11-19
+
+The actual approved replay has not started yet. New trial/evidence paths are
+absent, the previous trial remains intact, and Go 1.22.2, Git 2.43.0, Python 3.12.3,
+venv/ensurepip and the PTY recorder are available. Ordinary PATH still selects
+unsupported Copilot 0.0.403. The already-installed supported client is 1.0.107,
+with unchanged SHA-256 985f0e1b1b3e734bc996324651307a076ae3deae21e3fa9f9af917983ce309c4;
+its actual help documents profile isolation and disabling updates. The approved
+trial-only selection requires no global change or prerequisite installation.
+
+See uninterrupted-quickstart-preparation.md for exact command output and frozen
+input identities. Fresh authentication, selected model, actual marketplace
+identity, before-task inventory and uninterrupted navigation remain unobserved.
+No new product defect or successful replay is inferred from this preflight.
+## Power-Loss Recovery Inspection: 2026-11-23
+
+Read-only inspection recovered a launched attempt, superseding the preparation
+checkpoint's prepared-not-launched claim as current status. Private launcher
+receipts place setup start at 2026-11-20T10:13:17.380143+00:00. The before-task
+snapshot at 10:14:37.491669+00:00 contains 680 plugin files; its retained comparison
+with public d976666 reports no missing, extra or changed files. These are retained
+receipts, not a new installation or reconstructed before-manifest.
+
+The retained interactive event stream contains one session, a task request at
+11:55:00.953Z, actual human brief approval at 11:56:46.793Z and actual human report
+approval at 12:42:36.392Z on 2026-11-20. Its final assistant message at 12:42:57.727Z
+states that work stopped after report approval. The standalone report and all four
+requested example artifacts remain in the private trial workspace. That report
+records successful Atom vet/build/execute, exact valid totals, and both requested
+exit-1/empty-stdout error cases. This inspection has not rerun or independently
+regraded those command captures. No missing execution was supplied after the fact.
+
+A session.shutdown event exists at 2026-11-21T03:44:24.301Z, but the supervisor
+receipt still says running-setup-and-interactive-session and has neither an exit
+code nor the planned after-plugin manifest. Both original supervisor and recorder
+process identities are now absent. A shutdown event alone does not establish
+normal recorder closure or when power loss affected the observation. Active/pause
+intervals have not been established; wall-clock elapsed time is not active effort.
+The outer uninterrupted-replay verdict remains ungraded pending evidence audit
+and participant clarification. The inner approved POC report is not automatically
+a Confirmed verdict for the outer navigation/continuity contract.
+
+Private evidence remains in the originally declared trial/evidence destinations;
+raw recordings and event streams are not copied into Git. No launch, retry,
+installation, model call, Go execution, publication or Phase 09 closure occurred
+during recovery. The preparation document remains a historical checkpoint.
+## Normal Exit Clarified; Original Technical Captures Verified: 2026-11-23
+
+The developer confirmed exactly: "I exited normally after approving the report".
+Do not infer interruption during the POC from the later power-loss report.
+Read-only inspection of original successful tool results independently confirms
+all actual Atom vet/build/execute stages, direct valid/error cases and explicit
+capture assertions. Both retained fixtures match the approved variations.
+The original module atom check exited 0 but skipped test/race for lack of tests.
+No executable was rerun during recovery.
+
+See [the recovered result](uninterrupted-quickstart-report.md). The inner POC is
+Confirmed and human-approved. The outer frozen observation contract remains
+Inconclusive because closing recorder/post-plugin evidence is missing; active
+intervals and complete continuity/no-outside-coaching are not independently
+established. This is not a demonstrated technical failure or an automatic retry.
+
+## Replay Accepted; Remaining Lifecycle Documentation Gap: 2026-11-23
+
+The developer accepted successful replay evidence without another attempt. The
+current recovered report now distinguishes accepted user-flow success from the
+still-incomplete observer audit; historical assessments remain intact. Missing
+recorder metadata does not establish a product failure and will not trigger a
+retry. Existing original Go captures and actual approvals support the bounded
+outcome; no broader usability/timing/platform guarantee follows.
+
+Roadmap Phase 09 includes uninstall instructions. README documents installation
+and updates, but a scoped search of README, docs and shared references found no
+uninstall guidance. The existing pinned 1.0.107 client help confirms
+copilot plugin uninstall <name>, accepting plugin-name@marketplace-name, with
+exit 0; no removal ran. The quickstart's current evidence link also still names
+the older restarted validation. See [the completion spec](phase-completion-spec.md)
+for the proposed narrow documentation work. No new runtime defect is identified.
+
+## Lifecycle Documentation Completed And Checked: 2026-11-23
+
+Implemented the approved README uninstall guidance, one quickstart evidence-link
+change and append-only existing-spec reconciliation. No unresolved finding in
+this documentation slice. The Phase 09 task-to-evidence checklist is recorded
+in phase-completion-spec.md for the completion gate, with the experienced-user
+Ubuntu/WSL and observer-measurement limitations retained.
+
+Actual checks confirm all six quickstart fenced blocks and all other quickstart
+text except the link are unchanged; README changes only its uninstall section;
+original spec history, workflow, runtime, skills and plugin files are preserved.
+All 646 relative links resolve and git diff --check exited 0. Uninstall syntax was
+validated by help only, not by removing a working installation. No replay ran.
+
+## Phase 09 Accepted Complete Within Its Stated Scope: 2026-11-23
+
+The developer accepted the completed documentation and Phase 09 checklist with
+the stated limits. The roadmap now records its four tasks complete and links to
+the acceptance receipt. No new unresolved finding in the delivered scope. The
+observer/platform/newcomer/timing limits remain explicitly documented; they do
+not reopen the accepted replay or trigger another run. No runtime phase state
+was fabricated in this multi-project Python-tooling repository.
+
+## Phase 09 Publication Review: 2026-11-23
+
+No unresolved finding in the accepted documentation publication slice. Reviewed
+all six tracked diffs and four complete new Markdown artifacts. Current main
+matches the branch's original base, and there is no existing PR for this head.
+The accepted user-flow outcome, incomplete observer measurements, historical
+verdicts and limited platform/newcomer coverage remain explicit. No generated
+Go program, raw session/terminal recording, credential/configuration copy,
+recorder/helper program, unrelated stashed work or runtime change is included.
+
+Fresh root atom check exited 2: "atom check: No go.mod found in C:\Users\gimotwan\work\atom".
+This known Python-tooling applicability limit is not a failing changed Go module
+or a passed quality gate. The approved prose-only shipping checks are factual
+review, documentation links, exact changed-scope preservation and whitespace.
+No fresh full Python runtime or release-readiness result is claimed by this PR.
