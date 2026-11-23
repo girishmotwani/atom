@@ -174,11 +174,18 @@ Tasks:
 
 **Outcome:** a new developer reaches one useful verified result before reading the whole methodology.
 
+**Status:** accepted complete on 2026-11-23 for the documented Ubuntu/WSL
+experienced-user scope. See the [completion checklist and acceptance](phase-09-onboarding-example/phase-completion-spec.md).
+Fresh Atom locations on an existing supported host were exercised, not a clean
+OS/cold-authentication or independent newcomer study. Missing recorder closure,
+post-session inventory and active-time measurements remain explicit limitations,
+not blockers requiring another replay. No publication or release is implied.
+
 Tasks:
-- [ ] Put supported prerequisites, installation/update/uninstall steps and a short entry-point choice near the front of the documentation.
-- [ ] Build one small public Go example with real commands, outputs and failure boundaries; avoid unsupported agent/model claims.
-- [ ] Explain which tasks use the full pipeline and which approved standalone paths apply.
-- [ ] Replay from a clean setup and check duplication hazards between installation methods; document supported versions and limitations.
+- [x] Put supported prerequisites, installation/update/uninstall steps and a short entry-point choice near the front of the documentation.
+- [x] Build one small public Go example with real commands, outputs and failure boundaries; avoid unsupported agent/model claims.
+- [x] Explain which tasks use the full pipeline and which approved standalone paths apply.
+- [x] Replay from a clean setup and check duplication hazards between installation methods; document supported versions and limitations.
 
 **Done when:** the documented path replays successfully in its stated environment; unverified platforms and dependencies are plainly labeled. No numerical setup-time promise without measurement.
 

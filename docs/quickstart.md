@@ -151,5 +151,5 @@ Error wording can vary, but incorrect totals or missing failure evidence mean th
 POC is not complete. Your files remain available after you close the terminal.
 
 For a larger project, see the [full workflow](workflow.md).
-[Validation notes and limitations](../specs/atom-v1-improvements/phase-09-onboarding-example/quickstart-final-validation.md)
+[Validation notes and limitations](../specs/atom-v1-improvements/phase-09-onboarding-example/uninterrupted-quickstart-report.md)
 are kept separately from this walkthrough.
