@@ -114,6 +114,59 @@ def review(*args: str) -> int:
     return main(["review", *args])
 
 
+@pytest.mark.parametrize("source,enabled,fixed", [
+    (("--working",), True, False),
+    (("--staged",), True, True),
+    (("--branch", "main"), True, False),
+    (("--working",), False, True),
+])
+def test_no_auto_update_reaches_probes_and_reviews(scripted, source, enabled, fixed):
+    options = ["--no-auto-update"] if enabled else []
+    if fixed:
+        options.append("--fixed-evidence")
+    try:
+        code = review(
+            *source, "--runs", "2", "--concurrency", "1", "--skip-toolchain",
+            "--model", "first-model", "--model", "second-model",
+            "--disable-mcp-server", "first-mcp",
+            "--disable-mcp-server", "second-mcp", *options,
+        )
+    except SystemExit as error:
+        code = error.code
+
+    assert code == EXIT_PASSED
+    calls = [
+        (command, text)
+        for command, text in zip(scripted.commands, scripted.stdin_texts)
+        if command[0] == "copilot"
+    ]
+    assert len(calls) == 6
+    for command, text in calls:
+        assert command.count("--no-auto-update") == int(enabled)
+        assert ("--excluded-tools" in command) is fixed
+        excluded = [
+            command[index + 1]
+            for index, argument in enumerate(command)
+            if argument == "--disable-mcp-server"
+        ]
+        assert excluded == ["first-mcp", "second-mcp"]
+        if "-p" in command:
+            assert text is None
+        else:
+            assert "--output-format" in command
+            assert text is not None and DIFF_TEXT in text
+
+
+def test_review_help_documents_no_auto_update_scope(capsys):
+    with pytest.raises(SystemExit) as error:
+        review("--help")
+    assert error.value.code == 0
+    output = " ".join(capsys.readouterr().out.split())
+    assert "--no-auto-update" in output
+    assert "probes and review calls" in output
+    assert "bundled version" in output
+
+
 def test_review_help_documents_strict_toolchain_option(capsys):
     with pytest.raises(SystemExit) as raised:
         main(["review", "--help"])

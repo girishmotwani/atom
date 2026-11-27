@@ -186,7 +186,7 @@ class InvocationReport:
 
 def probe_command(
     model: str, disable_mcp_servers: Sequence[str] = (),
-    *, fixed_evidence: bool = False,
+    *, fixed_evidence: bool = False, no_auto_update: bool = False,
 ) -> tuple[str, ...]:
     """Check availability with the same caller-selected isolation as reviews.
 
@@ -209,6 +209,8 @@ def probe_command(
         command.extend(("--disable-mcp-server", server))
     if fixed_evidence:
         command.extend(("--excluded-tools", "builtin:*", "custom:*", "mcp:*"))
+    if no_auto_update:
+        command.append("--no-auto-update")
     return tuple(command)
 
 
@@ -216,7 +218,7 @@ def review_command(
     model: str,
     prompt: str,
     disable_mcp_servers: Sequence[str] = (),
-    *, fixed_evidence: bool = False,
+    *, fixed_evidence: bool = False, no_auto_update: bool = False,
 ) -> tuple[str, ...]:
     """Build one review call, with the flags that every measurement demanded.
 
@@ -261,6 +263,8 @@ def review_command(
         command.extend(("--disable-mcp-server", server))
     if fixed_evidence:
         command.extend(("--excluded-tools", "builtin:*", "custom:*", "mcp:*"))
+    if no_auto_update:
+        command.append("--no-auto-update")
 
     return tuple(command)
 
@@ -272,7 +276,7 @@ def probe_models(
     timeout_seconds: float = DEFAULT_PROBE_TIMEOUT_SECONDS,
     concurrency: int = DEFAULT_CONCURRENCY,
     disable_mcp_servers: Sequence[str] = (),
-    *, fixed_evidence: bool = False,
+    *, fixed_evidence: bool = False, no_auto_update: bool = False,
 ) -> tuple[ModelAvailability, ...]:
     """Check models with the caller's exclusions before review can spend runs.
 
@@ -283,7 +287,10 @@ def probe_models(
 
     def probe(model: str) -> ModelAvailability:
         result = runner.run(
-            probe_command(model, disable_mcp_servers, fixed_evidence=fixed_evidence),
+            probe_command(
+                model, disable_mcp_servers, fixed_evidence=fixed_evidence,
+                no_auto_update=no_auto_update,
+            ),
             working_directory, timeout_seconds,
         )
         if result.succeeded:
@@ -306,7 +313,7 @@ def invoke_models(
     concurrency: int = DEFAULT_CONCURRENCY,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     disable_mcp_servers: Sequence[str] = (),
-    *, fixed_evidence: bool = False,
+    *, fixed_evidence: bool = False, no_auto_update: bool = False,
 ) -> InvocationReport:
     """Run every available model `runs` times and record each attempt.
 
@@ -322,6 +329,7 @@ def invoke_models(
         requested, runner, working_directory, concurrency=concurrency,
         disable_mcp_servers=disable_mcp_servers,
         fixed_evidence=fixed_evidence,
+        no_auto_update=no_auto_update,
     )
     usable_models = [entry.model for entry in availability if entry.available]
 
@@ -340,6 +348,7 @@ def invoke_models(
     command_for = {
         model: review_command(
             model, prompt, disable_mcp_servers, fixed_evidence=fixed_evidence,
+            no_auto_update=no_auto_update,
         )
         for model in usable_models
     }

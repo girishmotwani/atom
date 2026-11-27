@@ -235,6 +235,13 @@ def _add_review_parser(subparsers: argparse._SubParsersAction) -> None:
         help="MCP server to disable for each call; repeat for several.",
     )
     review_parser.add_argument(
+        "--no-auto-update", action="store_true",
+        help=(
+            "Disable Copilot CLI auto-updates for probes and review calls; "
+            "use its bundled version."
+        ),
+    )
+    review_parser.add_argument(
         "--json", action="store_true", dest="as_json",
         help="Emit machine-readable JSON instead of markdown.",
     )
@@ -718,6 +725,7 @@ def _run_review_command(arguments: argparse.Namespace) -> int:
                 concurrency=arguments.concurrency,
                 window=arguments.window,
                 disable_mcp_servers=arguments.disable_mcp_servers,
+                no_auto_update=arguments.no_auto_update,
                 skip_toolchain=arguments.skip_toolchain,
                 fixed_evidence=arguments.fixed_evidence,
                 context_documents=documents,

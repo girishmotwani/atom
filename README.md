@@ -287,14 +287,21 @@ launch-module guidance described below. Automatic surrounding-code collection is
 not supplied; Go checks still cover only the selected module.
 Required checks still block review unless you explicitly use `--skip-toolchain`.
 Existing `--model`, `--runs`, `--concurrency`, `--window`,
-`--disable-mcp-server`, and `--json` options apply. Choose exactly one source:
-`--pr`, `--working`, `--staged`, or `--branch`.
+`--disable-mcp-server`, `--no-auto-update`, and `--json` options apply. Choose
+exactly one source: `--pr`, `--working`, `--staged`, or `--branch`.
 
 Use repeated `--model NAME` options to select reviewers available to your Copilot
 account when a default model is unavailable; Atom does not silently substitute one.
 Repeated `--disable-mcp-server NAME` options exclude named custom MCP servers from
 both availability probes and review calls, without changing saved configuration.
 Disabling built-in MCP servers alone does not exclude custom servers.
+
+Use `--no-auto-update` to disable Copilot CLI update downloads for every
+availability probe and review call in this run. Copilot uses the version bundled
+in the executable Atom launches, rather than a newer previously downloaded one;
+this is not an arbitrary version pin or an offline mode. It does not disable
+custom MCP servers or change saved settings. Without the flag, the existing
+CLI update behavior is unchanged.
 
 Normal reviews freeze two optional files from the **launch module root**, in order:
 `.atom\atom\skills\atom\references\go-style.md` and `AGENTS.md`. Local edits apply,

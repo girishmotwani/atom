@@ -290,6 +290,7 @@ def run_review(
     go_toolchain_request: GoToolchainRequest | None = None,
     strict_toolchain: bool = False,
     control_go_version: str | None = None,
+    no_auto_update: bool = False,
 ) -> ReviewOutcome:
     """Capture a diff, ask every model about it, and merge what comes back.
 
@@ -464,6 +465,7 @@ def run_review(
         concurrency=concurrency,
         disable_mcp_servers=disable_mcp_servers,
         fixed_evidence=fixed_evidence,
+        no_auto_update=no_auto_update,
     )
 
     # The diff's own file list is the allow-list (B117): a finding about a file
