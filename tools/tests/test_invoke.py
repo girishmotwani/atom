@@ -30,6 +30,62 @@ WORKDIR = Path("/repo")
 PROMPT = "Review this diff."
 
 
+@pytest.mark.parametrize("builder,arguments", [
+    (probe_command, ("fixture-model",)),
+    (review_command, ("fixture-model", PROMPT)),
+])
+@pytest.mark.parametrize("fixed", [False, True])
+def test_no_auto_update_preserves_other_command_arguments(builder, arguments, fixed):
+    baseline = builder(*arguments, fixed_evidence=fixed)
+
+    assert builder(*arguments, fixed_evidence=fixed, no_auto_update=False) == baseline
+    assert builder(*arguments, fixed_evidence=fixed, no_auto_update=True) == (
+        *baseline, "--no-auto-update",
+    )
+
+
+def test_no_auto_update_preserves_probe_and_review_deadlines():
+    model = "fixture-model"
+    probe = probe_command(model, no_auto_update=True)
+    review = review_command(model, PROMPT, no_auto_update=True)
+    runner = FakeRunner({
+        probe: command_result(probe, WORKDIR),
+        review: command_result(review, WORKDIR, stdout=cli_review_response("[]")),
+    })
+
+    report = invoke_models(
+        [model], PROMPT, runner, WORKDIR, runs=2, concurrency=1, no_auto_update=True,
+    )
+
+    assert runner.calls == [
+        (probe, WORKDIR, 60.0),
+        (review, WORKDIR, 600.0),
+        (review, WORKDIR, 600.0),
+    ]
+    assert runner.stdin_texts == [None, PROMPT, PROMPT]
+    assert not report.is_partial
+
+
+@pytest.mark.parametrize("outcome,exit_code", [
+    (CommandOutcome.COMPLETED, 1),
+    (CommandOutcome.TIMED_OUT, None),
+])
+def test_no_auto_update_probe_failure_never_retries_without_flag(outcome, exit_code):
+    model = "fixture-model"
+    probe = probe_command(model, no_auto_update=True)
+    runner = FakeRunner({
+        probe: command_result(
+            probe, WORKDIR, outcome, exit_code, stderr="probe refused",
+        ),
+    })
+
+    with pytest.raises(NoModelAvailable, match="probe refused"):
+        invoke_models([model], PROMPT, runner, WORKDIR, runs=3, no_auto_update=True)
+
+    assert runner.calls == [(probe, WORKDIR, 60.0)]
+    assert runner.stdin_texts == [None]
+
+
 def test_fixed_evidence_exclusions_reach_probes_and_reviews():
     model = "fixture-model"
     servers = ("custom-mcp",)

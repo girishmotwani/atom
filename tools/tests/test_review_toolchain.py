@@ -102,7 +102,7 @@ def test_run_review_continues_with_no_exclusions_when_directory_is_not_go_module
         runs,
         concurrency,
         disable_mcp_servers=(),
-        *, fixed_evidence=False,
+        *, fixed_evidence=False, no_auto_update=False,
     ):
         captured_prompts.append(prompt)
         return InvocationReport(

@@ -145,6 +145,24 @@ def test_pr_report_provenance_and_limitations(prepared_cli, capsys, as_json):
     assert not checkout_runner.checkout.parent.exists()
 
 
+@pytest.mark.parametrize("enabled", [False, True])
+def test_pr_no_auto_update_reaches_probes_and_reviews(prepared_cli, enabled):
+    checkout_runner, models = prepared_cli
+    options = ["--no-auto-update"] if enabled else []
+
+    assert invoke(
+        "--pr", PR_URL, "--skip-toolchain", "--model", "fixture-model",
+        "--runs", "1", "--disable-mcp-server", "custom-mcp", *options,
+    ) == EXIT_PASSED
+
+    calls = [command for command in models.commands if command[0] == "copilot"]
+    assert len(calls) == 2
+    for command in calls:
+        assert command.count("--no-auto-update") == int(enabled)
+        assert command[command.index("--disable-mcp-server") + 1] == "custom-mcp"
+    assert not checkout_runner.checkout.parent.exists()
+
+
 def test_pr_review_options_and_partial_status(prepared_cli, capsys, tmp_path):
     checkout_runner, models = prepared_cli
     (tmp_path / "AGENTS.md").write_text(
