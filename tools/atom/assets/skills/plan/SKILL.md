@@ -102,19 +102,26 @@ Reshape the plan from the answers. **One question at a time.**
 Fill in [phase-plan.md](../atom/templates/phase-plan.md) at
 `specs/{project}/phase-plan.md`.
 
-Then create the phase directories so the structure is visible:
+Then create the phase directories so the structure is visible. Writing the first
+phase artifact through `atom-write-artifact` creates its parent directory; use the
+same writer for subsequent artifacts:
 
 ```
 specs/{project}/phase-01-{slug}/
 specs/{project}/phase-02-{slug}/
 ```
 
-Register the phases so progress is trackable:
+Phase discovery is filesystem-derived; no phase registration command is needed.
+Inspect the derived phase and artifact information with:
 
 ```bash
-atom phase add 01 {slug} --risk high --poc-required
-atom phase list
+atom status
 ```
+
+Status reports artifact presence, not completeness or human approval. Keep the
+phase order, dependencies, risks, and approved outcomes in the plan and phase
+artifacts. A missing-state diagnostic is not an instruction to invent a writable
+phase state machine; follow the existing setup guidance if onboarding is needed.
 
 ## Step 6 — Gate
 
@@ -145,7 +152,7 @@ a plan that stopped being consulted.
 - [ ] Risk is front-loaded in the ordering
 - [ ] Each phase has a POC question or a specific recorded justification for skipping
 - [ ] Plan reshaped through conversation, not just presented
-- [ ] `phase-plan.md` complete; phase directories created; phases registered
+- [ ] `phase-plan.md` complete; phase directories created; tracking is artifact-derived
 - [ ] Plan presented at a gate and explicitly approved
 
 ## Next

@@ -209,13 +209,17 @@ Example `decisions.md` entry:
 - Next action: present `specs/cache/phase-01-locking/poc-report.md` to the developer
 ```
 
-Example CI output:
+Example CI halt after determining that the report has no human approval:
 
 ```bash
-atom phase show
-# phase-01-locking: waiting_for_gate after poc-report
+atom status
+echo "Halted: phase-01-locking POC Report awaits human approval."
 exit 2
 ```
+
+Status is informational: it reports derived artifact presence and declared
+approvals, not a gate verdict. The explicit halt and nonzero exit above are the
+caller's responsibility, not hidden CLI enforcement.
 
 Stopping is the correct outcome. Continuing would create work from approval that
 did not happen.

@@ -79,7 +79,9 @@ routinely changes phase N+1's design — running them in parallel discards that.
 2. Work on a branch, not on `main`.
 3. Create `specs/{project}/` with `findings.md` and `decisions.md`, both from their
    templates, both populated with their explicit empty statement.
-4. Register the run: `atom status --start {project}`.
+4. Inspect existing derived progress with `atom status`; there is no separate run
+   registration step. Status does not initialize a project or record gate approval.
+   If it reports missing setup, use the approved setup path above.
 
 ## Step 1 — Project scope
 
@@ -100,11 +102,10 @@ For each phase in order:
 | 4 | `/atom:review` | — | Models other than the one that wrote the code |
 | 5 | `/atom:ship` | — | Push only on explicit instruction |
 
-Then:
-
-```bash
-atom phase done NN
-```
+After human-approved completion, record the accepted outcome and supporting
+verification/review/shipping evidence in the phase artifacts and update the phase
+plan. There is no phase-completion command; artifact presence alone is not proof
+that a phase is complete or approved.
 
 Between phases, ask the developer whether the plan still holds. It often doesn't, and
 finding that out costs one question.
@@ -119,17 +120,23 @@ finding that out costs one question.
 
 ## Resuming
 
-State lives in `.atom/state.json`. To resume:
+Phase progress is derived from phase directories and artifact presence, not stored
+as an active-phase state machine. Inspect it with:
 
 ```bash
 atom status
 ```
 
-Resume from the **last completed** step. If a gate was interrupted mid-conversation,
+Read the phase plan, phase artifacts, and recorded human approval evidence before
+choosing the next step. `.atom/state.json` stores approval declarations, not the
+active phase; status inspection does not create approval.
+
+Resume from the **last verified and approved** step. If a gate was interrupted mid-conversation,
 restart at that gate — not at the step before it, and never past it. An interrupted
 gate was never approved, and an unapproved gate is an open gate.
 
-Verify the artifacts on disk match what the state file claims before trusting it.
+Verify that the artifacts and approval records support the claimed outcome. Status
+is derived information, not a completion verdict or permission to pass a gate.
 
 ---
 
